@@ -52,7 +52,7 @@
 
       .page {
         min-width: 0;
-        max-width: 1320px;
+        max-width: min(100%, 1520px);
         width: 100%;
         margin: 0 auto;
         padding: 20px 18px 40px;
@@ -151,6 +151,22 @@
         font-size: 13px;
         font-weight: 650;
         color: var(--text);
+      }
+
+      .sync-state-pill {
+        min-width: 138px;
+      }
+
+      .sync-state-pill .header-pill-value {
+        color: var(--brand-blue);
+      }
+
+      .sync-state-pill.is-paused .header-pill-value {
+        color: var(--warning);
+      }
+
+      .sync-state-pill.is-error .header-pill-value {
+        color: var(--danger);
       }
 
       .operador-pill {
@@ -555,14 +571,18 @@
       }
 
       .sidebar-hist-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
         padding: 10px;
         border-radius: var(--radius-sm);
         border: 1px solid var(--border);
         background: #fafcfe;
         font-size: 12px;
+        position: relative;
       }
 
-      .sidebar-hist-item strong {
+      .sidebar-hist-item-main strong {
         display: block;
         color: var(--text);
         margin-bottom: 4px;
@@ -688,6 +708,45 @@
         flex-shrink: 0;
       }
 
+      .card-detail-body {
+        font-size: 13px;
+        max-height: 52vh;
+        overflow: auto;
+        margin: 0;
+        padding: 12px 14px;
+        background: #fafcfe;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+      }
+
+      .card-detail-body dl {
+        margin: 0;
+        display: grid;
+        gap: 10px 14px;
+      }
+
+      .card-detail-body .detail-row {
+        display: grid;
+        gap: 2px;
+      }
+
+      .card-detail-body .detail-row dt {
+        margin: 0;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+
+      .card-detail-body .detail-row dd {
+        margin: 0;
+        font-weight: 650;
+        color: var(--text);
+        line-height: 1.4;
+        word-break: break-word;
+      }
+
       .card-detail-pre {
         white-space: pre-wrap;
         font-size: 13px;
@@ -698,6 +757,498 @@
         background: #f8fafc;
         border-radius: 10px;
         border: 1px solid var(--border);
+      }
+
+      .queue-lede {
+        margin: -4px 0 12px;
+        font-size: 13px;
+        line-height: 1.45;
+        max-width: 720px;
+      }
+
+      .historico-quick-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .historico-quick-pills .hq-pill {
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--muted);
+        border-radius: 999px;
+        padding: 7px 13px;
+        font-size: 12px;
+        font-weight: 650;
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      }
+
+      .historico-quick-pills .hq-pill:hover {
+        color: var(--brand-blue);
+        border-color: rgba(0, 75, 199, 0.28);
+        background: rgba(0, 75, 199, 0.04);
+      }
+
+      .historico-quick-pills .hq-pill.active {
+        background: rgba(0, 75, 199, 0.1);
+        border-color: rgba(0, 75, 199, 0.35);
+        color: var(--brand-blue);
+      }
+
+      .historico-filters-premium .hf-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px 14px;
+        margin-bottom: 10px;
+      }
+
+      .historico-filters-premium .hf-grid label {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+
+      .historico-filters-premium .hf-grid select,
+      .historico-filters-premium .hf-grid input[type='text'] {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-size: 13px;
+      }
+
+      .historico-filters-premium .hf-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+
+      .historico-filters-premium .hf-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .historico-filters-premium .hf-chip-row .filter-button {
+        font-size: 11px;
+        padding: 6px 10px;
+      }
+
+      .historico-error-bar {
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        background: rgba(239, 68, 68, 0.06);
+        border-radius: var(--radius-sm);
+        padding: 12px;
+        margin-bottom: 12px;
+        font-size: 13px;
+      }
+
+      .queue-card--historico .qk-card-main {
+        padding: 10px 12px 10px;
+      }
+
+      .queue-card--historico .qk-title {
+        font-size: 15px;
+      }
+
+      .queue-card--historico .qk-desc {
+        margin-top: 4px;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .queue-card--historico .hist-meta-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 14px;
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .queue-card--historico .hist-meta-bar span {
+        min-width: 0;
+      }
+
+      .queue-card--historico .hist-meta-bar strong {
+        color: var(--text);
+        font-weight: 650;
+      }
+
+      .queue-card--historico .qk-meta {
+        margin-top: 8px;
+        padding: 8px 10px;
+        gap: 6px 12px;
+      }
+
+      .queue-card--historico .qk-meta-row dt {
+        font-size: 9px;
+      }
+
+      .queue-card--historico .qk-meta-row dd {
+        font-size: 11px;
+      }
+
+      .qk-stripe-hist-resolvido {
+        background: linear-gradient(180deg, #34d399, var(--success));
+      }
+
+      .qk-stripe-hist-reaberto {
+        background: linear-gradient(180deg, #fb923c, var(--warning));
+      }
+
+      .qk-stripe-hist-geral {
+        background: linear-gradient(180deg, var(--brand-blue-2), var(--brand-blue));
+      }
+
+      .qk-stripe-hist-med {
+        background: linear-gradient(180deg, #22c55e, #15803d);
+      }
+
+      .badge.status-historico_resolvido {
+        background: rgba(22, 163, 74, 0.14);
+        color: var(--success);
+        border: 1px solid rgba(22, 163, 74, 0.28);
+      }
+
+      .badge.status-historico_reaberto {
+        background: rgba(249, 115, 22, 0.14);
+        color: #c2410c;
+        border: 1px solid rgba(249, 115, 22, 0.35);
+      }
+
+      .badge.status-historico_med {
+        background: rgba(22, 163, 74, 0.12);
+        color: #166534;
+      }
+
+      .sidebar-hist-mini {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .sidebar-hist-mini button {
+        font-size: 12px;
+        padding: 5px 9px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--brand-blue);
+        cursor: pointer;
+        font-weight: 650;
+      }
+
+      .sidebar-hist-mini button:hover {
+        background: rgba(0, 75, 199, 0.06);
+      }
+
+      .audit-drawer-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10050;
+        display: flex;
+        justify-content: flex-end;
+        align-items: stretch;
+        background: rgba(15, 23, 42, 0.38);
+        backdrop-filter: blur(2px);
+      }
+
+      .audit-drawer-overlay.hidden {
+        display: none !important;
+      }
+
+      .audit-drawer {
+        width: min(640px, 100vw);
+        max-width: 100%;
+        background: var(--surface);
+        border-left: 1px solid var(--border);
+        box-shadow: -12px 0 40px rgba(15, 23, 42, 0.14);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        animation: audit-drawer-in 0.22s ease-out;
+      }
+
+      @keyframes audit-drawer-in {
+        from {
+          transform: translateX(24px);
+          opacity: 0.92;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      .audit-drawer-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 14px 12px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+
+      .audit-drawer-back {
+        border: 1px solid var(--border) !important;
+        background: #fff !important;
+        color: var(--brand-blue) !important;
+        border-radius: var(--radius-sm) !important;
+        padding: 8px 11px !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        cursor: pointer;
+      }
+
+      .audit-drawer-title {
+        flex: 1;
+        margin: 0;
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+
+      .audit-drawer-summary {
+        padding: 12px 14px;
+        border-bottom: 1px solid #eef2f8;
+        background: #fafcfe;
+        flex-shrink: 0;
+      }
+
+      .audit-drawer-summary .ads-head {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+
+      .audit-drawer-summary .ads-ico {
+        width: 42px;
+        height: 42px;
+        border-radius: 999px;
+        background: rgba(0, 75, 199, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+
+      .audit-drawer-summary .ads-lines {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .audit-drawer-summary .ads-lines strong {
+        display: block;
+        font-size: 15px;
+        font-weight: 800;
+        color: var(--text);
+      }
+
+      .audit-drawer-summary .ads-sub {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 4px;
+        line-height: 1.45;
+      }
+
+      .audit-summary-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .audit-summary-cards .asc {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 8px 10px;
+        background: #fff;
+      }
+
+      .audit-summary-cards .asc dt {
+        margin: 0;
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+
+      .audit-summary-cards .asc dd {
+        margin: 4px 0 0;
+        font-size: 13px;
+        font-weight: 750;
+        color: var(--text);
+      }
+
+      .audit-tl-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 10px 14px;
+        border-bottom: 1px solid #eef2f8;
+        flex-shrink: 0;
+      }
+
+      .audit-tl-filters button {
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 11px;
+        font-weight: 650;
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      .audit-tl-filters button.active {
+        background: rgba(0, 75, 199, 0.1);
+        border-color: rgba(0, 75, 199, 0.28);
+        color: var(--brand-blue);
+      }
+
+      .audit-drawer-body {
+        flex: 1;
+        overflow: auto;
+        padding: 12px 14px 18px;
+        min-height: 0;
+      }
+
+      .audit-banner {
+        font-size: 12px;
+        line-height: 1.45;
+        color: var(--muted);
+        border: 1px dashed var(--border);
+        border-radius: var(--radius-sm);
+        padding: 10px;
+        margin-bottom: 12px;
+        background: #fff;
+      }
+
+      .audit-timeline {
+        position: relative;
+        padding-left: 22px;
+      }
+
+      .audit-timeline::before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 6px;
+        bottom: 6px;
+        width: 2px;
+        background: #e2e8f0;
+        border-radius: 2px;
+      }
+
+      .audit-tl-item {
+        position: relative;
+        margin-bottom: 12px;
+      }
+
+      .audit-tl-dot {
+        position: absolute;
+        left: -18px;
+        top: 12px;
+        width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        background: #fff;
+        border: 2px solid #cbd5e1;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+      }
+
+      .audit-tl-card {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 10px 12px;
+        background: #fff;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .audit-tl-card.tone-green {
+        background: rgba(22, 163, 74, 0.06);
+        border-color: rgba(22, 163, 74, 0.22);
+      }
+
+      .audit-tl-card.tone-blue {
+        background: rgba(0, 75, 199, 0.06);
+        border-color: rgba(0, 75, 199, 0.18);
+      }
+
+      .audit-tl-card.tone-orange {
+        background: rgba(249, 115, 22, 0.08);
+        border-color: rgba(249, 115, 22, 0.28);
+      }
+
+      .audit-tl-card.tone-purple {
+        background: rgba(139, 92, 246, 0.07);
+        border-color: rgba(139, 92, 246, 0.22);
+      }
+
+      .audit-tl-card.tone-red {
+        background: rgba(239, 68, 68, 0.07);
+        border-color: rgba(239, 68, 68, 0.28);
+      }
+
+      .audit-tl-card.tone-wa {
+        background: rgba(22, 163, 74, 0.09);
+        border-color: rgba(22, 163, 74, 0.28);
+      }
+
+      .audit-tl-time {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+
+      .audit-tl-title {
+        font-size: 13px;
+        font-weight: 750;
+        color: var(--text);
+      }
+
+      .audit-tl-detail {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 4px;
+        line-height: 1.4;
+      }
+
+      .audit-drawer-foot {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+        padding: 12px 14px;
+        border-top: 1px solid var(--border);
+        flex-shrink: 0;
+        background: #fafcfe;
+      }
+
+      .audit-drawer-status {
+        padding: 8px 14px;
+        font-size: 12px;
+        border-bottom: 1px solid #eef2f8;
+      }
+
+      @media (max-width: 720px) {
+        .audit-drawer {
+          width: 100vw;
+        }
       }
 
       .toolbar,
@@ -1684,6 +2235,10 @@
             <span class="header-pill-label">Última atualização</span>
             <span id="last-sync-label" class="header-pill-value">—</span>
           </div>
+          <div id="sync-state-pill" class="header-pill sync-state-pill">
+            <span class="header-pill-label">Atualização automática</span>
+            <span id="sync-state-label" class="header-pill-value">Ativa</span>
+          </div>
           <div class="header-pill">
             <span class="header-pill-label">Última ação</span>
             <span id="last-action-label" class="header-pill-value">—</span>
@@ -1747,6 +2302,7 @@
           <div class="desk-main">
             <section class="card queue-panel-head">
               <h2 id="queue-section-heading">Fila de pendências</h2>
+              <p id="queue-section-lede" class="queue-lede ho-muted hidden"></p>
               <p id="queue-subtitle" class="queue-subtitle ho-muted"></p>
               <div id="med-search-wrap" class="med-search-row hidden">
                 <label for="med-queue-search" class="ho-muted" style="display:block;font-size:12px;font-weight:700;margin-bottom:4px;">Buscar</label>
@@ -1836,13 +2392,36 @@
       </section>
     </main>
 
+    <div id="audit-drawer-overlay" class="audit-drawer-overlay hidden" aria-hidden="true" onclick="onAuditDrawerOverlayClick_(event)">
+      <aside
+        id="audit-drawer"
+        class="audit-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="audit-drawer-title"
+        onclick="event.stopPropagation()"
+      >
+        <header class="audit-drawer-head">
+          <button type="button" class="audit-drawer-back" onclick="closeAuditDrawer_()">← Voltar</button>
+          <h2 id="audit-drawer-title" class="audit-drawer-title">Trilha de Auditoria</h2>
+          <button type="button" class="modal-icon-btn" onclick="closeAuditDrawer_()" aria-label="Fechar">×</button>
+        </header>
+        <div id="audit-drawer-status" class="audit-drawer-status hidden"></div>
+        <div id="audit-drawer-inner"></div>
+        <footer class="audit-drawer-foot">
+          <button type="button" class="btn-queue-secondary" onclick="copyAuditTrailToClipboard_()">Copiar trilha</button>
+          <button type="button" class="btn-queue-primary" onclick="closeAuditDrawer_()">Fechar</button>
+        </footer>
+      </aside>
+    </div>
+
     <div id="card-detail-overlay" class="modal-overlay hidden" aria-hidden="true">
       <div class="modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="card-detail-title">
         <div class="modal-head">
           <h2 id="card-detail-title">Detalhes</h2>
           <button type="button" class="modal-icon-btn" onclick="closeCardDetailOverlay_()" aria-label="Fechar">×</button>
         </div>
-        <pre id="card-detail-body" class="card-detail-pre"></pre>
+        <div id="card-detail-body" class="card-detail-body"></div>
         <div class="form-actions">
           <button type="button" class="light" onclick="closeCardDetailOverlay_()">Fechar</button>
         </div>
@@ -2004,6 +2583,8 @@
 
     <script>
       const OPERADOR_STORAGE_KEY = 'handover_operador_atual_v14';
+      const HANDOVER_AUTO_REFRESH_MS = 30000;
+      const HANDOVER_AUTO_REFRESH_ENABLED = true;
       const QUEUE_FILTERS_PENDENCIAS = ['pendentes', 'todos', 'urgentes', 'vencidos_hoje'];
       const QUEUE_FILTERS_MEDICAMENTOS = [
         'pendentes',
@@ -2029,6 +2610,12 @@
       let activeChecklistFilter = 'todos';
       let historicoResolvidos = [];
       let historicoLoadState = 'idle';
+      let historicoLoadError = '';
+      let auditTimelineFilter = 'todos';
+      let lastAuditTimelineEvents = [];
+      let lastAuditTimelineHeadline = '';
+      let lastAuditTimelineBasic = false;
+      let lastAuditRawRecord = null;
       let checklistPendingItemId = null;
       let isChecklistExpanded = false;
       const openChecklistCategories = new Set();
@@ -2048,6 +2635,10 @@
         estado: 'todos',
       };
       let dashboardAutoRefreshTimer = null;
+      let dashboardRelativeTimer = null;
+      let dashboardRefreshInFlight = false;
+      let dashboardLastFingerprint = '';
+      let dashboardLastRefreshError = '';
       let lastDashboardSyncTs = Date.now();
 
       const formModalOverlay = document.getElementById('form-modal-overlay');
@@ -2083,6 +2674,8 @@
       const historicoFiltersPanel = document.getElementById('historico-filters-panel');
       const checklistTurnSelect = document.getElementById('checklist-turno-select');
       const checklistTurnTitleEl = document.getElementById('checklist-turn-title');
+      const syncStatePill = document.getElementById('sync-state-pill');
+      const syncStateLabel = document.getElementById('sync-state-label');
 
       const panelQueueWrap = document.getElementById('panel-queue-wrap');
       const panelChecklist = document.getElementById('panel-checklist');
@@ -2155,6 +2748,11 @@
         if (event.key !== 'Escape') {
           return;
         }
+        var auditOv = document.getElementById('audit-drawer-overlay');
+        if (auditOv && !auditOv.classList.contains('hidden')) {
+          closeAuditDrawer_();
+          return;
+        }
         if (formModalOverlay && !formModalOverlay.classList.contains('hidden')) {
           closeFormModal_();
           return;
@@ -2186,6 +2784,7 @@
         if (operadorRequiredOverlay) {
           operadorRequiredOverlay.classList.remove('hidden');
           operadorRequiredOverlay.setAttribute('aria-hidden', 'false');
+          updateAutoRefreshStatus_();
           window.setTimeout(function () {
             if (operadorModalInput) {
               operadorModalInput.focus();
@@ -2228,6 +2827,7 @@
           operadorRequiredOverlay.classList.add('hidden');
           operadorRequiredOverlay.setAttribute('aria-hidden', 'true');
         }
+        updateAutoRefreshStatus_();
       }
 
       function cancelReopenHistoricoModal_() {
@@ -2236,6 +2836,7 @@
           reopenConfirmOverlay.classList.add('hidden');
           reopenConfirmOverlay.setAttribute('aria-hidden', 'true');
         }
+        updateAutoRefreshStatus_();
       }
 
       function confirmReopenHistoricoModal_() {
@@ -2293,29 +2894,63 @@
           reopenConfirmOverlay.classList.remove('hidden');
           reopenConfirmOverlay.setAttribute('aria-hidden', 'false');
         }
+        updateAutoRefreshStatus_();
       }
 
       function touchLastSyncTime_() {
         lastDashboardSyncTs = Date.now();
+        dashboardLastRefreshError = '';
         var el = document.getElementById('last-sync-label');
-        if (!el) {
+        if (el) {
+          var d = new Date(lastDashboardSyncTs);
+          el.textContent =
+            String(d.getHours()).padStart(2, '0') +
+            ':' +
+            String(d.getMinutes()).padStart(2, '0') +
+            ':' +
+            String(d.getSeconds()).padStart(2, '0');
+        }
+        updateAutoRefreshStatus_();
+      }
+
+      function secondsSinceLastSync_() {
+        return Math.max(0, Math.floor((Date.now() - lastDashboardSyncTs) / 1000));
+      }
+
+      function setAutoRefreshStatus_(text, stateClass) {
+        if (syncStateLabel) {
+          syncStateLabel.textContent = text;
+        }
+        if (syncStatePill) {
+          syncStatePill.classList.toggle('is-paused', stateClass === 'paused');
+          syncStatePill.classList.toggle('is-error', stateClass === 'error');
+        }
+      }
+
+      function updateAutoRefreshStatus_() {
+        if (dashboardRefreshInFlight) {
+          setAutoRefreshStatus_('Atualizando...', '');
           return;
         }
-        var d = new Date(lastDashboardSyncTs);
-        el.textContent =
-          String(d.getHours()).padStart(2, '0') +
-          ':' +
-          String(d.getMinutes()).padStart(2, '0') +
-          ':' +
-          String(d.getSeconds()).padStart(2, '0');
+        if (dashboardLastRefreshError) {
+          setAutoRefreshStatus_('Erro ao atualizar', 'error');
+          return;
+        }
+        if (shouldPauseAutoRefresh_()) {
+          setAutoRefreshStatus_('Pausado durante ediÃ§Ã£o', 'paused');
+          return;
+        }
+        setAutoRefreshStatus_('Atualizado hÃ¡ ' + secondsSinceLastSync_() + 's', '');
       }
 
       function isAnyBlockingModalOpen_() {
+        var auditOv = document.getElementById('audit-drawer-overlay');
         return (
           (formModalOverlay && !formModalOverlay.classList.contains('hidden')) ||
           (operadorRequiredOverlay && !operadorRequiredOverlay.classList.contains('hidden')) ||
           (reopenConfirmOverlay && !reopenConfirmOverlay.classList.contains('hidden')) ||
-          (cardDetailOverlay && !cardDetailOverlay.classList.contains('hidden'))
+          (cardDetailOverlay && !cardDetailOverlay.classList.contains('hidden')) ||
+          (auditOv && !auditOv.classList.contains('hidden'))
         );
       }
 
@@ -2323,17 +2958,106 @@
         return checklistObservationEditMode.size > 0;
       }
 
+      function isImportantInputActive_() {
+        var ae = document.activeElement;
+        if (!ae || ae === document.body || ae === document.documentElement) {
+          return false;
+        }
+        var tag = String(ae.tagName || '').toLowerCase();
+        if (tag === 'textarea' || tag === 'select') {
+          return true;
+        }
+        if (tag === 'input') {
+          var type = String(ae.type || 'text').toLowerCase();
+          return ['button', 'checkbox', 'radio', 'submit', 'reset'].indexOf(type) === -1;
+        }
+        return ae.isContentEditable === true;
+      }
+
+      function isLocalSyncBusy_() {
+        return (
+          checklistPendingItemId ||
+          (dashboardData.geral || []).some(function (g) {
+            return g.__syncState === 'syncing' || g.__resolveState === 'resolving';
+          }) ||
+          (dashboardData.medicamentos || []).some(function (m) {
+            return m.__syncState === 'syncing';
+          })
+        );
+      }
+
+      function shouldPauseAutoRefresh_() {
+        return (
+          isAnyBlockingModalOpen_() ||
+          isChecklistObservationEditing_() ||
+          isImportantInputActive_() ||
+          isLocalSyncBusy_() ||
+          (typeof document !== 'undefined' && document.visibilityState === 'hidden')
+        );
+      }
+
       function initDashboardSync_() {
         touchLastSyncTime_();
+        dashboardLastFingerprint = buildDashboardFingerprint_(dashboardData);
         if (dashboardAutoRefreshTimer) {
           window.clearInterval(dashboardAutoRefreshTimer);
         }
+        if (dashboardRelativeTimer) {
+          window.clearInterval(dashboardRelativeTimer);
+        }
+        dashboardRelativeTimer = window.setInterval(updateAutoRefreshStatus_, 5000);
+        document.addEventListener('visibilitychange', updateAutoRefreshStatus_);
+        document.addEventListener('focusin', updateAutoRefreshStatus_, true);
+        document.addEventListener(
+          'focusout',
+          function () {
+            window.setTimeout(updateAutoRefreshStatus_, 80);
+          },
+          true
+        );
+        if (!HANDOVER_AUTO_REFRESH_ENABLED) {
+          setAutoRefreshStatus_('Desativada', 'paused');
+          return;
+        }
         dashboardAutoRefreshTimer = window.setInterval(function () {
-          if (isAnyBlockingModalOpen_() || isChecklistObservationEditing_()) {
+          if (shouldPauseAutoRefresh_()) {
+            updateAutoRefreshStatus_();
             return;
           }
-          refreshDashboardNow_(true);
-        }, 60000);
+          refreshDashboardNow_(true, 'auto');
+        }, HANDOVER_AUTO_REFRESH_MS);
+      }
+
+      function buildDashboardFingerprint_(data) {
+        data = data || {};
+        function recKey(item) {
+          return [
+            item.ID || '',
+            item.Status || '',
+            item.Resolvido || '',
+            item.Comprado || '',
+            item.Entregue || '',
+            item.Ultima_Acao_Em || '',
+            item.Data_Resolucao || '',
+            item.Data_Aviso_WhatsApp || '',
+            item.Data_Hora_Check || '',
+            item.Responsavel || '',
+            item.Observacao || '',
+          ].join('~');
+        }
+        var geral = (data.geral || []).map(recKey).sort();
+        var med = (data.medicamentos || []).map(recKey).sort();
+        var check = ((data.checklistTurno && data.checklistTurno.items) || []).map(recKey).sort();
+        return [geral.join('|'), med.join('|'), check.join('|')].join('::');
+      }
+
+      function countFingerprintChanges_(before, after) {
+        if (!before || !after || before === after) {
+          return 0;
+        }
+        var a = before.split('|');
+        var b = after.split('|');
+        return Math.max(1, Math.abs(b.length - a.length));
       }
 
       function mergeServerIntoDashboard_(bundle) {
@@ -2370,32 +3094,55 @@
         updateLastActionLabel_();
       }
 
-      function refreshDashboardNow_(silent) {
+      function refreshDashboardNow_(silent, source) {
         if (!silent && isAnyBlockingModalOpen_()) {
           showToast_('Feche os modais para atualizar.', true);
+          updateAutoRefreshStatus_();
           return;
         }
+        if (dashboardRefreshInFlight) {
+          return;
+        }
+        captureObservationDraftsFromDom_();
+        dashboardRefreshInFlight = true;
+        dashboardLastRefreshError = '';
+        updateAutoRefreshStatus_();
         var started = Date.now();
+        var beforeFingerprint = dashboardLastFingerprint || buildDashboardFingerprint_(dashboardData);
         try {
           getScriptRunner_()
             .withSuccessHandler(function (bundle) {
               perfLog_('refreshDashboardBundle', started);
               mergeServerIntoDashboard_(bundle);
+              var afterFingerprint = buildDashboardFingerprint_(dashboardData);
+              var changes = beforeFingerprint && beforeFingerprint !== afterFingerprint;
+              var changeCount = countFingerprintChanges_(beforeFingerprint, afterFingerprint);
+              dashboardLastFingerprint = afterFingerprint;
               touchLastSyncTime_();
               initChecklistTurnoUi_();
               renderAll();
+              dashboardRefreshInFlight = false;
+              updateAutoRefreshStatus_();
               if (!silent) {
                 showToast_('Dados atualizados');
+              } else if (source === 'auto' && changes) {
+                showToast_(changeCount > 1 ? changeCount + ' alteraÃ§Ãµes recebidas' : 'Handover atualizado');
               }
             })
             .withFailureHandler(function (error) {
               perfLog_('refreshDashboardBundle_fail', started);
+              dashboardRefreshInFlight = false;
+              dashboardLastRefreshError = getErrorMessage(error);
+              updateAutoRefreshStatus_();
               if (!silent) {
                 showToast_(getErrorMessage(error), true);
               }
             })
             .refreshDashboardBundle(activeChecklistTurno);
         } catch (error) {
+          dashboardRefreshInFlight = false;
+          dashboardLastRefreshError = error.message;
+          updateAutoRefreshStatus_();
           if (!silent) {
             showToast_(error.message, true);
           }
@@ -2704,25 +3451,31 @@
           return;
         }
         historicoLoadState = 'loading';
+        historicoLoadError = '';
         var started = Date.now();
         try {
           getScriptRunner_()
             .withSuccessHandler(function (resp) {
               historicoResolvidos = resp && resp.historico ? resp.historico : [];
               historicoLoadState = 'ready';
+              historicoLoadError = '';
               perfLog_('fetchHistoricoResolvidos', started);
               callback();
             })
             .withFailureHandler(function (err) {
               historicoLoadState = 'idle';
+              historicoResolvidos = [];
+              historicoLoadError = getErrorMessage(err);
               perfLog_('fetchHistoricoResolvidos_fail', started);
-              showToast_(getErrorMessage(err), true);
+              showToast_(historicoLoadError, true);
               callback();
             })
             .fetchHistoricoResolvidos(280);
         } catch (err) {
           historicoLoadState = 'idle';
-          showToast_(getErrorMessage(err), true);
+          historicoLoadError = getErrorMessage(err);
+          historicoResolvidos = [];
+          showToast_(historicoLoadError, true);
           callback();
         }
       }
@@ -3040,6 +3793,14 @@
         if (!queueSectionHeading) {
           return;
         }
+        var lede = document.getElementById('queue-section-lede');
+        if (lede) {
+          lede.classList.toggle('hidden', activeMainTab !== 'historico');
+          lede.textContent =
+            activeMainTab === 'historico'
+              ? 'Trilha de auditoria e reabertura — dados reais do arquivo.'
+              : '';
+        }
         if (activeMainTab === 'pendencias') {
           queueSectionHeading.textContent = 'Fila de pendências';
           if (medSearchWrap) {
@@ -3163,14 +3924,19 @@
         cardDetailOverlay.setAttribute('aria-hidden', 'true');
       }
 
-      function openCardDetailOverlay_(title, bodyText) {
+      function openCardDetailOverlay_(title, bodyText, opts) {
+        opts = opts || {};
         var tEl = document.getElementById('card-detail-title');
         var bEl = document.getElementById('card-detail-body');
         if (tEl) {
           tEl.textContent = title || 'Detalhes';
         }
         if (bEl) {
-          bEl.textContent = bodyText || '';
+          if (opts.isHtml) {
+            bEl.innerHTML = bodyText || '';
+          } else {
+            bEl.textContent = bodyText || '';
+          }
         }
         if (cardDetailOverlay) {
           cardDetailOverlay.classList.remove('hidden');
@@ -3228,6 +3994,10 @@
           showToast_('Item não encontrado.', true);
           return;
         }
+        if (item.type === 'historico') {
+          openHistoricoDetailById_(id);
+          return;
+        }
         var extras = buildCardDetailExtras_(item);
         var body =
           item.title +
@@ -3245,6 +4015,10 @@
           showToast_('Item não encontrado.', true);
           return;
         }
+        if (item.type === 'historico') {
+          cardMoreCopiarHistorico_(id);
+          return;
+        }
         var extras = buildCardDetailExtras_(item);
         var text =
           item.title +
@@ -3255,7 +4029,7 @@
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(text).then(
             function () {
-              showToast_('Copiado');
+              showToast_('Informações copiadas.');
             },
             function () {
               showToast_('Não foi possível copiar.', true);
@@ -3346,13 +4120,23 @@
                 var isGeral = String(row.Origem) === 'Geral';
                 var title = isGeral ? geralQueueTitleFromItem_(row) : row.Medicamento || 'Medicamento';
                 var sub = isGeral ? String(row.Autor || '') : String(row.Cliente || row.Atendente || '');
+                var hid = escapeJsSingleQuoted_(String(row.ID));
                 return (
-                  '<div class="sidebar-hist-item"><strong>' +
+                  '<div class="sidebar-hist-item">' +
+                  '<div class="sidebar-hist-item-main"><strong>' +
                   escapeHtml(title) +
                   '</strong>' +
                   escapeHtml(formatDateTime(row.Timestamp)) +
                   (sub ? ' · ' + escapeHtml(sub) : '') +
-                  '</div>'
+                  '</div>' +
+                  '<div class="sidebar-hist-mini">' +
+                  '<button type="button" onclick="openHistoricoDetailById_(\'' +
+                  hid +
+                  '\')">Detalhes</button>' +
+                  '<button type="button" onclick="openAuditDrawerForId_(\'' +
+                  hid +
+                  '\')">Trilha</button>' +
+                  '</div></div>'
                 );
               })
               .join('') +
@@ -3693,6 +4477,699 @@
         });
       }
 
+      function clearHistoricoFilters_() {
+        historicoFilterState.criados = 'todos';
+        historicoFilterState.resolucao = 'todos';
+        historicoFilterState.operador = '';
+        historicoFilterState.categoria = 'todos';
+        historicoFilterState.estado = 'todos';
+        renderHistoricoFiltersPanel_();
+        renderQueue();
+      }
+
+      function applyHistoricoQuickPill_(pill) {
+        switch (pill) {
+          case 'todos':
+            historicoFilterState.categoria = 'todos';
+            historicoFilterState.estado = 'todos';
+            break;
+          case 'geral':
+            historicoFilterState.categoria = 'geral';
+            historicoFilterState.estado = 'todos';
+            break;
+          case 'medicamentos':
+            historicoFilterState.categoria = 'medicamentos';
+            historicoFilterState.estado = 'todos';
+            break;
+          case 'resolvidos':
+            historicoFilterState.categoria = 'todos';
+            historicoFilterState.estado = 'resolvido';
+            break;
+          case 'reabertos':
+            historicoFilterState.categoria = 'todos';
+            historicoFilterState.estado = 'reaberto';
+            break;
+          default:
+            return;
+        }
+        renderHistoricoFiltersPanel_();
+        renderQueue();
+      }
+
+      function historicoQuickPillActive_(pill) {
+        var st = historicoFilterState;
+        switch (pill) {
+          case 'todos':
+            return st.categoria === 'todos' && st.estado === 'todos';
+          case 'geral':
+            return st.categoria === 'geral';
+          case 'medicamentos':
+            return st.categoria === 'medicamentos';
+          case 'resolvidos':
+            return st.categoria === 'todos' && st.estado === 'resolvido';
+          case 'reabertos':
+            return st.categoria === 'todos' && st.estado === 'reaberto';
+          default:
+            return false;
+        }
+      }
+
+      function retryLoadHistorico_() {
+        historicoLoadError = '';
+        historicoLoadState = 'idle';
+        loadHistoricoIfNeeded_(function () {
+          renderAll();
+        });
+      }
+
+      function findHistoricoRawById_(id) {
+        var sid = String(id);
+        return (historicoResolvidos || []).find(function (row) {
+          return String(row.ID) === sid;
+        });
+      }
+
+      function historicoTipoLinha_(item) {
+        if (!item) {
+          return '';
+        }
+        var o = String(item.Origem || '');
+        if (o === 'Geral') {
+          return 'Geral';
+        }
+        var t = medicationTipoFromRecord_(item);
+        if (t === 'falta') {
+          return 'Medicamento · Falta';
+        }
+        if (t === 'encomenda') {
+          return 'Medicamento · Encomenda';
+        }
+        return 'Medicamentos · ' + (item.Tipo || 'Registro');
+      }
+
+      function detailDlRow_(label, value) {
+        var v = value == null ? '' : String(value).trim();
+        if (!v) {
+          return '';
+        }
+        return (
+          '<div class="detail-row"><dt>' +
+          escapeHtml(label) +
+          '</dt><dd>' +
+          escapeHtml(v) +
+          '</dd></div>'
+        );
+      }
+
+      function buildHistoricoDetailHtml_(raw) {
+        if (!raw) {
+          return '<p class="ho-muted">Sem dados.</p>';
+        }
+        var origem = String(raw.Origem || '');
+        var chunks = [];
+        if (origem === 'Geral') {
+          chunks.push(detailDlRow_('Tipo', 'Geral'));
+          chunks.push(detailDlRow_('Título', geralQueueTitleFromItem_(raw)));
+          chunks.push(detailDlRow_('Descrição', raw.Descricao));
+          chunks.push(detailDlRow_('Urgência', raw.Urgencia));
+        } else {
+          chunks.push(detailDlRow_('Tipo', historicoTipoLinha_(raw)));
+          chunks.push(detailDlRow_('Medicamento', raw.Medicamento));
+          chunks.push(detailDlRow_('Cliente', raw.Cliente));
+          chunks.push(detailDlRow_('Telefone', raw.Telefone));
+          chunks.push(detailDlRow_('Atendente', raw.Atendente));
+          chunks.push(detailDlRow_('Previsão', raw.Previsao_Entrega ? formatDate(raw.Previsao_Entrega) : ''));
+          if (medicationTipoFromRecord_(raw) !== 'falta') {
+            chunks.push(detailDlRow_('Preço', raw.Preco_Venda ? formatCurrencyBr_(raw.Preco_Venda) : ''));
+            chunks.push(detailDlRow_('Pré-pago', raw.Pre_Pago ? 'Sim' : raw.Pre_Pago === false ? 'Não' : ''));
+          }
+        }
+        chunks.push(detailDlRow_('Status operacional', raw.Status));
+        chunks.push(detailDlRow_('Estado no arquivo', raw.Estado_Arquivo));
+        chunks.push(detailDlRow_('Criado por', raw.Autor));
+        chunks.push(detailDlRow_('Criado em', raw.Timestamp ? formatDateTime(raw.Timestamp) : ''));
+        chunks.push(
+          detailDlRow_(
+            'Última ação',
+            raw.Ultima_Acao_Por
+              ? raw.Ultima_Acao_Por + (raw.Ultima_Acao_Em ? ' · ' + formatDateTime(raw.Ultima_Acao_Em) : '')
+              : ''
+          )
+        );
+        chunks.push(
+          detailDlRow_(
+            'Resolvido',
+            raw.Resolvido_Por
+              ? raw.Resolvido_Por + (raw.Data_Resolucao ? ' · ' + formatDateTime(raw.Data_Resolucao) : '')
+              : ''
+          )
+        );
+        chunks.push(
+          detailDlRow_(
+            'Reaberto',
+            raw.Reaberto_Por
+              ? raw.Reaberto_Por + (raw.Data_Reabertura ? ' · ' + formatDateTime(raw.Data_Reabertura) : '')
+              : ''
+          )
+        );
+        chunks.push(detailDlRow_('Motivo da reabertura', raw.Motivo_Reabertura));
+        chunks.push(detailDlRow_('WhatsApp', raw.Status_Aviso_WhatsApp));
+        chunks.push(
+          detailDlRow_(
+            'Data aviso WhatsApp',
+            raw.Data_Aviso_WhatsApp ? formatDateTime(raw.Data_Aviso_WhatsApp) : ''
+          )
+        );
+        chunks.push(detailDlRow_('Arquivado em', raw.Arquivado_Em ? formatDateTime(raw.Arquivado_Em) : ''));
+        return '<dl>' + chunks.filter(Boolean).join('') + '</dl>';
+      }
+
+      function buildHistoricoClipboardPack_(raw) {
+        if (!raw) {
+          return '';
+        }
+        var origem = String(raw.Origem || '');
+        var lines = [];
+        if (origem === 'Geral') {
+          lines.push('Handover — Pendência');
+          lines.push('Título: ' + geralQueueTitleFromItem_(raw));
+          lines.push('Status: ' + (raw.Estado_Arquivo || raw.Status || '-'));
+          lines.push('Criado por: ' + (raw.Autor || '-'));
+          if (raw.Resolvido_Por) {
+            lines.push('Resolvido por: ' + raw.Resolvido_Por);
+          }
+          if (raw.Ultima_Acao_Por && raw.Ultima_Acao_Em) {
+            lines.push('Última ação: ' + raw.Ultima_Acao_Por + ' · ' + formatDateTime(raw.Ultima_Acao_Em));
+          }
+          lines.push('Descrição: ' + (raw.Descricao || '-'));
+        } else {
+          lines.push('Handover — Medicamento solicitado');
+          lines.push('Tipo: ' + historicoTipoLinha_(raw));
+          lines.push('Medicamento: ' + (raw.Medicamento || '-'));
+          lines.push('Cliente: ' + (raw.Cliente || '-'));
+          lines.push('Telefone: ' + (raw.Telefone || '-'));
+          lines.push('Status: ' + (raw.Status || '-'));
+          if (medicationTipoFromRecord_(raw) !== 'falta' && raw.Preco_Venda) {
+            lines.push('Preço: ' + formatCurrencyBr_(raw.Preco_Venda));
+          }
+          if (raw.Previsao_Entrega) {
+            lines.push('Previsão: ' + formatDate(raw.Previsao_Entrega));
+          }
+          if (raw.Ultima_Acao_Por && raw.Ultima_Acao_Em) {
+            lines.push('Última ação: ' + raw.Ultima_Acao_Por + ' às ' + formatDateTime(raw.Ultima_Acao_Em));
+          }
+        }
+        return lines.join('\n');
+      }
+
+      function pushAuditEv_(list, ev) {
+        if (!ev || !ev.title) {
+          return;
+        }
+        var sk = Number(ev.sortKey || 0);
+        if (!sk && ev.tsRaw) {
+          sk = parseDateTime_(ev.tsRaw) || 0;
+        }
+        ev.sortKey = sk;
+        ev.tsLabel = ev.tsLabel || (ev.tsRaw ? formatDateTime(ev.tsRaw) : '');
+        list.push(ev);
+      }
+
+      function buildHistoricoAuditEvents_(raw) {
+        var ev = [];
+        if (!raw) {
+          return ev;
+        }
+
+        if (raw.Timestamp && raw.Autor) {
+          pushAuditEv_(ev, {
+            tsRaw: raw.Timestamp,
+            sortKey: parseDateTime_(raw.Timestamp),
+            filterCat: 'criacao',
+            tone: 'blue',
+            title: 'Registro criado',
+            detail: 'Autor / criador: ' + raw.Autor,
+            tsLabel: formatDateTime(raw.Timestamp),
+          });
+        }
+
+        if (
+          raw.Status_Anterior &&
+          raw.Status &&
+          String(raw.Status_Anterior).trim() !== String(raw.Status).trim()
+        ) {
+          var tsTrans = raw.Data_Reversao || raw.Ultima_Acao_Em || raw.Data_Resolucao || raw.Arquivado_Em || raw.Timestamp;
+          pushAuditEv_(ev, {
+            tsRaw: tsTrans,
+            sortKey: parseDateTime_(tsTrans),
+            filterCat: 'status',
+            tone: 'blue',
+            title: 'Status atualizado (registro no arquivo)',
+            detail: 'De "' + raw.Status_Anterior + '" para "' + raw.Status + '"',
+            tsLabel: tsTrans ? formatDateTime(tsTrans) : '',
+          });
+        }
+
+        if (raw.Comprado) {
+          var tsC = raw.Ultima_Acao_Em || raw.Arquivado_Em || raw.Timestamp;
+          pushAuditEv_(ev, {
+            tsRaw: tsC,
+            sortKey: parseDateTime_(tsC),
+            filterCat: 'status',
+            tone: 'green',
+            title: 'Medicamento comprado',
+            detail: 'Marcado como comprado no registro arquivado.',
+            tsLabel: tsC ? formatDateTime(tsC) : '',
+          });
+        }
+
+        if (raw.Entregue) {
+          var tsE = raw.Ultima_Acao_Em || raw.Arquivado_Em || raw.Timestamp;
+          pushAuditEv_(ev, {
+            tsRaw: tsE,
+            sortKey: parseDateTime_(tsE),
+            filterCat: 'status',
+            tone: 'green',
+            title: 'Entregue',
+            detail: 'Marcado como entregue no registro arquivado.',
+            tsLabel: tsE ? formatDateTime(tsE) : '',
+          });
+        }
+
+        var st = String(raw.Status || '').toLowerCase();
+        if (st.indexOf('parcial') >= 0) {
+          var tsP = raw.Data_Resolucao || raw.Ultima_Acao_Em || raw.Timestamp;
+          pushAuditEv_(ev, {
+            tsRaw: tsP,
+            sortKey: parseDateTime_(tsP),
+            filterCat: 'status',
+            tone: 'green',
+            title: 'Resolvido parcialmente',
+            detail: 'Status: ' + raw.Status,
+            tsLabel: tsP ? formatDateTime(tsP) : '',
+          });
+        }
+
+        if (raw.Data_Resolucao && raw.Resolvido_Por) {
+          pushAuditEv_(ev, {
+            tsRaw: raw.Data_Resolucao,
+            sortKey: parseDateTime_(raw.Data_Resolucao),
+            filterCat: 'status',
+            tone: 'green',
+            title: 'Resolvido',
+            detail: 'Por ' + raw.Resolvido_Por,
+            tsLabel: formatDateTime(raw.Data_Resolucao),
+          });
+        }
+
+        if (raw.Arquivado_Em) {
+          pushAuditEv_(ev, {
+            tsRaw: raw.Arquivado_Em,
+            sortKey: parseDateTime_(raw.Arquivado_Em),
+            filterCat: 'status',
+            tone: 'blue',
+            title: 'Arquivado',
+            detail:
+              'Situação operacional: ' +
+              (raw.Status || '-') +
+              (raw.Estado_Arquivo ? ' · Estado no arquivo: ' + raw.Estado_Arquivo : ''),
+            tsLabel: formatDateTime(raw.Arquivado_Em),
+          });
+        }
+
+        if (raw.Reaberto_Por && raw.Data_Reabertura) {
+          var det = 'Por ' + raw.Reaberto_Por;
+          if (raw.Motivo_Reabertura) {
+            det += '. Motivo: ' + raw.Motivo_Reabertura;
+          }
+          pushAuditEv_(ev, {
+            tsRaw: raw.Data_Reabertura,
+            sortKey: parseDateTime_(raw.Data_Reabertura),
+            filterCat: 'status',
+            tone: 'orange',
+            title: 'Reaberto',
+            detail: det,
+            tsLabel: formatDateTime(raw.Data_Reabertura),
+          });
+        }
+
+        if (raw.Revertido_Por && raw.Data_Reversao) {
+          pushAuditEv_(ev, {
+            tsRaw: raw.Data_Reversao,
+            sortKey: parseDateTime_(raw.Data_Reversao),
+            filterCat: 'status',
+            tone: 'orange',
+            title: 'Reversão registrada',
+            detail:
+              'Revertido por ' +
+              raw.Revertido_Por +
+              (raw.Motivo_Reversao ? ' · Motivo: ' + raw.Motivo_Reversao : ''),
+            tsLabel: formatDateTime(raw.Data_Reversao),
+          });
+        }
+
+        if (raw.Ultima_Acao_Por && raw.Ultima_Acao_Em) {
+          pushAuditEv_(ev, {
+            tsRaw: raw.Ultima_Acao_Em,
+            sortKey: parseDateTime_(raw.Ultima_Acao_Em),
+            filterCat: 'edicao',
+            tone: 'blue',
+            title: 'Última ação registrada',
+            detail: raw.Ultima_Acao_Por + ' · ' + formatDateTime(raw.Ultima_Acao_Em),
+            tsLabel: formatDateTime(raw.Ultima_Acao_Em),
+          });
+        }
+
+        if (raw.Status_Aviso_WhatsApp || raw.Data_Aviso_WhatsApp) {
+          var tsW = raw.Data_Aviso_WhatsApp || raw.Ultima_Acao_Em || raw.Timestamp;
+          pushAuditEv_(ev, {
+            tsRaw: tsW,
+            sortKey: parseDateTime_(tsW),
+            filterCat: 'whatsapp',
+            tone: 'wa',
+            title: 'WhatsApp',
+            detail:
+              (raw.Status_Aviso_WhatsApp ? 'Status: ' + raw.Status_Aviso_WhatsApp : 'Registro de aviso') +
+              (raw.Data_Aviso_WhatsApp ? ' · ' + formatDateTime(raw.Data_Aviso_WhatsApp) : ''),
+            tsLabel: tsW ? formatDateTime(tsW) : '',
+          });
+        }
+
+        ev.sort(function (a, b) {
+          var ka = Number(a.sortKey || 0);
+          var kb = Number(b.sortKey || 0);
+          if (ka !== kb) {
+            return ka - kb;
+          }
+          return String(a.title).localeCompare(String(b.title));
+        });
+
+        return ev;
+      }
+
+      function filterAuditTimelineEvents_(events, filt) {
+        if (!events || !events.length) {
+          return [];
+        }
+        if (!filt || filt === 'todos') {
+          return events.slice();
+        }
+        if (filt === 'erro' || filt === 'observacoes') {
+          return events.filter(function (e) {
+            return e.filterCat === filt;
+          });
+        }
+        return events.filter(function (e) {
+          return e.filterCat === filt;
+        });
+      }
+
+      function setAuditTimelineFilter_(filt) {
+        auditTimelineFilter = filt || 'todos';
+        renderAuditDrawerInner_();
+      }
+
+      function renderAuditDrawerInner_() {
+        var host = document.getElementById('audit-drawer-inner');
+        if (!host || !lastAuditRawRecord) {
+          return;
+        }
+        var raw = lastAuditRawRecord;
+        var events = lastAuditTimelineEvents || [];
+        var filtered = filterAuditTimelineEvents_(events, auditTimelineFilter);
+        var nome =
+          String(raw.Origem || '') === 'Geral'
+            ? geralQueueTitleFromItem_(raw)
+            : raw.Medicamento || 'Medicamento';
+        var tipo = historicoTipoLinha_(raw);
+        var estado = raw.Estado_Arquivo || raw.Status || '-';
+        var ico = String(raw.Origem || '') === 'Geral' ? '📋' : '💊';
+
+        var headLines =
+          '<strong>' +
+          escapeHtml(nome) +
+          '</strong>' +
+          '<div class="ads-sub">' +
+          escapeHtml(tipo) +
+          ' · ' +
+          escapeHtml(estado) +
+          '</div>';
+        if (String(raw.Origem || '') === 'Medicamentos') {
+          headLines +=
+            '<div class="ads-sub">' +
+            (raw.Cliente ? 'Cliente: ' + escapeHtml(raw.Cliente) : '') +
+            (raw.Telefone ? ' · Tel.: ' + escapeHtml(raw.Telefone) : '') +
+            (raw.Atendente ? ' · Atendente: ' + escapeHtml(raw.Atendente) : '') +
+            '</div>';
+        }
+        headLines +=
+          '<div class="ads-sub">Criado por: ' +
+          escapeHtml(raw.Autor || '-') +
+          (raw.Resolvido_Por ? ' · Resolvido por: ' + escapeHtml(raw.Resolvido_Por) : '') +
+          '</div>';
+        if (raw.Ultima_Acao_Por && raw.Ultima_Acao_Em) {
+          headLines +=
+            '<div class="ads-sub">Última ação: ' +
+            escapeHtml(raw.Ultima_Acao_Por + ' · ' + formatDateTime(raw.Ultima_Acao_Em)) +
+            '</div>';
+        }
+
+        var createdTs = parseDateTime_(raw.Timestamp);
+        var resolvedTs = parseDateTime_(raw.Data_Resolucao);
+        var elapsed = '';
+        if (createdTs && resolvedTs && resolvedTs >= createdTs) {
+          var mins = Math.round((resolvedTs - createdTs) / 60000);
+          if (mins >= 1440) {
+            elapsed = Math.round(mins / 1440) + ' dia(s)';
+          } else if (mins >= 60) {
+            elapsed = Math.round(mins / 60) + ' h';
+          } else {
+            elapsed = mins + ' min';
+          }
+        } else if (createdTs) {
+          var now = Date.now();
+          var mins2 = Math.round((now - createdTs) / 60000);
+          elapsed = '~' + mins2 + ' min desde a criação (sem data de resolução)';
+        }
+
+        var filtBtns = ['todos', 'criacao', 'edicao', 'status', 'observacoes', 'whatsapp', 'erro'];
+        var filtLabels = {
+          todos: 'Todos',
+          criacao: 'Criação',
+          edicao: 'Edição',
+          status: 'Status',
+          observacoes: 'Observações',
+          whatsapp: 'WhatsApp',
+          erro: 'Erro',
+        };
+
+        var filtersHtml =
+          '<div class="audit-tl-filters">' +
+          filtBtns
+            .map(function (fb) {
+              return (
+                '<button type="button" class="' +
+                (auditTimelineFilter === fb ? 'active' : '') +
+                '" onclick="setAuditTimelineFilter_(\'' +
+                fb +
+                "')\">" +
+                escapeHtml(filtLabels[fb]) +
+                '</button>'
+              );
+            })
+            .join('') +
+          '</div>';
+
+        var banner =
+          '<div class="audit-banner">' +
+          (lastAuditTimelineBasic
+            ? 'Este registro possui apenas trilha básica. Eventos antigos não têm auditoria detalhada.'
+            : 'Trilha montada apenas com campos reais do arquivo. Sem inferências de antes/depois quando o sistema não registrou o valor anterior.') +
+          '</div>';
+
+        var tlHtml = '';
+        if (!filtered.length) {
+          tlHtml =
+            '<div class="audit-banner">' +
+            (events.length
+              ? 'Nenhum evento neste filtro.'
+              : 'Trilha detalhada indisponível para este registro.') +
+            '</div>';
+        } else {
+          tlHtml = '<div class="audit-timeline">';
+          filtered.forEach(function (e) {
+            tlHtml +=
+              '<div class="audit-tl-item">' +
+              '<span class="audit-tl-dot" aria-hidden="true"></span>' +
+              '<div class="audit-tl-card tone-' +
+              escapeAttribute(e.tone) +
+              '">' +
+              '<div class="audit-tl-time">' +
+              escapeHtml(e.tsLabel || '—') +
+              '</div>' +
+              '<div class="audit-tl-title">' +
+              escapeHtml(e.title) +
+              '</div>' +
+              (e.detail
+                ? '<div class="audit-tl-detail">' + escapeHtml(e.detail) + '</div>'
+                : '') +
+              '</div>' +
+              '</div>';
+          });
+          tlHtml += '</div>';
+        }
+
+        host.innerHTML =
+          '<div class="audit-drawer-summary">' +
+          '<div class="ads-head">' +
+          '<div class="ads-ico" aria-hidden="true">' +
+          ico +
+          '</div>' +
+          '<div class="ads-lines">' +
+          headLines +
+          '</div></div>' +
+          '<dl class="audit-summary-cards">' +
+          '<div class="asc"><dt>Criado por</dt><dd>' +
+          escapeHtml(raw.Autor || '—') +
+          '</dd></div>' +
+          '<div class="asc"><dt>Última alteração</dt><dd>' +
+          escapeHtml(
+            raw.Ultima_Acao_Por && raw.Ultima_Acao_Em
+              ? raw.Ultima_Acao_Por + ' · ' + formatDateTime(raw.Ultima_Acao_Em)
+              : '—'
+          ) +
+          '</dd></div>' +
+          '<div class="asc"><dt>Tempo até resolver</dt><dd>' +
+          escapeHtml(elapsed || '—') +
+          '</dd></div>' +
+          '<div class="asc"><dt>Total de eventos</dt><dd>' +
+          escapeHtml(String(events.length)) +
+          '</dd></div>' +
+          '<div class="asc"><dt>Status atual</dt><dd>' +
+          escapeHtml(estado) +
+          '</dd></div>' +
+          '</dl></div>' +
+          filtersHtml +
+          '<div class="audit-drawer-body">' +
+          banner +
+          tlHtml +
+          '</div>';
+
+        var stEl = document.getElementById('audit-drawer-status');
+        if (stEl) {
+          stEl.classList.add('hidden');
+          stEl.textContent = '';
+        }
+      }
+
+      function openAuditDrawerDom_() {
+        var ov = document.getElementById('audit-drawer-overlay');
+        if (!ov) {
+          return;
+        }
+        ov.classList.remove('hidden');
+        ov.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeAuditDrawer_() {
+        var ov = document.getElementById('audit-drawer-overlay');
+        if (!ov) {
+          return;
+        }
+        ov.classList.add('hidden');
+        ov.setAttribute('aria-hidden', 'true');
+      }
+
+      function onAuditDrawerOverlayClick_(ev) {
+        if (ev.target !== ev.currentTarget) {
+          return;
+        }
+        if (isChecklistObservationEditing_()) {
+          return;
+        }
+        closeAuditDrawer_();
+      }
+
+      function openAuditDrawerForId_(id) {
+        var raw = findHistoricoRawById_(id);
+        if (!raw) {
+          showToast_('Não foi possível abrir a trilha.', true);
+          return;
+        }
+        closeAllCardMenus_();
+        auditTimelineFilter = 'todos';
+        lastAuditRawRecord = raw;
+        lastAuditTimelineEvents = buildHistoricoAuditEvents_(raw);
+        lastAuditTimelineBasic = lastAuditTimelineEvents.length < 2;
+        renderAuditDrawerInner_();
+        openAuditDrawerDom_();
+      }
+
+      function openHistoricoDetailById_(id) {
+        var raw = findHistoricoRawById_(id);
+        if (!raw) {
+          showToast_('Registro não encontrado.', true);
+          return;
+        }
+        closeAllCardMenus_();
+        var title = String(raw.Origem || '') === 'Geral' ? 'Pendência — Detalhes' : 'Medicamento — Detalhes';
+        openCardDetailOverlay_(title, buildHistoricoDetailHtml_(raw), { isHtml: true });
+      }
+
+      function cardMoreVerTrilha_(id) {
+        openAuditDrawerForId_(id);
+      }
+
+      function copyAuditTrailToClipboard_() {
+        var raw = lastAuditRawRecord;
+        if (!raw) {
+          showToast_('Não foi possível copiar a trilha.', true);
+          return;
+        }
+        var title =
+          String(raw.Origem || '') === 'Geral'
+            ? geralQueueTitleFromItem_(raw)
+            : raw.Medicamento || 'Medicamento';
+        var lines = [
+          'Trilha de Auditoria — Handover',
+          'Item: ' + title,
+          'Tipo: ' + historicoTipoLinha_(raw),
+          'Status atual: ' + (raw.Estado_Arquivo || raw.Status || '-'),
+          '',
+          'Eventos:',
+        ];
+        var filtered = filterAuditTimelineEvents_(lastAuditTimelineEvents || [], auditTimelineFilter);
+        if (!filtered.length) {
+          lines.push('(nenhum evento neste filtro)');
+        } else {
+          filtered
+            .slice()
+            .reverse()
+            .forEach(function (e) {
+              lines.push(
+                (e.tsLabel || '') + ' — ' + e.title + (e.detail ? ' — ' + e.detail : '')
+              );
+            });
+        }
+        if (lastAuditTimelineBasic) {
+          lines.push('');
+          lines.push('Observação: este registro possui apenas trilha básica disponível.');
+        }
+        var text = lines.join('\n');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(
+            function () {
+              showToast_('Trilha copiada.');
+            },
+            function () {
+              showToast_('Não foi possível copiar.', true);
+            }
+          );
+        } else {
+          showToast_('Copiar indisponível neste navegador.', true);
+        }
+      }
+
       function renderHistoricoFiltersPanel_() {
         if (!historicoFiltersPanel) {
           return;
@@ -3703,62 +5180,95 @@
           return;
         }
         historicoFiltersPanel.classList.remove('hidden');
+
+        var errBar = '';
+        if (historicoLoadError) {
+          errBar =
+            '<div class="historico-error-bar">' +
+            '<strong>Não foi possível carregar o histórico.</strong> ' +
+            escapeHtml(historicoLoadError) +
+            ' <button type="button" class="btn-queue-secondary" onclick="retryLoadHistorico_()">Tentar novamente</button>' +
+            '</div>';
+        }
+
+        function optSel(field, val, label) {
+          return (
+            '<option value="' +
+            escapeAttribute(val) +
+            '"' +
+            (historicoFilterState[field] === val ? ' selected' : '') +
+            '>' +
+            escapeHtml(label) +
+            '</option>'
+          );
+        }
+
+        var pillsHtml =
+          '<div class="historico-quick-pills">' +
+          '<button type="button" class="hq-pill' +
+          (historicoQuickPillActive_('todos') ? ' active' : '') +
+          '" onclick="applyHistoricoQuickPill_(\'todos\')">Todos</button>' +
+          '<button type="button" class="hq-pill' +
+          (historicoQuickPillActive_('geral') ? ' active' : '') +
+          '" onclick="applyHistoricoQuickPill_(\'geral\')">Geral</button>' +
+          '<button type="button" class="hq-pill' +
+          (historicoQuickPillActive_('medicamentos') ? ' active' : '') +
+          '" onclick="applyHistoricoQuickPill_(\'medicamentos\')">Medicamentos</button>' +
+          '<button type="button" class="hq-pill' +
+          (historicoQuickPillActive_('resolvidos') ? ' active' : '') +
+          '" onclick="applyHistoricoQuickPill_(\'resolvidos\')">Resolvidos</button>' +
+          '<button type="button" class="hq-pill' +
+          (historicoQuickPillActive_('reabertos') ? ' active' : '') +
+          '" onclick="applyHistoricoQuickPill_(\'reabertos\')">Reabertos</button>' +
+          '</div>';
+
         historicoFiltersPanel.innerHTML =
-          '<div class="historico-filters-inner">' +
-          '<div class="filter-row"><strong>Criação</strong></div>' +
-          '<div class="filter-row">' +
-          '<button type="button" class="filter-button' +
-          (historicoFilterState.criados === 'todos' ? ' active' : '') +
-          '" onclick="setHistoricoFilter_(\'criados\',\'todos\')">Todos</button>' +
-          '<button type="button" class="filter-button' +
-          (historicoFilterState.criados === 'hoje' ? ' active' : '') +
-          '" onclick="setHistoricoFilter_(\'criados\',\'hoje\')">Hoje</button>' +
-          '<button type="button" class="filter-button' +
-          (historicoFilterState.criados === '7d' ? ' active' : '') +
-          '" onclick="setHistoricoFilter_(\'criados\',\'7d\')">Últimos 7 dias</button>' +
+          errBar +
+          '<div class="historico-filters-premium ho-card ho-card-pad">' +
+          pillsHtml +
+          '<div class="hf-actions">' +
+          '<span style="font-size:12px;font-weight:700;color:var(--muted);">Refinar busca</span>' +
+          '<button type="button" class="btn-queue-light" onclick="clearHistoricoFilters_()">Limpar filtros</button>' +
           '</div>' +
-          '<div class="filter-row"><strong>Resolução</strong></div>' +
-          '<div class="filter-row">' +
-          '<button type="button" class="filter-button' +
-          (historicoFilterState.resolucao === 'todos' ? ' active' : '') +
-          '" onclick="setHistoricoFilter_(\'resolucao\',\'todos\')">Todos</button>' +
-          '<button type="button" class="filter-button' +
-          (historicoFilterState.resolucao === 'hoje' ? ' active' : '') +
-          '" onclick="setHistoricoFilter_(\'resolucao\',\'hoje\')">Hoje</button>' +
-          '<button type="button" class="filter-button' +
-          (historicoFilterState.resolucao === '7d' ? ' active' : '') +
-          '" onclick="setHistoricoFilter_(\'resolucao\',\'7d\')">Últimos 7 dias</button>' +
+          '<div class="hf-grid">' +
+          '<div>' +
+          '<label for="historico-filter-criados">Data de criação</label>' +
+          '<select id="historico-filter-criados" onchange="setHistoricoFilter_(\'criados\', this.value)">' +
+          optSel('criados', 'todos', 'Todos') +
+          optSel('criados', 'hoje', 'Hoje') +
+          optSel('criados', '7d', 'Últimos 7 dias') +
+          '</select>' +
           '</div>' +
-          '<div class="filter-row"><strong>Categoria</strong></div>' +
-          '<div class="filter-row">' +
-          '<button type="button" class="filter-button' +
-          (historicoFilterState.categoria === 'todos' ? ' active' : '') +
-          '" onclick="setHistoricoFilter_(\'categoria\',\'todos\')">Todos</button>' +
-          '<button type="button" class="filter-button' +
-          (historicoFilterState.categoria === 'geral' ? ' active' : '') +
-          '" onclick="setHistoricoFilter_(\'categoria\',\'geral\')">Geral</button>' +
-          '<button type="button" class="filter-button' +
-          (historicoFilterState.categoria === 'medicamentos' ? ' active' : '') +
-          '" onclick="setHistoricoFilter_(\'categoria\',\'medicamentos\')">Medicamentos</button>' +
+          '<div>' +
+          '<label for="historico-filter-resolucao">Data de resolução</label>' +
+          '<select id="historico-filter-resolucao" onchange="setHistoricoFilter_(\'resolucao\', this.value)">' +
+          optSel('resolucao', 'todos', 'Todos') +
+          optSel('resolucao', 'hoje', 'Hoje') +
+          optSel('resolucao', '7d', 'Últimos 7 dias') +
+          '</select>' +
           '</div>' +
-          '<div class="filter-row"><strong>Estado</strong></div>' +
-          '<div class="filter-row">' +
-          '<button type="button" class="filter-button' +
-          (historicoFilterState.estado === 'todos' ? ' active' : '') +
-          '" onclick="setHistoricoFilter_(\'estado\',\'todos\')">Todos</button>' +
-          '<button type="button" class="filter-button' +
-          (historicoFilterState.estado === 'resolvido' ? ' active' : '') +
-          '" onclick="setHistoricoFilter_(\'estado\',\'resolvido\')">Arquivado</button>' +
-          '<button type="button" class="filter-button' +
-          (historicoFilterState.estado === 'reaberto' ? ' active' : '') +
-          '" onclick="setHistoricoFilter_(\'estado\',\'reaberto\')">Reaberto</button>' +
-          '</div>' +
-          '<div class="filter-row">' +
-          '<label style="font-size:12px;">Operador / responsável<br>' +
-          '<input id="historico-operador-filter" type="text" style="min-width:220px;padding:6px;" placeholder="Filtrar por nome" value="' +
+          '<div>' +
+          '<label for="historico-filter-operador">Operador</label>' +
+          '<input id="historico-operador-filter" type="text" placeholder="Nome do responsável" value="' +
           escapeAttribute(historicoFilterState.operador) +
           '" onchange="setHistoricoOperadorFilter_(this.value)">' +
-          '</label>' +
+          '</div>' +
+          '<div>' +
+          '<label for="historico-filter-tipo">Tipo</label>' +
+          '<select id="historico-filter-tipo" onchange="setHistoricoFilter_(\'categoria\', this.value)">' +
+          optSel('categoria', 'todos', 'Todos') +
+          optSel('categoria', 'geral', 'Geral') +
+          optSel('categoria', 'medicamentos', 'Medicamentos') +
+          '</select>' +
+          '</div>' +
+          '<div>' +
+          '<label for="historico-filter-estado">Status</label>' +
+          '<select id="historico-filter-estado" onchange="setHistoricoFilter_(\'estado\', this.value)">' +
+          optSel('estado', 'todos', 'Todos') +
+          optSel('estado', 'resolvido', 'Arquivado / Resolvido') +
+          optSel('estado', 'reaberto', 'Reaberto') +
+          '</select>' +
+          '</div>' +
           '</div>' +
           '</div>';
       }
@@ -3835,9 +5345,12 @@
               ? 'Arquivado'
               : estadoArq || 'Arquivado';
           var audit = buildAuditMetaLine_(item);
+          var tipoLinha = historicoTipoLinha_(item);
           var base = {
             id: item.ID,
             type: 'historico',
+            historicoRaw: item,
+            histStripe: estadoArq === 'Reaberto' ? 'reaberto' : 'resolvido',
             isOverdue: false,
             whatsappNotSent: false,
             actions: reopenEligible
@@ -3857,21 +5370,29 @@
               (item.Arquivado_Em ? formatDateTime(item.Arquivado_Em) : '-'),
           };
 
+          var ua =
+            item.Ultima_Acao_Por && item.Ultima_Acao_Em
+              ? item.Ultima_Acao_Por + ' · ' + formatDateTime(item.Ultima_Acao_Em)
+              : '';
+
           if (origem === 'Geral') {
             var ht = geralQueueTitleFromItem_(item);
             var hu = geralQueueUrgenciaFromItem_(item);
+            var resumo = String(item.Descricao || '').trim() || '—';
             return Object.assign({}, base, {
-              originLabel: 'Histórico · Geral',
+              originLabel: tipoLinha,
               statusLabel: arquivoStatusLabel,
               statusKey: estadoArq === 'Reaberto' ? 'historico_reaberto' : 'historico_resolvido',
               title: ht,
-              description:
-                'Autor: ' +
-                (item.Autor || '-') +
-                ' · Urgência: ' +
-                hu +
-                ' · Descrição: ' +
-                (item.Descricao || '-'),
+              description: resumo,
+              histResumoExtra: 'Urgência: ' + hu,
+              histCriadoPor: item.Autor || '—',
+              histCriadoEm: item.Timestamp ? formatDateTime(item.Timestamp) : '—',
+              histResolvidoPor: item.Resolvido_Por || '',
+              histResolvidoEm: item.Data_Resolucao ? formatDateTime(item.Data_Resolucao) : '',
+              histReabertoPor: item.Reaberto_Por || '',
+              histReabertoEm: item.Data_Reabertura ? formatDateTime(item.Data_Reabertura) : '',
+              histUltimaAcao: ua,
               person: item.Autor || '-',
               forecast: '',
               price: '',
@@ -3880,20 +5401,27 @@
             });
           }
 
+          var resumoMed =
+            'Cliente: ' +
+            (item.Cliente || '-') +
+            ' · Atendente: ' +
+            (item.Atendente || '-') +
+            ' · Status: ' +
+            (item.Status || '-');
           return Object.assign({}, base, {
-            originLabel: 'Histórico · Medicamentos',
+            originLabel: tipoLinha,
             statusLabel: arquivoStatusLabel,
             statusKey: estadoArq === 'Reaberto' ? 'historico_reaberto' : 'historico_med',
             title: item.Medicamento || 'Medicamento',
-            description:
-              'Tipo: ' +
-              (item.Tipo || '-') +
-              ' | Cliente: ' +
-              (item.Cliente || '-') +
-              ' | Atendente: ' +
-              (item.Atendente || '-') +
-              ' | Registro: ' +
-              (item.Status || '-'),
+            description: resumoMed,
+            histResumoExtra: '',
+            histCriadoPor: item.Autor || '—',
+            histCriadoEm: item.Timestamp ? formatDateTime(item.Timestamp) : '—',
+            histResolvidoPor: item.Resolvido_Por || '',
+            histResolvidoEm: item.Data_Resolucao ? formatDateTime(item.Data_Resolucao) : '',
+            histReabertoPor: item.Reaberto_Por || '',
+            histReabertoEm: item.Data_Reabertura ? formatDateTime(item.Data_Reabertura) : '',
+            histUltimaAcao: ua,
             person: item.Cliente ? item.Cliente + ' / ' + (item.Atendente || '-') : item.Atendente || '-',
             forecast: item.Previsao_Entrega ? formatDate(item.Previsao_Entrega) : '',
             price: medicationTipoFromRecord_(item) === 'falta' ? '' : formatCurrencyBr_(item.Preco_Venda),
@@ -3917,6 +5445,26 @@
 
       function renderQueue() {
         renderHistoricoFiltersPanel_();
+
+        if (activeMainTab === 'historico') {
+          if (historicoLoadState === 'loading') {
+            lastRenderedQueueItems = [];
+            queueList.innerHTML = '';
+            queueEmpty.textContent = 'Carregando histórico...';
+            queueEmpty.classList.remove('hidden');
+            queueSubtitle.textContent = 'Carregando histórico...';
+            return;
+          }
+          if (historicoLoadError) {
+            lastRenderedQueueItems = [];
+            queueList.innerHTML = '';
+            queueEmpty.textContent = '';
+            queueEmpty.classList.add('hidden');
+            queueSubtitle.textContent = 'Histórico — utilize Tentar novamente nos filtros.';
+            return;
+          }
+        }
+
         const queueItems = buildQueueItemsForRender_();
         lastRenderedQueueItems = queueItems.slice();
         queueList.innerHTML = '';
@@ -3925,11 +5473,15 @@
           humanizeMainTabLabel_(activeMainTab) +
           ' · Filtro: ' +
           humanizeQueueFilter_(activeQueueFilter) +
-          ' (' +
+          ' · ' +
           queueItems.length +
-          ')';
+          ' registro(s)';
 
         if (queueItems.length === 0) {
+          queueEmpty.textContent =
+            activeMainTab === 'historico'
+              ? 'Nenhum registro encontrado com esses filtros.'
+              : 'Nenhum item para o filtro selecionado.';
           return;
         }
 
@@ -3942,15 +5494,166 @@
           if (item.syncState === 'error') {
             cardClass += ' sync-error';
           }
+          if (item.type === 'historico') {
+            cardClass += ' queue-card--historico';
+          }
           card.className = cardClass;
           card.innerHTML = buildQueueCardHtml_(item);
           queueList.appendChild(card);
         });
       }
 
+      function buildHistoricoCardHtml_(item) {
+        var statusClass = item.statusKey ? ' status-' + item.statusKey : '';
+        var badges = [
+          '<span class="badge">' + escapeHtml(item.originLabel) + '</span>',
+          '<span class="badge' + statusClass + '">' + escapeHtml(item.statusLabel) + '</span>',
+        ];
+
+        var descExtra =
+          item.histResumoExtra && item.type === 'historico'
+            ? '<div class="qk-desc" style="margin-top:4px;font-size:11px;color:var(--muted);">' +
+              escapeHtml(item.histResumoExtra) +
+              '</div>'
+            : '';
+
+        var metaBar = '<div class="hist-meta-bar">';
+        metaBar +=
+          '<span>Criado por <strong>' +
+          escapeHtml(item.histCriadoPor || '—') +
+          '</strong> · ' +
+          escapeHtml(item.histCriadoEm || '—') +
+          '</span>';
+        if (item.histResolvidoPor) {
+          metaBar +=
+            '<span>Resolvido por <strong>' +
+            escapeHtml(item.histResolvidoPor) +
+            '</strong>' +
+            (item.histResolvidoEm ? ' · ' + escapeHtml(item.histResolvidoEm) : '') +
+            '</span>';
+        }
+        if (item.histReabertoPor) {
+          metaBar +=
+            '<span>Reaberto por <strong>' +
+            escapeHtml(item.histReabertoPor) +
+            '</strong>' +
+            (item.histReabertoEm ? ' · ' + escapeHtml(item.histReabertoEm) : '') +
+            '</span>';
+        }
+        if (item.histUltimaAcao) {
+          metaBar +=
+            '<span>Última ação <strong>' + escapeHtml(item.histUltimaAcao) + '</strong></span>';
+        }
+        metaBar += '</div>';
+
+        var metaDl = buildQueueMetaRowsHtml_(item);
+
+        var actionsHtml = item.actions
+          .map(function (action) {
+            var cls = queueActionButtonClass_(action);
+            return (
+              '<button ' +
+              'data-queue-action="1" ' +
+              'class="' +
+              escapeHtml(cls) +
+              '" ' +
+              'type="button" ' +
+              'onclick="' +
+              escapeAttribute(action.handler) +
+              "('" +
+              escapeAttribute(item.id) +
+              "')\">" +
+              escapeHtml(action.label) +
+              '</button>'
+            );
+          })
+          .join('');
+
+        var descMain =
+          item.description && String(item.description).trim()
+            ? '<div class="qk-desc">' + escapeHtml(item.description) + '</div>'
+            : '';
+
+        return (
+          '<div class="qk-card-shell">' +
+          '<span class="qk-stripe ' +
+          queueCardStripeClass_(item) +
+          '" aria-hidden="true"></span>' +
+          '<div class="qk-card-main">' +
+          '<div class="qk-top">' +
+          '<div class="qk-badges">' +
+          badges.join(' ') +
+          '</div>' +
+          '<div class="qk-top-right">' +
+          '<div class="qk-time">' +
+          escapeHtml(item.timeLabel) +
+          '</div>' +
+          '<div class="card-more" data-card-more-wrap="' +
+          escapeAttribute(item.id) +
+          '">' +
+          '<button type="button" class="card-more-btn" onclick="toggleCardMoreMenu_(event, \'' +
+          escapeJsSingleQuoted_(item.id) +
+          '\')">⋯</button>' +
+          '<div class="card-more-menu hidden" role="menu">' +
+          '<button type="button" onclick="openHistoricoDetailById_(\'' +
+          escapeJsSingleQuoted_(item.id) +
+          '\')"><span class="card-menu-ico" aria-hidden="true">👁</span>Ver detalhes</button>' +
+          '<button type="button" onclick="cardMoreVerTrilha_(\'' +
+          escapeJsSingleQuoted_(item.id) +
+          '\')"><span class="card-menu-ico" aria-hidden="true">📑</span>Ver trilha de auditoria</button>' +
+          '<button type="button" onclick="cardMoreCopiarHistorico_(\'' +
+          escapeJsSingleQuoted_(item.id) +
+          '\')"><span class="card-menu-ico" aria-hidden="true">⎘</span>Copiar informações</button>' +
+          '</div>' +
+          '</div>' +
+          '</div>' +
+          '</div>' +
+          '<div class="qk-title">' +
+          escapeHtml(item.title) +
+          '</div>' +
+          descMain +
+          descExtra +
+          metaBar +
+          metaDl +
+          '<div class="qk-actions">' +
+          actionsHtml +
+          '</div>' +
+          '</div>' +
+          '</div>'
+        );
+      }
+
+      function cardMoreCopiarHistorico_(id) {
+        closeAllCardMenus_();
+        var raw = findHistoricoRawById_(id);
+        if (!raw) {
+          showToast_('Item não encontrado.', true);
+          return;
+        }
+        var text = buildHistoricoClipboardPack_(raw);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(
+            function () {
+              showToast_('Informações copiadas.');
+            },
+            function () {
+              showToast_('Não foi possível copiar.', true);
+            }
+          );
+        } else {
+          showToast_('Copiar indisponível neste navegador.', true);
+        }
+      }
+
       function queueCardStripeClass_(item) {
         if (item.type === 'historico') {
-          return 'qk-stripe-hist';
+          if (item.histStripe === 'reaberto') {
+            return 'qk-stripe-hist-reaberto';
+          }
+          if (item.originLabel === 'Geral') {
+            return 'qk-stripe-hist-resolvido';
+          }
+          return 'qk-stripe-hist-med';
         }
         if (item.vencidosTier === 'vencido') {
           return 'qk-stripe-vencido';
@@ -3999,10 +5702,7 @@
           chunks.push(row('WhatsApp', item.metaWhatsapp));
           chunks.push(row('Última ação', item.metaUltimaAcao));
         } else if (item.type === 'historico') {
-          chunks.push(row('Registro', item.timeLabel));
-          if (item.person) {
-            chunks.push(row('Responsável/Cliente', item.person));
-          }
+          return '';
         }
         var inner = chunks.filter(Boolean).join('');
         if (!inner) {
@@ -4026,6 +5726,9 @@
       }
 
       function buildQueueCardHtml_(item) {
+        if (item.type === 'historico') {
+          return buildHistoricoCardHtml_(item);
+        }
         var statusClass = item.statusKey ? ' status-' + item.statusKey : '';
         var badges = [
           '<span class="badge">' + escapeHtml(item.originLabel) + '</span>',
@@ -4118,7 +5821,7 @@
           '<button type="button" onclick="cardMoreVerDetalhes_(\'' +
           escapeJsSingleQuoted_(item.id) +
           '\')"><span class="card-menu-ico" aria-hidden="true">👁</span>Ver detalhes</button>' +
-          '<button type="button" disabled title="Trilha detalhada será implementada em fase futura."><span class="card-menu-ico" aria-hidden="true">⏱</span>Ver trilha de auditoria</button>' +
+          '<button type="button" disabled title="A trilha completa fica na aba Histórico (arquivo)."><span class="card-menu-ico" aria-hidden="true">⏱</span>Ver trilha de auditoria</button>' +
           '<button type="button" onclick="cardMoreCopiar_(\'' +
           escapeJsSingleQuoted_(item.id) +
           '\')"><span class="card-menu-ico" aria-hidden="true">⎘</span>Copiar informações</button>' +
@@ -4997,6 +6700,7 @@
           checklistObservationDrafts[key] = model.Observacao || '';
         }
         checklistObservationEditMode.add(key);
+        updateAutoRefreshStatus_();
         if (!patchChecklistItemArticle_(itemId)) {
           renderChecklistSection();
         }
@@ -5006,6 +6710,7 @@
         var key = checklistDraftKey_(itemId);
         checklistObservationEditMode.delete(key);
         delete checklistObservationDrafts[key];
+        updateAutoRefreshStatus_();
         if (!patchChecklistItemArticle_(itemId)) {
           renderChecklistSection();
         }
@@ -5078,6 +6783,7 @@
                 var k = checklistDraftKey_(id);
                 checklistObservationEditMode.delete(k);
                 delete checklistObservationDrafts[k];
+                updateAutoRefreshStatus_();
                 if (!patchChecklistItemArticle_(id)) {
                   renderChecklistSection();
                 }
@@ -5204,6 +6910,7 @@
         updateVisibleFields();
         updateMedicinePriceVisibility_();
         clearStatus(formStatus);
+        updateAutoRefreshStatus_();
       }
 
       function openFormModal_(initialCategory) {
@@ -5227,6 +6934,7 @@
         formModalOverlay.classList.remove('hidden');
         formModalOverlay.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
+        updateAutoRefreshStatus_();
         window.setTimeout(function () {
           if (categorySelect.value === 'Medicamentos') {
             var med = document.getElementById('medicamento');

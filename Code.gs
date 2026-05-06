@@ -505,6 +505,8 @@ function getChecklistSummary_(items) {
 function updateChecklistItemStatus(id, status, responsavel) {
   const started = Date.now();
   setupSpreadsheet();
+  var writeLock = acquireHandoverWriteLock_('updateChecklistItemStatus');
+  try {
 
   const location = findRowById_(SHEET_NAMES.CHECKLIST, id);
   if (!location) {
@@ -532,11 +534,16 @@ function updateChecklistItemStatus(id, status, responsavel) {
     checklistItem: updatedItem,
     checklistSummary: checklistSummaryForItemContext_(updatedItem),
   };
+  } finally {
+    releaseHandoverWriteLock_(writeLock);
+  }
 }
 
 function updateChecklistItemObservation(id, observacao, responsavel) {
   const started = Date.now();
   setupSpreadsheet();
+  var writeLock = acquireHandoverWriteLock_('updateChecklistItemObservation');
+  try {
 
   const location = findRowById_(SHEET_NAMES.CHECKLIST, id);
   if (!location) {
@@ -558,6 +565,9 @@ function updateChecklistItemObservation(id, observacao, responsavel) {
     checklistItem: updatedItem,
     checklistSummary: checklistSummaryForItemContext_(updatedItem),
   };
+  } finally {
+    releaseHandoverWriteLock_(writeLock);
+  }
 }
 
 function generateTodayMorningChecklist() {
@@ -607,6 +617,8 @@ function buildChecklistTurnoPayload_(turnoOpt) {
 function saveData(tab, data, operador) {
   const started = Date.now();
   setupSpreadsheet();
+  var writeLock = acquireHandoverWriteLock_('saveData');
+  try {
 
   if (tab !== SHEET_NAMES.GERAL && tab !== SHEET_NAMES.MEDICAMENTOS) {
     throw new Error('Aba invalida: ' + tab);
@@ -753,6 +765,9 @@ function saveData(tab, data, operador) {
   }
 
   throw new Error('Aba invalida: ' + tab);
+  } finally {
+    releaseHandoverWriteLock_(writeLock);
+  }
 }
 
 function fetchData() {
@@ -813,6 +828,8 @@ function fetchHistoricoResolvidos(limit) {
 function markAsPurchased(id, operador) {
   const started = Date.now();
   setupSpreadsheet();
+  var writeLock = acquireHandoverWriteLock_('markAsPurchased');
+  try {
 
   const location = findRowById_(SHEET_NAMES.MEDICAMENTOS, id);
   if (!location) {
@@ -829,11 +846,16 @@ function markAsPurchased(id, operador) {
     success: true,
     record: fetchMedicationRecordById_(id),
   };
+  } finally {
+    releaseHandoverWriteLock_(writeLock);
+  }
 }
 
 function markAsDelivered(id, operador) {
   const started = Date.now();
   setupSpreadsheet();
+  var writeLock = acquireHandoverWriteLock_('markAsDelivered');
+  try {
 
   const location = findRowById_(SHEET_NAMES.MEDICAMENTOS, id);
   if (!location) {
@@ -852,11 +874,16 @@ function markAsDelivered(id, operador) {
     success: true,
     record: fetchMedicationRecordById_(id),
   };
+  } finally {
+    releaseHandoverWriteLock_(writeLock);
+  }
 }
 
 function revertMedicationToPending(id, operador, motivo) {
   const started = Date.now();
   setupSpreadsheet();
+  var writeLock = acquireHandoverWriteLock_('revertMedicationToPending');
+  try {
 
   var ctx = '[revertMedicationToPending] ID=' + sanitizeText_(id) + ' acao=reverter_medicamento ';
   var op = sanitizeText_(operador);
@@ -920,6 +947,9 @@ function revertMedicationToPending(id, operador, motivo) {
     success: true,
     record: fetchMedicationRecordById_(id),
   };
+  } finally {
+    releaseHandoverWriteLock_(writeLock);
+  }
 }
 
 function markAsResolved(id, operador) {
@@ -930,8 +960,10 @@ function markAsResolved(id, operador) {
     ' aba=' +
     SHEET_NAMES.GERAL +
     ' acao=arquivar status=';
+  var writeLock = null;
   try {
     setupSpreadsheet();
+    writeLock = acquireHandoverWriteLock_('markAsResolved');
 
     const location = findRowById_(SHEET_NAMES.GERAL, id);
     if (!location) {
@@ -961,6 +993,8 @@ function markAsResolved(id, operador) {
     };
   } catch (error) {
     throw new Error(ctx + 'erro mensagem=' + error.message);
+  } finally {
+    releaseHandoverWriteLock_(writeLock);
   }
 }
 
@@ -987,8 +1021,10 @@ function reopenHistoricoItem(archivedRecordId, operador, motivo) {
     throw new Error(ctx + 'Operador obrigatorio.');
   }
 
+  var writeLock = null;
   try {
     setupSpreadsheet();
+    writeLock = acquireHandoverWriteLock_('reopenHistoricoItem');
 
     var loc = findRowById_(SHEET_NAMES.ARQUIVO, rid);
     if (!loc) {
@@ -1106,6 +1142,8 @@ function reopenHistoricoItem(archivedRecordId, operador, motivo) {
     throw new Error('Origem nao suportada para reabertura: ' + origem);
   } catch (error) {
     throw new Error(ctx + 'erro mensagem=' + error.message);
+  } finally {
+    releaseHandoverWriteLock_(writeLock);
   }
 }
 
@@ -1748,6 +1786,30 @@ function toBoolean_(value) {
   return value === true || value === 'TRUE' || value === 'true' || value === 'Sim' || value === 'on';
 }
 
+function acquireHandoverWriteLock_(context) {
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(8000);
+    return lock;
+  } catch (error) {
+    throw new Error(
+      'Sistema ocupado salvando outra acao. Tente novamente em alguns segundos.' +
+        (context ? ' Contexto: ' + context + '.' : '')
+    );
+  }
+}
+
+function releaseHandoverWriteLock_(lock) {
+  if (!lock) {
+    return;
+  }
+  try {
+    lock.releaseLock();
+  } catch (error) {
+    Logger.log('releaseHandoverWriteLock_: ' + error);
+  }
+}
+
 function sendOrderEmail_(order) {
   const hasValidPrevisao =
     order.previsaoEntrega instanceof Date && !isNaN(order.previsaoEntrega.getTime());
@@ -1775,6 +1837,8 @@ function sendOrderEmail_(order) {
 function registerWhatsAppAttempt(id, operador) {
   const started = Date.now();
   setupSpreadsheet();
+  var writeLock = acquireHandoverWriteLock_('registerWhatsAppAttempt');
+  try {
 
   const location = findRowById_(SHEET_NAMES.MEDICAMENTOS, id);
   if (!location) {
@@ -1812,6 +1876,9 @@ function registerWhatsAppAttempt(id, operador) {
     whatsAppUrl: 'https://wa.me/' + normalizedPhone + '?text=' + encodeURIComponent(message),
     record: fetchMedicationRecordById_(id),
   };
+  } finally {
+    releaseHandoverWriteLock_(writeLock);
+  }
 }
 
 function syncMedicationStatus_(sheet, rowNumber) {
