@@ -1,4 +1,4 @@
-# Validacao Handover - commit a3d9a20
+# Validacao Handover - commit 16c9a6e
 
 Projeto: Handover - Drogarias Conceito
 
@@ -6,7 +6,7 @@ Pasta: `C:\Users\Marco\Desktop\Sis Drogaria\Handover`
 
 Branch: `master`
 
-Commit validado: `a3d9a20 - style(handover): refina layout desktop premium com coluna lateral`
+Commit validado: `16c9a6e - style(handover): polimento visual desktop antes da auditoria`
 
 ScriptId: `1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd`
 
@@ -16,9 +16,9 @@ URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklp
 
 ## Resultado
 
-Status geral: OK
+Status geral: FALHA
 
-Versao publicada: 28.
+Versao publicada: nenhuma nesta rodada.
 
 Rollback feito: NAO.
 
@@ -29,47 +29,40 @@ POP tocado: NAO.
 - Pasta Handover confirmada.
 - Branch `master` confirmada.
 - `.clasp.json` confirmado com scriptId do Handover.
-- Commit `a3d9a20` presente no HEAD.
-- Commit alterou somente `Index.html`.
-- `Code.gs` nao foi alterado.
-- Schema nao foi alterado.
-- Nao existe `sheet.clear()` no diff.
-- Nao ha referencia ao scriptId/deploymentId do POP no diff.
-- Novo Registro preserva `Pendencia da loja -> Geral` e `Medicamento solicitado -> Medicamentos`.
-- Falta/Encomenda, checklist, historico, menu sem Imprimir, WhatsApp imediato e Atualizar agora foram preservados no codigo.
+- Commit `16c9a6e` presente no HEAD.
+- O commit `16c9a6e` isoladamente alterou somente `Index.html`.
+- `git diff --check 16c9a6e^..16c9a6e`: OK.
+- Nao ha `sheet.clear()` no diff do commit `16c9a6e`.
+- Nao ha referencia ao scriptId/deploymentId do POP no diff do commit `16c9a6e`.
+
+## Bloqueio de publicacao
+
+A publicacao foi bloqueada porque o deployment oficial atual esta na versao 28, baseada no commit `a3d9a20`, mas o HEAD atual contem tambem o commit anterior `2f45b08 - Add safe auto refresh and write locks`, que altera `Code.gs`.
+
+Publicar o HEAD agora enviaria ao Apps Script:
+
+- `Code.gs`
+- `Index.html`
+
+Isso contrariaria o escopo informado para esta tarefa, que declara polimento visual em `Index.html` sem backend, schema ou `Code.gs`.
 
 ## Publicacao
 
-- `clasp status`: OK.
-- `clasp push`: OK, 3 arquivos enviados.
-- `clasp version`: criada versao 28.
-- `clasp deploy`: deployment oficial atualizado para versao 28.
-- URL oficial mantida.
+- `clasp status`: nao executado para publicacao.
+- `clasp push`: NAO.
+- `clasp version`: NAO.
+- `clasp deploy`: NAO.
+- Deployment oficial permaneceu em v28.
 
-## Smoke desktop real
+## Smoke real
 
-- Abertura: OK. Web App abriu sem erro critico e layout novo carregou.
-- Visual desktop: OK. Header premium, KPIs com icones, abas com visual premium, cards menos corridos e medicamentos mais organizados.
-- Header/KPIs: OK. Cinco KPIs visiveis: Pendencias, Urgentes, Medicamentos solicitados, Comprados sem aviso e Checklist pendente.
-- Layout lateral: OK. Coluna lateral direita presente com areas de Checklist/Historico.
-- Abas: OK. Pendencias, Medicamentos, Checklist e Historico alternam.
-- Pendencias: OK. Pendencias exibem apenas solicitacoes gerais; filtro Vencidos/Hoje continua disponivel.
-- Medicamentos: OK. Medicamentos separados de Pendencias; busca por `CODEX_V24` funcionou; filtros visiveis.
-- Novo Registro: OK. Dropdown abre; Pendencia da loja abre `Geral`; Medicamento solicitado abre `Medicamentos`.
-- Falta: OK. Cliente, telefone, pre-pago e preco ficam ocultos.
-- Encomenda: OK. Cliente, telefone, preco e pre-pago ficam visiveis.
-- Checklist: OK. Abre, filtros aparecem, categorias funcionam e rascunho de observacao foi preservado ao alterar outro item.
-- Historico: OK. Carrega sob demanda, filtros aparecem e reabrir/reverter permanece visivel.
-- Menu tres pontos: OK. Nao ha `Imprimir`; `Ver detalhes`, `Copiar informacoes` e `Ver trilha de auditoria` aparecem.
-- Regressao critica: OK. Atualizar agora acionado sem erro critico; WhatsApp abriu `api.whatsapp.com/send` em nova aba com telefone normalizado em `55...`; resolver/reabrir seguem visiveis.
-- Console: OK. Sem erro critico observado.
-- Registros criados: nenhum.
+Nao executado pos-publicacao, porque nao houve publicacao.
 
 ## Falhas
 
 ### Criticas
 
-- Nenhuma.
+- Risco de publicar mudanca de backend fora do escopo visual: `Code.gs` difere da base v28 devido ao commit `2f45b08` ainda nao publicado.
 
 ### Medias
 
@@ -77,8 +70,8 @@ POP tocado: NAO.
 
 ### Leves
 
-- Nenhuma.
+- Arquivos `ux-handover-*.png` permanecem untracked e fora do commit de relatorio.
 
 ## Veredito
 
-Publicado e aprovado para backoffice desktop. Refinamento visual premium da Fase 1.1 validado.
+Publicacao bloqueada. Proxima acao: decidir se a v29 deve incluir tambem o commit `2f45b08` de auto-refresh/LockService ou preparar uma branch/commit visual baseado diretamente na v28 publicada.
