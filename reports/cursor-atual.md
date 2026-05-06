@@ -65,3 +65,8 @@
 - valores como 50, 50,00 e R$ 50,00.
 
 Regra: se o dado aparece no card de Medicamentos, ele deve ser encontrável pela caixa de busca.”
+
+## Skills (criação/atualização nesta rodada)
+
+- Criada: `aios/skills/handover-visual-only-guardrails/SKILL.md`
+  - Motivo: evitar repetir o problema de **release visual-only contaminada** por lógica funcional (auto-refresh/polling/sync UI) herdada de commits mistos.
