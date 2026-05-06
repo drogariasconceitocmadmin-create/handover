@@ -466,6 +466,10 @@ function logoutHandover(sessionToken) {
   return encerrarSessaoHandover_(sessionToken);
 }
 
+function setupUsuariosHandover() {
+  return setupUsuariosHandover_();
+}
+
 function setupUsuariosHandover_() {
   var sheet = ensureUsuariosHandoverSheet_();
   var lastRow = sheet.getLastRow();
