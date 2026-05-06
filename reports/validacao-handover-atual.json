@@ -3,12 +3,12 @@
   "status_geral": "OK",
   "pasta": "C:\\Users\\Marco\\Desktop\\Sis Drogaria\\Handover",
   "branch": "master",
-  "commit_validado": "e7c7f84",
-  "mensagem_commit": "fix(handover): Novo registro Medicamentos abre modal na categoria correta",
+  "commit_validado": "a3d9a20",
+  "mensagem_commit": "style(handover): refina layout desktop premium com coluna lateral",
   "scriptId": "1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd",
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
-  "versao_publicada": 27,
+  "versao_publicada": 28,
   "rollback_feito": false,
   "pop_tocado": false,
   "pre_deploy": {
@@ -18,38 +18,64 @@
     ],
     "code_gs_alterado": false,
     "schema_alterado": false,
-    "payloads_alterados": false,
-    "pop_referenciado": false
+    "sheet_clear": false,
+    "pop_referenciado": false,
+    "novo_registro_preservado": true,
+    "falta_encomenda_preservado": true,
+    "checklist_preservado": true,
+    "historico_preservado": true,
+    "whatsapp_imediato_preservado": true,
+    "atualizar_agora_preservado": true
   },
   "publicacao": {
     "clasp_status": "OK",
     "clasp_push": "OK",
-    "clasp_version": 27,
+    "clasp_version": 28,
     "clasp_deploy": "OK",
     "deployment_oficial_mantido": true
   },
-  "smoke_minimo": {
+  "smoke_desktop": {
     "abertura": "OK",
-    "layout_v26": true,
-    "novo_registro_geral_categoria": "Geral",
-    "novo_registro_geral_ok": true,
-    "novo_registro_medicamentos_categoria": "Medicamentos",
-    "novo_registro_medicamentos_ok": true,
-    "falta_oculta_cliente": true,
-    "falta_oculta_telefone": true,
-    "falta_oculta_pre_pago": true,
-    "falta_oculta_preco": true,
-    "encomenda_mostra_cliente": true,
-    "encomenda_mostra_telefone": true,
-    "encomenda_mostra_preco": true,
-    "encomenda_mostra_pre_pago": true,
-    "console_erro_critico": false,
-    "registros_criados": []
+    "visual_desktop": "OK",
+    "header_kpis": "OK",
+    "layout_lateral": "OK",
+    "abas": "OK",
+    "pendencias": "OK",
+    "medicamentos": "OK",
+    "novo_registro": "OK",
+    "falta": "OK",
+    "encomenda": "OK",
+    "checklist": "OK",
+    "historico": "OK",
+    "menu_tres_pontos": "OK",
+    "regressao_critica": "OK",
+    "console_erro_critico": false
   },
+  "evidencias": {
+    "kpi_cards": 5,
+    "side_column": true,
+    "tabs": [
+      "Pendencias",
+      "Medicamentos",
+      "Checklist",
+      "Historico"
+    ],
+    "pendencias_medicamentos_separados": true,
+    "novo_registro_geral_categoria": "Geral",
+    "novo_registro_medicamentos_categoria": "Medicamentos",
+    "falta_oculta_cliente_telefone_pre_pago_preco": true,
+    "encomenda_mostra_cliente_telefone_preco_pre_pago": true,
+    "checklist_draft_preservado": true,
+    "historico_filtros_visiveis": true,
+    "menu_tem_imprimir": false,
+    "whatsapp_popup_url": "https://api.whatsapp.com/send/?phone=5521999999999&text=...",
+    "whatsapp_telefone_normalizado_55": true
+  },
+  "registros_criados": [],
   "falhas": {
     "criticas": [],
     "medias": [],
     "leves": []
   },
-  "veredito": "Publicado e aprovado. Dropdown Novo registro > Medicamento solicitado abre o modal diretamente em Medicamentos."
+  "veredito": "Publicado e aprovado para backoffice desktop. Refinamento visual premium da Fase 1.1 validado."
 }

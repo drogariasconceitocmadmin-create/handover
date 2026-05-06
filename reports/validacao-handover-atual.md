@@ -1,4 +1,4 @@
-# Validacao Handover - commit e7c7f84
+# Validacao Handover - commit a3d9a20
 
 Projeto: Handover - Drogarias Conceito
 
@@ -6,7 +6,7 @@ Pasta: `C:\Users\Marco\Desktop\Sis Drogaria\Handover`
 
 Branch: `master`
 
-Commit validado: `e7c7f84 - fix(handover): Novo registro Medicamentos abre modal na categoria correta`
+Commit validado: `a3d9a20 - style(handover): refina layout desktop premium com coluna lateral`
 
 ScriptId: `1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd`
 
@@ -18,7 +18,7 @@ URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklp
 
 Status geral: OK
 
-Versao publicada: 27.
+Versao publicada: 28.
 
 Rollback feito: NAO.
 
@@ -29,29 +29,39 @@ POP tocado: NAO.
 - Pasta Handover confirmada.
 - Branch `master` confirmada.
 - `.clasp.json` confirmado com scriptId do Handover.
-- Commit `e7c7f84` presente no HEAD.
+- Commit `a3d9a20` presente no HEAD.
 - Commit alterou somente `Index.html`.
 - `Code.gs` nao foi alterado.
 - Schema nao foi alterado.
-- Payloads nao foram alterados.
+- Nao existe `sheet.clear()` no diff.
 - Nao ha referencia ao scriptId/deploymentId do POP no diff.
-- Patch limita-se a passar categoria inicial para `openFormModal_`.
+- Novo Registro preserva `Pendencia da loja -> Geral` e `Medicamento solicitado -> Medicamentos`.
+- Falta/Encomenda, checklist, historico, menu sem Imprimir, WhatsApp imediato e Atualizar agora foram preservados no codigo.
 
 ## Publicacao
 
 - `clasp status`: OK.
 - `clasp push`: OK, 3 arquivos enviados.
-- `clasp version`: criada versao 27.
-- `clasp deploy`: deployment oficial atualizado para versao 27.
+- `clasp version`: criada versao 28.
+- `clasp deploy`: deployment oficial atualizado para versao 28.
 - URL oficial mantida.
 
-## Smoke minimo real
+## Smoke desktop real
 
-- Abertura: OK. Web App abriu sem erro critico e layout v26 carregou.
-- Novo registro Geral: OK. `Novo registro > Pendencia da loja` abriu modal em categoria `Geral`; campos de Geral visiveis e campos de Medicamentos ocultos.
-- Novo registro Medicamentos: OK. `Novo registro > Medicamento solicitado` abriu modal em categoria `Medicamentos`; campos de Medicamentos visiveis e campos de Geral ocultos.
-- Falta: OK. Ao selecionar `Falta`, cliente, telefone, pre-pago e preco ficaram ocultos.
-- Encomenda: OK. Ao selecionar `Encomenda`, cliente, telefone, preco e pre-pago ficaram visiveis.
+- Abertura: OK. Web App abriu sem erro critico e layout novo carregou.
+- Visual desktop: OK. Header premium, KPIs com icones, abas com visual premium, cards menos corridos e medicamentos mais organizados.
+- Header/KPIs: OK. Cinco KPIs visiveis: Pendencias, Urgentes, Medicamentos solicitados, Comprados sem aviso e Checklist pendente.
+- Layout lateral: OK. Coluna lateral direita presente com areas de Checklist/Historico.
+- Abas: OK. Pendencias, Medicamentos, Checklist e Historico alternam.
+- Pendencias: OK. Pendencias exibem apenas solicitacoes gerais; filtro Vencidos/Hoje continua disponivel.
+- Medicamentos: OK. Medicamentos separados de Pendencias; busca por `CODEX_V24` funcionou; filtros visiveis.
+- Novo Registro: OK. Dropdown abre; Pendencia da loja abre `Geral`; Medicamento solicitado abre `Medicamentos`.
+- Falta: OK. Cliente, telefone, pre-pago e preco ficam ocultos.
+- Encomenda: OK. Cliente, telefone, preco e pre-pago ficam visiveis.
+- Checklist: OK. Abre, filtros aparecem, categorias funcionam e rascunho de observacao foi preservado ao alterar outro item.
+- Historico: OK. Carrega sob demanda, filtros aparecem e reabrir/reverter permanece visivel.
+- Menu tres pontos: OK. Nao ha `Imprimir`; `Ver detalhes`, `Copiar informacoes` e `Ver trilha de auditoria` aparecem.
+- Regressao critica: OK. Atualizar agora acionado sem erro critico; WhatsApp abriu `api.whatsapp.com/send` em nova aba com telefone normalizado em `55...`; resolver/reabrir seguem visiveis.
 - Console: OK. Sem erro critico observado.
 - Registros criados: nenhum.
 
@@ -71,4 +81,4 @@ POP tocado: NAO.
 
 ## Veredito
 
-Publicado e aprovado. Dropdown `Novo registro > Medicamento solicitado` abre o modal diretamente em `Medicamentos`.
+Publicado e aprovado para backoffice desktop. Refinamento visual premium da Fase 1.1 validado.
