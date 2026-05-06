@@ -290,16 +290,40 @@ function getUsuarioRecordByRow_(sheet, rowNumber) {
   return obj;
 }
 
+function isUsuarioAtivoPlanilha_(ativoVal) {
+  if (ativoVal === false) {
+    return false;
+  }
+  var s = String(ativoVal == null ? '' : ativoVal).trim();
+  if (s === '') {
+    return true;
+  }
+  var low = s.toLowerCase();
+  if (low === 'false' || low === 'nao' || low === 'não' || low === 'inativo' || low === 'no' || s === '0') {
+    return false;
+  }
+  return (
+    ativoVal === true ||
+    low === 'true' ||
+    low === 'sim' ||
+    low === 'ativo' ||
+    low === 'yes' ||
+    low === 's' ||
+    s === '1' ||
+    toBoolean_(ativoVal)
+  );
+}
+
 function validateUsuarioLogin_(usuario, pin) {
   var sheet = ensureUsuariosHandoverSheet_();
   var rowNumber = findUsuarioRowByUsername_(sheet, usuario);
   if (!rowNumber) {
+    Logger.log('validateUsuarioLogin_: usuario nao encontrado u=' + normalizeUsuarioHandover_(usuario));
     return { ok: false, message: 'Usuário ou PIN inválido.' };
   }
   var record = getUsuarioRecordByRow_(sheet, rowNumber);
-  var ativoVal = record.Ativo;
-  var ativo = ativoVal === true || String(ativoVal || '').toLowerCase() === 'true' || String(ativoVal || '') === '1';
-  if (!ativo) {
+  if (!isUsuarioAtivoPlanilha_(record.Ativo)) {
+    Logger.log('validateUsuarioLogin_: inativo u=' + normalizeUsuarioHandover_(usuario));
     return { ok: false, message: 'Usuário inativo.' };
   }
   var expected = String(record.Pin_Hash || '').trim();
@@ -314,9 +338,10 @@ function validateUsuarioLogin_(usuario, pin) {
       id: sanitizeText_(record.ID || ''),
       nome: sanitizeText_(record.Nome || record.Usuario || ''),
       usuario: normalizeUsuarioHandover_(record.Usuario || usuario),
-      perfil: sanitizeText_(record.Perfil || 'operador'),
+      perfil: normalizePerfilHandover_(record.Perfil || 'operador'),
     };
   }
+  Logger.log('validateUsuarioLogin_: pin nao confere u=' + normalizeUsuarioHandover_(usuario));
   return { ok: false, message: 'Usuário ou PIN inválido.' };
 }
 
@@ -415,34 +440,120 @@ function isRowExcluded_(item) {
 }
 
 function loginHandover(usuario, pin) {
-  setupSpreadsheet();
-  var u = normalizeUsuarioHandover_(usuario);
-  if (!u) {
-    throw new Error('Informe o usuário.');
-  }
-  var result = validateUsuarioLogin_(u, pin);
-  if (!result.ok) {
-    throw new Error(result.message || 'Login inválido.');
-  }
-  var sess = criarSessaoHandover_(result.usuario, result.nome, result.perfil);
-
-  // best-effort update Ultimo_Login_Em
   try {
-    var sheet = ensureUsuariosHandoverSheet_();
-    sheet.getRange(result.rowNumber, getColumnIndex_(sheet, 'Ultimo_Login_Em')).setValue(new Date());
-  } catch (e) {
-    Logger.log('loginHandover Ultimo_Login_Em: ' + e);
-  }
+    setupSpreadsheet();
+    var u = normalizeUsuarioHandover_(usuario);
+    if (!u) {
+      return { success: false, message: 'Informe o usuário.' };
+    }
+    var result = validateUsuarioLogin_(u, pin);
+    if (!result.ok) {
+      return { success: false, message: result.message || 'Usuário ou PIN inválido.' };
+    }
+    var sess = criarSessaoHandover_(result.usuario, result.nome, result.perfil);
 
-  return {
-    success: true,
-    token: sess.token,
-    expAtMs: sess.expAtMs,
-    usuario: result.usuario,
-    nome: result.nome,
-    perfil: result.perfil,
-    displayName: result.nome ? result.nome + ' (' + result.usuario + ')' : result.usuario,
-  };
+    try {
+      var sheet = ensureUsuariosHandoverSheet_();
+      sheet.getRange(result.rowNumber, getColumnIndex_(sheet, 'Ultimo_Login_Em')).setValue(new Date());
+    } catch (e) {
+      Logger.log('loginHandover Ultimo_Login_Em: ' + e);
+    }
+
+    var nome = sanitizeText_(result.nome || result.usuario || '');
+    var perfil = normalizePerfilHandover_(result.perfil || 'operador');
+    Logger.log(
+      'loginHandover ok u=' + result.usuario + ' perfil=' + perfil + ' token_len=' + String(sess.token || '').length
+    );
+
+    return {
+      success: true,
+      token: String(sess.token),
+      usuario: result.usuario,
+      nome: nome,
+      perfil: perfil,
+      displayName: nome,
+    };
+  } catch (e) {
+    Logger.log('loginHandover excecao: ' + e);
+    return { success: false, message: 'Não foi possível entrar. Tente novamente.' };
+  }
+}
+
+function debugAuthUsuariosHandover_() {
+  try {
+    setupSpreadsheet();
+    var sheet = ensureUsuariosHandoverSheet_();
+    var lastRow = sheet.getLastRow();
+    Logger.log('debugAuthUsuariosHandover_: lastRow=' + lastRow);
+    if (lastRow <= 1) {
+      return { ok: true, rows: 0 };
+    }
+    var lastCol = Math.max(sheet.getLastColumn(), 1);
+    var headerCells = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    for (var r = 2; r <= lastRow; r++) {
+      var row = sheet.getRange(r, 1, r, lastCol).getValues()[0];
+      var obj = rowCellsToObject_(headerCells, row);
+      var u = normalizeUsuarioHandover_(obj.Usuario || '');
+      var pinPresent = String(obj.Pin_Hash || '').trim().length > 0;
+      var perf = normalizePerfilHandover_(obj.Perfil || '');
+      var avRaw = String(obj.Ativo == null ? '' : obj.Ativo).trim();
+      var ativoOk = isUsuarioAtivoPlanilha_(obj.Ativo);
+      Logger.log(
+        'debugAuth row=' + r + ' usuario=' + u + ' perfil=' + perf + ' ativo=' + ativoOk + ' ativo_raw=' + avRaw + ' pin_hash_present=' + pinPresent
+      );
+    }
+    return { ok: true, rows: lastRow - 1 };
+  } catch (e) {
+    Logger.log('debugAuthUsuariosHandover_: ' + e);
+    return { ok: false };
+  }
+}
+
+function selfTestAuthHandover_() {
+  try {
+    setupSpreadsheet();
+    var props = PropertiesService.getScriptProperties();
+    var salt = props.getProperty(HANDOVER_AUTH_SALT_KEY);
+    Logger.log('selfTestAuthHandover_: salt_present=' + !!salt);
+
+    var sheet = ensureUsuariosHandoverSheet_();
+    var lastCol = Math.max(sheet.getLastColumn(), 1);
+    var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function (h) {
+      return String(h || '').trim();
+    });
+    var missing = HANDOVER_USERS_HEADERS.filter(function (h) {
+      return headers.indexOf(h) < 0;
+    });
+    Logger.log('selfTestAuthHandover_: headers_missing=' + (missing.length ? missing.join(',') : 'none'));
+
+    var lastRow = sheet.getLastRow();
+    var adminAtivos = 0;
+    if (lastRow > 1) {
+      var headerCells2 = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+      for (var r = 2; r <= lastRow; r++) {
+        var row2 = sheet.getRange(r, 1, r, lastCol).getValues()[0];
+        var obj2 = rowCellsToObject_(headerCells2, row2);
+        if (normalizePerfilHandover_(obj2.Perfil) === 'admin' && isUsuarioAtivoPlanilha_(obj2.Ativo)) {
+          adminAtivos++;
+        }
+      }
+    }
+    Logger.log('selfTestAuthHandover_: admin_ativo_count=' + adminAtivos);
+
+    var probe = loginHandover('__handover_selftest_user__', '000000');
+    Logger.log('selfTestAuthHandover_: probe_success=' + probe.success + ' probe_msg=' + (probe.message || ''));
+
+    return {
+      ok: true,
+      saltPresent: !!salt,
+      headersOk: missing.length === 0,
+      adminAtivos: adminAtivos,
+      probeReturnedObject: typeof probe === 'object',
+    };
+  } catch (e) {
+    Logger.log('selfTestAuthHandover_: ' + e);
+    return { ok: false };
+  }
 }
 
 function validateSessionHandover(sessionToken) {

@@ -3211,29 +3211,60 @@
           authLoginError.className = 'status';
         }
 
-        getScriptRunner_()
-          .withSuccessHandler(function (res) {
-            if (!res || !res.success || !res.token) {
-              showAuthLogin_('Login inválido.');
-              return;
-            }
-            setSession_(res.token, res.usuario || '', res.nome || '', res.perfil || '', res.displayName || '');
-            authState = 'logged_in';
-            hideLoginOverlay_();
-            unlockDashboardAfterAuth_();
-            bootstrapDashboardAfterAuth_();
-            var cb = pendingAuthCallback_;
-            pendingAuthCallback_ = null;
-            if (cb) {
-              cb(res.token, res.displayName || '');
-            }
-            refreshDashboardNow_();
-          })
-          .withFailureHandler(function (err) {
-            var msg = err && err.message ? String(err.message) : 'Login inválido.';
-            showAuthLogin_(msg);
-          })
-          .loginHandover(usuario, pin);
+        var loginCompletedOk = false;
+        var loginTimer = window.setTimeout(function () {
+          if (!loginCompletedOk) {
+            console.warn('[Handover] loginHandover: timeout aguardando resposta do servidor.');
+            showAuthLogin_('Tempo esgotado ao entrar. Verifique a conexão e tente novamente.');
+          }
+        }, 45000);
+
+        try {
+          getScriptRunner_()
+            .withSuccessHandler(function (res) {
+              window.clearTimeout(loginTimer);
+              try {
+                if (!res || res.success === false) {
+                  showAuthLogin_(res && res.message ? String(res.message) : 'Usuário ou PIN inválido.');
+                  return;
+                }
+                if (!res.token) {
+                  showAuthLogin_('Resposta de login inválida. Tente novamente.');
+                  return;
+                }
+                loginCompletedOk = true;
+                if (authLoginError) {
+                  authLoginError.textContent = '';
+                  authLoginError.className = 'status';
+                }
+                setSession_(res.token, res.usuario || '', res.nome || '', res.perfil || '', res.displayName || '');
+                authState = 'logged_in';
+                hideLoginOverlay_();
+                unlockDashboardAfterAuth_();
+                bootstrapDashboardAfterAuth_();
+                var cb = pendingAuthCallback_;
+                pendingAuthCallback_ = null;
+                if (cb) {
+                  cb(res.token, res.displayName || '');
+                }
+                refreshDashboardNow_(true);
+              } catch (innerErr) {
+                console.error('[Handover] login successHandler:', innerErr);
+                showAuthLogin_('Erro ao concluir login. Recarregue a página.');
+              }
+            })
+            .withFailureHandler(function (err) {
+              window.clearTimeout(loginTimer);
+              var msg = err && err.message ? String(err.message) : 'Não foi possível entrar.';
+              console.warn('[Handover] loginHandover failure:', err);
+              showAuthLogin_(msg);
+            })
+            .loginHandover(usuario, pin);
+        } catch (err) {
+          window.clearTimeout(loginTimer);
+          console.warn('[Handover] loginHandover throw:', err);
+          showAuthLogin_(err && err.message ? String(err.message) : 'Não foi possível entrar.');
+        }
       }
 
       function logoutHandover_() {
