@@ -242,7 +242,7 @@ function usuariosHandoverHasAnyPinHash_() {
       return false;
     }
     var colHash = getColumnIndex_(sheet, 'Pin_Hash');
-    var vals = sheet.getRange(2, colHash, lastRow, colHash).getValues();
+    var vals = sheet.getRange(2, colHash, lastRow - 1, 1).getValues();
     for (var i = 0; i < vals.length; i++) {
       if (String(vals[i][0] || '').trim() !== '') {
         return true;
@@ -311,7 +311,7 @@ function findUsuarioRowByUsername_(sheet, usuario) {
     return null;
   }
   var colUsuario = getColumnIndex_(sheet, 'Usuario');
-  var values = sheet.getRange(2, colUsuario, lastRow, colUsuario).getValues();
+  var values = sheet.getRange(2, colUsuario, lastRow - 1, 1).getValues();
   for (var i = 0; i < values.length; i++) {
     var cell = normalizeUsuarioHandover_(values[i][0]);
     if (cell === uname) {
@@ -324,7 +324,7 @@ function findUsuarioRowByUsername_(sheet, usuario) {
 function getUsuarioRecordByRow_(sheet, rowNumber) {
   var lastCol = Math.max(sheet.getLastColumn(), 1);
   var headerCells = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  var row = sheet.getRange(rowNumber, 1, rowNumber, lastCol).getValues()[0];
+  var row = sheet.getRange(rowNumber, 1, 1, lastCol).getValues()[0];
   var obj = rowCellsToObject_(headerCells, row);
   return obj;
 }
@@ -644,7 +644,7 @@ function debugAuthUsuariosHandover_() {
     var lastCol = Math.max(sheet.getLastColumn(), 1);
     var headerCells = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
     for (var r = 2; r <= lastRow; r++) {
-      var row = sheet.getRange(r, 1, r, lastCol).getValues()[0];
+      var row = sheet.getRange(r, 1, 1, lastCol).getValues()[0];
       var obj = rowCellsToObject_(headerCells, row);
       var u = normalizeUsuarioHandover_(obj.Usuario || '');
       var pinPresent = String(obj.Pin_Hash || '').trim().length > 0;
@@ -684,7 +684,7 @@ function selfTestAuthHandover_() {
     if (lastRow > 1) {
       var headerCells2 = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
       for (var r = 2; r <= lastRow; r++) {
-        var row2 = sheet.getRange(r, 1, r, lastCol).getValues()[0];
+        var row2 = sheet.getRange(r, 1, 1, lastCol).getValues()[0];
         var obj2 = rowCellsToObject_(headerCells2, row2);
         if (normalizePerfilHandover_(obj2.Perfil) === 'admin' && isUsuarioAtivoPlanilha_(obj2.Ativo)) {
           adminAtivos++;
@@ -2108,7 +2108,7 @@ function findRowById_(sheetName, id) {
   }
 
   var idCol = getIdColumnIndexSafe_(sheet);
-  const ids = sheet.getRange(2, idCol, lastRow, idCol).getValues();
+  const ids = sheet.getRange(2, idCol, lastRow - 1, 1).getValues();
 
   for (var index = 0; index < ids.length; index++) {
     if (ids[index][0] === id) {
@@ -2614,7 +2614,7 @@ function rowCellsToObject_(headerCells, valueCells) {
 function rowToObjectFromSheetRow_(sheet, rowNumber) {
   var lastCol = Math.max(sheet.getLastColumn(), 1);
   var headerCells = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  var valueCells = sheet.getRange(rowNumber, 1, rowNumber, lastCol).getValues()[0];
+  var valueCells = sheet.getRange(rowNumber, 1, 1, lastCol).getValues()[0];
   return rowCellsToObject_(headerCells, valueCells);
 }
 
