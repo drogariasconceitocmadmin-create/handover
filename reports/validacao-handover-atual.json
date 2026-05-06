@@ -3,99 +3,99 @@
   "status_geral": "OK",
   "pasta": "C:\\Users\\Marco\\Desktop\\Sis Drogaria\\Handover",
   "branch_publicada": "release/handover-v29-visual-clean",
-  "commit_publicado": "6fa9e8b",
-  "mensagem_commit": "style(handover): reaplica polimento visual desktop sobre v28 publicada",
-  "base_usada": "e5aa219",
+  "commit_publicado": "465c85b",
+  "commit_visual_alvo": "26ad132",
+  "commits_incluidos": [
+    {
+      "hash": "26ad132",
+      "mensagem": "style(handover): acabamento premium fino desktop fase 1.3"
+    },
+    {
+      "hash": "465c85b",
+      "mensagem": "docs(handover): adiciona skill de guardrails visual-only"
+    }
+  ],
+  "base_publicada_anterior": "v30 / v29 visual limpa",
   "scriptId": "1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd",
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
-  "versao_publicada": 29,
+  "versao_publicada": 31,
   "rollback_feito": false,
   "pop_tocado": false,
+  "registros_criados": [],
+  "skill_aplicada": {
+    "arquivo": "aios/skills/handover-visual-only-guardrails/SKILL.md",
+    "commit": "465c85b",
+    "motivo": "Bloquear contaminacao de release visual-only por backend, sync, polling, locks ou auto-refresh expandido."
+  },
   "pre_deploy": {
     "resultado": "OK",
     "branch_correta": true,
-    "head": "6fa9e8b",
-    "diff_e5aa219_6fa9e8b": [
-      "Index.html"
-    ],
-    "somente_index_html": true,
+    "branch": "release/handover-v29-visual-clean",
+    "head": "465c85b",
+    "commit_26ad132_presente": true,
+    "scriptId_handover": true,
+    "nao_master": true,
     "code_gs_alterado": false,
-    "commit_2f45b08_incluido": false,
+    "appsscript_alterado": false,
+    "clasp_json_alterado": false,
     "schema_alterado": false,
+    "commit_2f45b08_incluido": false,
+    "lockservice": false,
+    "polling_novo": false,
+    "auto_refresh_expandido": false,
+    "pill_atualizacao_automatica": false,
+    "handover_auto_refresh_constantes": false,
+    "dashboard_fingerprint": false,
     "sheet_clear": false,
-    "pop_referenciado": false
+    "pop_referenciado": false,
+    "observacao_guardrail": "setInterval/dashboardAutoRefreshTimer existem no baseline e5aa219 aprovado; nao foram classificados como entrada nova da Fase 1.3."
   },
   "publicacao": {
     "clasp_status": "OK",
     "clasp_push": "OK",
-    "clasp_version": 29,
+    "clasp_version": 31,
     "clasp_deploy": "OK",
     "deployment_oficial_mantido": true,
     "url_oficial_mantida": true
   },
-  "smoke_visual_desktop": {
+  "smoke_real_desktop": {
     "abertura": "OK",
-    "header_compacto": true,
-    "layout_largo_centralizado": true,
-    "svg_icons": 23,
+    "console_sem_erro_critico": true,
+    "sem_pill_atualizacao_automatica": true,
+    "sem_texto_atualizando_fixo": true,
+    "botao_atualizar_agora": true,
+    "header_height": 73,
     "kpis": 5,
-    "abas": [
+    "svg_icons": 23,
+    "tabs": [
       "Pendencias",
       "Medicamentos",
       "Checklist",
       "Historico"
     ],
-    "cards_pendencias_compactos": true,
-    "cards_medicamentos_compactos": true,
-    "sidebar_checklist_historico": true,
-    "desktop_1366_sem_overflow": true
+    "cards_pendencias": 4,
+    "sidebar": true,
+    "overflow_1366": false
   },
-  "smoke_funcional": {
-    "atualizar_agora": "OK",
-    "novo_registro_dropdown": "OK",
-    "novo_registro_geral_categoria": "Geral",
-    "novo_registro_medicamentos_categoria": "Medicamentos",
-    "whatsapp_abriu": true,
-    "whatsapp_popup_url": "https://api.whatsapp.com/send/?phone=5521999999999&text=..."
-  },
-  "checklist": {
-    "abre": true,
-    "visual_refinado": true,
-    "botoes_status": [
-      "Feito",
-      "N/A",
-      "Pendente"
-    ],
-    "botao_status_funcionou": true,
-    "rascunho_observacao_preservado": true
-  },
-  "medicamentos": {
+  "regressao_minima": {
+    "pendencias_abre": true,
+    "medicamentos_abre": true,
+    "checklist_abre": true,
+    "historico_abre": true,
+    "novo_registro_dropdown": true,
+    "novo_registro_geral": true,
+    "novo_registro_medicamentos": true,
     "falta_sem_campos_indevidos": true,
-    "encomenda_com_campos_corretos": true
+    "encomenda_com_campos_corretos": true,
+    "checklist_rascunho_preservado": true,
+    "menu_sem_imprimir": true,
+    "whatsapp": "Botao nao estava visivel em estado seguro; nao acionado."
   },
-  "historico": {
-    "abre": true,
-    "filtros_visiveis": true,
-    "carrega_sob_demanda": true
-  },
-  "menu_tres_pontos": {
-    "sem_imprimir": true,
-    "ver_detalhes": true,
-    "copiar_informacoes": true,
-    "trilha_auditoria": true
-  },
-  "mobile_regressao_minima": {
-    "innerWidth": 390,
-    "scrollWidth": 390,
-    "has980": false,
-    "overflow_critico": false
-  },
-  "registros_criados": [],
   "falhas": {
     "criticas": [],
     "medias": [],
     "leves": []
   },
-  "veredito": "Publicado e aprovado. v29 visual limpa publicada sem incluir 2f45b08 e sem alterar Code.gs em relacao a base v28 aprovada."
+  "veredito": "Publicado e aprovado. Fase 1.3 visual publicada como versao 31 com guardrails visual-only aplicados, sem Code.gs novo, sem 2f45b08, sem LockService e sem auto-refresh expandido novo."
 }

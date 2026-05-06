@@ -1,4 +1,4 @@
-# Validacao Handover - v29 visual limpa
+# Validacao Handover - Fase 1.3 visual
 
 Projeto: Handover - Drogarias Conceito
 
@@ -6,9 +6,11 @@ Pasta: `C:\Users\Marco\Desktop\Sis Drogaria\Handover`
 
 Branch publicada: `release/handover-v29-visual-clean`
 
-Commit publicado: `6fa9e8b - style(handover): reaplica polimento visual desktop sobre v28 publicada`
+Commit publicado: `465c85b` (`HEAD`), contendo:
+- `26ad132 - style(handover): acabamento premium fino desktop fase 1.3`
+- `465c85b - docs(handover): adiciona skill de guardrails visual-only`
 
-Base usada: `e5aa219 - reports: validacao Handover a3d9a20`
+Base publicada anterior: v30 / v29 visual limpa
 
 ScriptId: `1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd`
 
@@ -20,61 +22,71 @@ URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklp
 
 Status geral: OK
 
-Versao publicada: 29.
+Versao publicada: 31.
 
 Rollback feito: NAO.
 
 POP tocado: NAO.
 
+Registros criados: nenhum.
+
+## Skill aplicada
+
+- Skill lida/aplicada: `aios/skills/handover-visual-only-guardrails/SKILL.md`.
+- Motivo: bloquear contaminacao de release visual-only por backend, sync, polling, locks ou auto-refresh expandido.
+- Observacao: a skill foi adicionada no commit `465c85b` e registrada nesta rodada.
+
 ## Pre-deploy
 
-- `git fetch origin`: OK.
 - Branch atual confirmada: `release/handover-v29-visual-clean`.
-- `HEAD`: `6fa9e8b`.
-- `git diff --name-only e5aa219..6fa9e8b`: somente `Index.html`.
+- `HEAD`: `465c85b`.
+- Commit visual alvo presente: `26ad132`.
+- `.clasp.json`: scriptId oficial do Handover.
+- Nao esta na `master`.
 - `Code.gs`: sem alteracao em relacao a `e5aa219`.
+- `appsscript.json`: sem alteracao em relacao a `e5aa219`.
+- `.clasp.json`: sem alteracao em relacao a `e5aa219`.
 - Commit `2f45b08`: NAO esta na branch publicada.
-- Nao ha `sheet.clear()` no diff.
-- Nao ha referencia ao scriptId/deploymentId do POP no diff.
-- Schema/backend nao foram alterados nesta publicacao.
+- `LockService`, `getScriptLock`, `acquireHandoverWriteLock_`, `releaseHandoverWriteLock_`: ausentes.
+- `HANDOVER_AUTO_REFRESH*`, `dashboardLastFingerprint`, `dashboardRefreshInFlight`, `refreshDashboardNow_(true, 'auto')`: ausentes.
+- Pill/texto `Atualizacao automatica` e texto fixo `Atualizando...`: ausentes.
+- `sheet.clear`: ausente.
+- Referencias ao POP proibido no diff: ausentes.
+- `setInterval`/`dashboardAutoRefreshTimer`: presente no baseline aprovado `e5aa219`; nao foi tratado como entrada nova da Fase 1.3.
 
 ## Publicacao
 
 - `clasp status`: OK.
-- `clasp push`: OK. O clasp enviou os arquivos rastreados do Apps Script, mas a unica alteracao relevante em relacao a base foi `Index.html`.
-- `clasp version`: criada versao 29.
-- `clasp deploy`: deployment oficial atualizado para versao 29.
+- `clasp push`: OK.
+- `clasp version`: criada versao 31.
+- `clasp deploy`: deployment oficial atualizado para versao 31.
 - DeploymentId e URL oficial preservados.
 
-## Smoke real pos-publicacao
+## Smoke real desktop
 
-- Abertura: OK. Web App abriu sem erro critico.
-- Visual desktop: OK. Header compacto, largura desktop aproveitada, KPIs com icones SVG e cards mais compactos.
-- 1366px: OK. `scrollWidth` = 1366, sem rolagem horizontal grosseira.
+- Abertura: OK. Web App abriu, dashboard carregou e nao houve erro critico capturado no console.
+- Escopo: OK. Sem pill `Atualizacao automatica`, sem texto fixo `Atualizando...`, com botao manual `Atualizar agora`.
+- Visual desktop: OK. Header institucional compacto, KPIs com SVG, abas limpas, cards compactos, sidebar refinada.
+- 1366px: OK. Sem rolagem horizontal grosseira.
 - KPIs: OK. 5 KPIs visiveis.
-- Abas: OK. Pendencias, Medicamentos, Checklist e Historico aparecem e alternam.
-- Pendencias: OK. Cards compactos e legiveis.
-- Medicamentos: OK. Cards compactos e legiveis.
-- Sidebar: OK. Coluna lateral Checklist/Historico aparece.
-- Novo Registro: OK. Dropdown abre; Pendencia abre `Geral`; Medicamento solicitado abre `Medicamentos`.
-- Falta: OK. Cliente, telefone, pre-pago e preco ficam ocultos.
-- Encomenda: OK. Cliente, telefone, preco e pre-pago ficam visiveis.
-- Checklist: OK. Checklist abre, botoes `Feito`, `N/A`, `Pendente` aparecem e respondem; rascunho de observacao nao sumiu ao alterar outro item.
-- Historico: OK. Aba abre, filtros aparecem e dados carregam sob demanda.
-- Menu tres pontos: OK. Nao existe `Imprimir`; existem `Ver detalhes`, `Ver trilha de auditoria` e `Copiar informacoes`.
-- Atualizar agora: OK. Botao presente e acionado sem erro critico.
-- WhatsApp: OK. Abriu `api.whatsapp.com/send` em nova aba com telefone normalizado em `55...`; nenhuma mensagem real foi enviada.
-- Mobile regressao minima: OK. Viewport 390px, sem largura interna 980px e sem overflow horizontal critico.
-- Registros criados: nenhum.
+- SVGs: OK. 23 icones SVG encontrados.
+- Abas: OK. Pendencias, Medicamentos, Checklist e Historico abrem.
+- Novo Registro: OK. Dropdown abre; Pendencia abre Geral; Medicamento abre Medicamentos.
+- Medicamento Falta: OK. Cliente, telefone, pre-pago e preco ficam ocultos.
+- Medicamento Encomenda: OK. Cliente, telefone, pre-pago e preco ficam visiveis.
+- Checklist: OK. Abre com 5 categorias; botoes Feito, N/A e Pendente aparecem; rascunho de observacao foi preservado ao alterar status.
+- Menu tres pontos: OK. Sem `Imprimir`; contem Ver detalhes, Ver trilha de auditoria e Copiar informacoes.
+- WhatsApp: botao nao estava visivel em estado seguro no smoke atual; nao foi acionado e nenhuma mensagem real foi enviada.
 
 ## Evidencias objetivas
 
-- Versao publicada: 29.
-- Desktop 1366px: `scrollWidth=1366`, `viewportWidth=1366`, `horizontalOverflow=false`.
-- Mobile 390px: `innerWidth=390`, `scrollWidth=390`, `has980=false`, `overflowCritical=false`.
-- SVGs encontrados: 23.
-- KPIs encontrados: 5.
-- WhatsApp abriu: `https://api.whatsapp.com/send/?phone=5521999999999&text=...`.
+- Versao publicada: 31.
+- Header height: 73px.
+- KPIs: 5.
+- SVGs: 23.
+- Cards de pendencias: 4.
+- Checklist: 5 categorias; acoes `Feito`, `N/A`, `Pendente`.
+- Registros criados: nenhum.
 
 ## Falhas
 
@@ -92,4 +104,4 @@ POP tocado: NAO.
 
 ## Veredito
 
-Publicado e aprovado. v29 visual limpa publicada a partir da branch `release/handover-v29-visual-clean`, sem incluir `2f45b08` e sem alterar `Code.gs` em relacao a base v28 aprovada.
+Publicado e aprovado. Fase 1.3 visual publicada na versao 31 a partir da branch `release/handover-v29-visual-clean`, com guardrails visual-only aplicados, sem `Code.gs` novo, sem `2f45b08`, sem LockService e sem auto-refresh expandido novo.
