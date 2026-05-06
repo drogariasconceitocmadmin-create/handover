@@ -1,16 +1,18 @@
-# Validacao Handover - Fase 1.3 visual
+# Validacao Handover - Compras_Medicamentos trigger sync fix
 
 Projeto: Handover - Drogarias Conceito
 
 Pasta: `C:\Users\Marco\Desktop\Sis Drogaria\Handover`
 
-Branch publicada: `release/handover-v29-visual-clean`
+Branch publicada: `feat/handover-compras-medicamentos`
 
-Commit publicado: `465c85b` (`HEAD`), contendo:
-- `26ad132 - style(handover): acabamento premium fino desktop fase 1.3`
-- `465c85b - docs(handover): adiciona skill de guardrails visual-only`
+Commit publicado: `17a0e42` (`HEAD`), contendo:
+- `712fb69 - feat(handover): aba Compras_Medicamentos espelha Medicamentos e sincroniza por ID`
+- `97b22f9 - feat(handover): handler Compras + trigger instalavel e diagnostico por ID`
+- `9876bfc - feat(handover): regra Status_Compra Compras para Medicamentos por ID`
+- `17a0e42 - fix(handover): sync Compras reversa, Pendente seguro e instrucoes pos-deploy`
 
-Base publicada anterior: v30 / v29 visual limpa
+Base: v33 estavel / sem auth/PIN / sem POP.
 
 ScriptId: `1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd`
 
@@ -22,71 +24,64 @@ URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklp
 
 Status geral: OK
 
-Versao publicada: 31.
+Versao publicada: 39.
 
 Rollback feito: NAO.
 
 POP tocado: NAO.
 
-Registros criados: nenhum.
-
-## Skill aplicada
-
-- Skill lida/aplicada: `aios/skills/handover-visual-only-guardrails/SKILL.md`.
-- Motivo: bloquear contaminacao de release visual-only por backend, sync, polling, locks ou auto-refresh expandido.
-- Observacao: a skill foi adicionada no commit `465c85b` e registrada nesta rodada.
+Registros criados nesta rodada: nenhum.
 
 ## Pre-deploy
 
-- Branch atual confirmada: `release/handover-v29-visual-clean`.
-- `HEAD`: `465c85b`.
-- Commit visual alvo presente: `26ad132`.
+- Branch atual confirmada: `feat/handover-compras-medicamentos`.
+- `HEAD`: `17a0e42`.
+- Commits obrigatorios presentes: `712fb69`, `97b22f9`, `9876bfc`, `17a0e42`.
 - `.clasp.json`: scriptId oficial do Handover.
-- Nao esta na `master`.
-- `Code.gs`: sem alteracao em relacao a `e5aa219`.
-- `appsscript.json`: sem alteracao em relacao a `e5aa219`.
-- `.clasp.json`: sem alteracao em relacao a `e5aa219`.
-- Commit `2f45b08`: NAO esta na branch publicada.
-- `LockService`, `getScriptLock`, `acquireHandoverWriteLock_`, `releaseHandoverWriteLock_`: ausentes.
-- `HANDOVER_AUTO_REFRESH*`, `dashboardLastFingerprint`, `dashboardRefreshInFlight`, `refreshDashboardNow_(true, 'auto')`: ausentes.
-- Pill/texto `Atualizacao automatica` e texto fixo `Atualizando...`: ausentes.
-- `sheet.clear`: ausente.
-- Referencias ao POP proibido no diff: ausentes.
-- `setInterval`/`dashboardAutoRefreshTimer`: presente no baseline aprovado `e5aa219`; nao foi tratado como entrada nova da Fase 1.3.
+- Auth/PIN: ausente (`loginHandover`, `validateSessionHandover`, `Pin_Hash`, `Usuarios_Handover` nao encontrados).
+- POP proibido: ausente.
+- `sheet.clear()` / `.clear()`: ausente.
+- Padroes perigosos de `getRange` usando linha/coluna final: ausentes.
+- `clasp status`: OK; Apps Script rastreia apenas `appsscript.json`, `Code.gs`, `Index.html`.
+
+## Compras_Medicamentos preflight
+
+- `instalarTriggerComprasMedicamentos_`: presente.
+- `listarTriggersHandover_`: presente.
+- `removerTriggerComprasMedicamentos_`: presente.
+- `handleComprasMedicamentosEdit_`: presente.
+- `processarStatusCompraPorIdHandover_`: presente.
+- `Status_Compra = Pendente de compra`: regra segura; atualiza colunas de apoio em Compras, mas nao forca `Medicamentos.Status` para Pendente.
+- Reversao explicita no Handover: `mirrorComprasMedicamentosRowForMedicamentoId_` aceita `fromRevertToPending` e forca Compras para `Pendente de compra`.
 
 ## Publicacao
 
-- `clasp status`: OK.
-- `clasp push`: OK.
-- `clasp version`: criada versao 31.
-- `clasp deploy`: deployment oficial atualizado para versao 31.
+- `clasp.cmd status`: OK.
+- `clasp.cmd push`: OK.
+- `clasp.cmd version`: criada versao 39.
+- `clasp.cmd deploy`: deployment oficial atualizado para versao 39.
 - DeploymentId e URL oficial preservados.
 
-## Smoke real desktop
+## Smoke real Web App
 
-- Abertura: OK. Web App abriu, dashboard carregou e nao houve erro critico capturado no console.
-- Escopo: OK. Sem pill `Atualizacao automatica`, sem texto fixo `Atualizando...`, com botao manual `Atualizar agora`.
-- Visual desktop: OK. Header institucional compacto, KPIs com SVG, abas limpas, cards compactos, sidebar refinada.
-- 1366px: OK. Sem rolagem horizontal grosseira.
-- KPIs: OK. 5 KPIs visiveis.
-- SVGs: OK. 23 icones SVG encontrados.
-- Abas: OK. Pendencias, Medicamentos, Checklist e Historico abrem.
-- Novo Registro: OK. Dropdown abre; Pendencia abre Geral; Medicamento abre Medicamentos.
-- Medicamento Falta: OK. Cliente, telefone, pre-pago e preco ficam ocultos.
-- Medicamento Encomenda: OK. Cliente, telefone, pre-pago e preco ficam visiveis.
-- Checklist: OK. Abre com 5 categorias; botoes Feito, N/A e Pendente aparecem; rascunho de observacao foi preservado ao alterar status.
-- Menu tres pontos: OK. Sem `Imprimir`; contem Ver detalhes, Ver trilha de auditoria e Copiar informacoes.
-- WhatsApp: botao nao estava visivel em estado seguro no smoke atual; nao foi acionado e nenhuma mensagem real foi enviada.
+- Abertura: OK. Web App abriu na URL oficial.
+- Dashboard: OK. KPIs, fila e checklist carregaram.
+- Console: OK. Sem erro critico capturado; apenas warnings do iframe/sandbox do Apps Script.
+- Novo Registro: OK. Dropdown abre.
+- Medicamentos: OK. Aba abre, filtros aparecem e item Cancelado existente nao quebra a listagem.
+- Busca Medicamentos: OK. Campo de busca aceitou busca por `CODEX` e manteve a tela funcional.
+- Checklist: OK. Aba abre e mostra turno, filtros e categorias.
+- Historico: OK. Aba abre e carrega sob demanda (`fetchHistoricoResolvidos` executou).
 
-## Evidencias objetivas
+## Teste manual pendente
 
-- Versao publicada: 31.
-- Header height: 73px.
-- KPIs: 5.
-- SVGs: 23.
-- Cards de pendencias: 4.
-- Checklist: 5 categorias; acoes `Feito`, `N/A`, `Pendente`.
-- Registros criados: nenhum.
+Nao foi executado Compras -> Handover via Playwright, por regra expressa da rodada.
+
+Pendente para Carlos apos instalar/confirmar o gatilho:
+1. Executar `instalarTriggerComprasMedicamentos_()` no Apps Script Editor, se ainda nao instalado.
+2. Rodar `listarTriggersHandover_()` e confirmar `handleComprasMedicamentosEdit_`.
+3. Na planilha autenticada, alterar `Status_Compra` de item seguro para `Comprado`, `Nao encontrado` e `Cancelado`.
+4. Confirmar propagacao por `ID_Handover` nas abas `Medicamentos` e `Compras_Medicamentos`.
 
 ## Falhas
 
@@ -100,16 +95,8 @@ Registros criados: nenhum.
 
 ### Leves
 
-- Nenhuma.
+- O smoke de planilha Compras -> Handover continua manual por restricao operacional desta rodada.
 
 ## Veredito
 
-Publicado e aprovado. Fase 1.3 visual publicada na versao 31 a partir da branch `release/handover-v29-visual-clean`, com guardrails visual-only aplicados, sem `Code.gs` novo, sem `2f45b08`, sem LockService e sem auto-refresh expandido novo.
-
----
-
-## Registro — branch feat/handover-compras-medicamentos (nao publicado neste relatorio)
-
-- Skill criada: `aios/skills/handover-compras-medicamentos/SKILL.md`.
-- Skill atualizada: `aios/skills/sheets-schema/SKILL.md` (aba `Compras_Medicamentos`).
-- Escopo: planilha operacional de compras espelhando Medicamentos por `ID_Handover`; sem auth/PIN; base alinhada a `9a50a06` (pre-auth).
+Publicado e aprovado para smoke Web App. Versao 39 mantida no deployment oficial. Validacao da regra reversa Compras -> Handover fica como teste manual autenticado apos instalacao do gatilho.

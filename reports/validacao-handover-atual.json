@@ -2,100 +2,84 @@
   "projeto": "Handover - Drogarias Conceito",
   "status_geral": "OK",
   "pasta": "C:\\Users\\Marco\\Desktop\\Sis Drogaria\\Handover",
-  "branch_publicada": "release/handover-v29-visual-clean",
-  "commit_publicado": "465c85b",
-  "commit_visual_alvo": "26ad132",
-  "commits_incluidos": [
+  "branch_publicada": "feat/handover-compras-medicamentos",
+  "commit_publicado": "17a0e42",
+  "commits_obrigatorios": [
     {
-      "hash": "26ad132",
-      "mensagem": "style(handover): acabamento premium fino desktop fase 1.3"
+      "hash": "712fb69",
+      "mensagem": "feat(handover): aba Compras_Medicamentos espelha Medicamentos e sincroniza por ID"
     },
     {
-      "hash": "465c85b",
-      "mensagem": "docs(handover): adiciona skill de guardrails visual-only"
+      "hash": "97b22f9",
+      "mensagem": "feat(handover): handler Compras + trigger instalavel e diagnostico por ID"
+    },
+    {
+      "hash": "9876bfc",
+      "mensagem": "feat(handover): regra Status_Compra Compras para Medicamentos por ID"
+    },
+    {
+      "hash": "17a0e42",
+      "mensagem": "fix(handover): sync Compras reversa, Pendente seguro e instrucoes pos-deploy"
     }
   ],
-  "base_publicada_anterior": "v30 / v29 visual limpa",
+  "base": "v33 estavel / sem auth/PIN / sem POP",
   "scriptId": "1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd",
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
-  "versao_publicada": 31,
+  "versao_publicada": 39,
   "rollback_feito": false,
   "pop_tocado": false,
   "registros_criados": [],
-  "skill_aplicada": {
-    "arquivo": "aios/skills/handover-visual-only-guardrails/SKILL.md",
-    "commit": "465c85b",
-    "motivo": "Bloquear contaminacao de release visual-only por backend, sync, polling, locks ou auto-refresh expandido."
-  },
   "pre_deploy": {
     "resultado": "OK",
-    "branch_correta": true,
-    "branch": "release/handover-v29-visual-clean",
-    "head": "465c85b",
-    "commit_26ad132_presente": true,
+    "branch": "feat/handover-compras-medicamentos",
+    "head": "17a0e42",
+    "commits_obrigatorios_presentes": true,
     "scriptId_handover": true,
-    "nao_master": true,
-    "code_gs_alterado": false,
-    "appsscript_alterado": false,
-    "clasp_json_alterado": false,
-    "schema_alterado": false,
-    "commit_2f45b08_incluido": false,
-    "lockservice": false,
-    "polling_novo": false,
-    "auto_refresh_expandido": false,
-    "pill_atualizacao_automatica": false,
-    "handover_auto_refresh_constantes": false,
-    "dashboard_fingerprint": false,
-    "sheet_clear": false,
+    "auth_pin_entrou": false,
     "pop_referenciado": false,
-    "observacao_guardrail": "setInterval/dashboardAutoRefreshTimer existem no baseline e5aa219 aprovado; nao foram classificados como entrada nova da Fase 1.3."
+    "sheet_clear": false,
+    "getRange_semantica_perigosa": false,
+    "clasp_status": "OK"
+  },
+  "compras_medicamentos_preflight": {
+    "instalarTriggerComprasMedicamentos_": true,
+    "listarTriggersHandover_": true,
+    "removerTriggerComprasMedicamentos_": true,
+    "handleComprasMedicamentosEdit_": true,
+    "processarStatusCompraPorIdHandover_": true,
+    "pendente_manual_nao_forca_medicamentos_status": true,
+    "reversao_handover_forca_compras_pendente": true
   },
   "publicacao": {
-    "clasp_status": "OK",
     "clasp_push": "OK",
-    "clasp_version": 31,
+    "clasp_version": 39,
     "clasp_deploy": "OK",
     "deployment_oficial_mantido": true,
     "url_oficial_mantida": true
   },
-  "smoke_real_desktop": {
+  "smoke_web_app": {
     "abertura": "OK",
+    "dashboard": "OK",
     "console_sem_erro_critico": true,
-    "sem_pill_atualizacao_automatica": true,
-    "sem_texto_atualizando_fixo": true,
-    "botao_atualizar_agora": true,
-    "header_height": 73,
-    "kpis": 5,
-    "svg_icons": 23,
-    "tabs": [
-      "Pendencias",
-      "Medicamentos",
-      "Checklist",
-      "Historico"
-    ],
-    "cards_pendencias": 4,
-    "sidebar": true,
-    "overflow_1366": false
+    "novo_registro": "OK",
+    "medicamentos": "OK",
+    "busca_medicamentos": "OK",
+    "cancelado_nao_quebra_medicamentos": true,
+    "checklist": "OK",
+    "historico": "OK"
   },
-  "regressao_minima": {
-    "pendencias_abre": true,
-    "medicamentos_abre": true,
-    "checklist_abre": true,
-    "historico_abre": true,
-    "novo_registro_dropdown": true,
-    "novo_registro_geral": true,
-    "novo_registro_medicamentos": true,
-    "falta_sem_campos_indevidos": true,
-    "encomenda_com_campos_corretos": true,
-    "checklist_rascunho_preservado": true,
-    "menu_sem_imprimir": true,
-    "whatsapp": "Botao nao estava visivel em estado seguro; nao acionado."
-  },
+  "teste_manual_pendente": [
+    "Instalar/confirmar gatilho handleComprasMedicamentosEdit_ com instalarTriggerComprasMedicamentos_ e listarTriggersHandover_.",
+    "Alterar Status_Compra na planilha autenticada para Comprado, Nao encontrado e Cancelado.",
+    "Confirmar propagacao por ID_Handover nas abas Medicamentos e Compras_Medicamentos."
+  ],
   "falhas": {
     "criticas": [],
     "medias": [],
-    "leves": []
+    "leves": [
+      "Smoke de planilha Compras -> Handover permanece manual por restricao operacional da rodada."
+    ]
   },
-  "veredito": "Publicado e aprovado. Fase 1.3 visual publicada como versao 31 com guardrails visual-only aplicados, sem Code.gs novo, sem 2f45b08, sem LockService e sem auto-refresh expandido novo."
+  "veredito": "Publicado e aprovado para smoke Web App. Versao 39 mantida no deployment oficial; validacao reversa Compras -> Handover pendente de teste manual autenticado apos instalacao do gatilho."
 }
