@@ -7,11 +7,12 @@
     "95eaf37",
     "211d3b6",
     "00527e6",
-    "239274c"
+    "239274c",
+    "5b44717"
   ],
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
-  "versao_publicada_teste": 36,
+  "versao_publicada_teste": 37,
   "versao_rollback": 33,
   "rollback_feito": true,
   "pop_tocado": false,
@@ -24,19 +25,18 @@
     "scriptId_handover": true,
     "pop_referenciado": false,
     "sheet_clear": false,
-    "updateOperadorAvatar_chamada_quebrada": false,
-    "syncOperadorUi_chama_syncOperadorAvatar": true,
     "pin_hash_sha256": true,
     "salt_script_properties": true,
-    "sessao_cache_service": true,
-    "exclusao_logica_estatica": true,
-    "deleteItemHandover_exige_admin_gerente": true,
+    "login_objeto_success_token": true,
+    "login_objeto_false_message": true,
+    "front_usa_res_token": true,
+    "front_trata_sucesso_falha_excecao_timeout": true,
     "dashboard_gated_codigo": true
   },
   "publicacao": {
     "clasp_status": "OK",
     "clasp_push": "OK",
-    "clasp_version": 36,
+    "clasp_version": 37,
     "clasp_deploy": "OK",
     "deployment_oficial_mantido": true,
     "url_oficial_mantida": true
@@ -57,11 +57,10 @@
       "resultado": false,
       "loginVisible": true,
       "appHidden": true,
-      "error": "Entrando...",
+      "error": "Usuario ou PIN invalido.",
       "header": "",
       "logoutVisible": false
     },
-    "console_errors": [],
     "login_operator": "NAO TESTADO",
     "perfis": "NAO TESTADO",
     "exclusao_logica": "NAO TESTADO",
@@ -69,13 +68,15 @@
   },
   "falhas": {
     "criticas": [
-      "Login Carlos/admin nao conclui apos PIN correto; fluxo fica em Entrando..."
+      "Login Carlos/admin falha com Usuario ou PIN invalido usando o PIN informado do bootstrap."
     ],
-    "medias": [],
+    "medias": [
+      "PIN errado ficou em Entrando... no tempo observado antes da tentativa seguinte."
+    ],
     "leves": [
       "deleteRow legado permanece em moveRowToResolved; nao faz parte da nova exclusao logica."
     ]
   },
-  "proxima_correcao": "Investigar por que loginHandover('carlos', PIN) nao retorna ao front no Web App publicado; verificar backend loginHandover/validateUsuarioLogin_/hash/salt/Usuarios_Handover e callbacks google.script.run.",
+  "proxima_correcao": "Investigar divergencia entre PIN informado no Logger e hash validado em Usuarios_Handover; conferir salt, ordem de execucao do setup, Ativo/Usuario/Perfil/Pin_Hash e rodar debugAuthUsuariosHandover_/selfTestAuthHandover_ no editor.",
   "veredito": "Publicado para teste, reprovado no smoke real e rollback executado para v33."
 }

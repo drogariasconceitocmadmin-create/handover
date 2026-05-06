@@ -1,4 +1,4 @@
-# Validacao Handover - Auth PIN login fix
+# Validacao Handover - Auth PIN login object fix
 
 Projeto: Handover - Drogarias Conceito
 
@@ -11,6 +11,7 @@ Commits validados/publicados temporariamente:
 - `211d3b6 - perfis e exclusao logica com auditoria`
 - `00527e6 - bloqueia dashboard ate sessao validada`
 - `239274c - corrige avatar do operador apos login`
+- `5b44717 - login retorna objeto e destrava UI do PIN`
 
 Base estavel: v33
 
@@ -22,7 +23,7 @@ URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklp
 
 Status geral: FALHA
 
-Versao publicada para teste: 36.
+Versao publicada para teste: 37.
 
 Rollback feito: SIM, deployment oficial voltou para v33.
 
@@ -39,24 +40,23 @@ Registros criados: nenhum.
 ## Pre-deploy
 
 - Branch atual confirmada: `feat/handover-auth-pin`.
-- Commits `95eaf37`, `211d3b6`, `00527e6` e `239274c` presentes.
+- Commits obrigatorios `95eaf37`, `211d3b6`, `00527e6`, `239274c` e `5b44717` presentes.
 - `.clasp.json`: scriptId oficial do Handover.
 - POP proibido: nao encontrado.
 - `sheet.clear`: ausente.
-- `updateOperadorAvatar_`: ausente.
-- `syncOperadorUiFromSession_` chama `syncOperadorAvatar_`.
 - PIN com `Pin_Hash`, SHA-256 e salt em ScriptProperties.
-- Sessao em `CacheService`.
-- Exclusao logica validada estaticamente em `deleteItemHandover`.
-- `deleteItemHandover` exige admin/gerente e nao usa `deleteRow`.
-- `deleteRow` legado existe apenas em `moveRowToResolved`.
+- `loginHandover` retorna objeto `{ success: true, token }` no sucesso.
+- `loginHandover` retorna `{ success: false, message }` na falha.
+- Front usa `res.token`.
+- Front limpa/trata `Entrando...` em sucesso, falha, excecao e timeout.
+- Dashboard gated presente.
 
 ## Publicacao
 
 - `clasp status`: OK.
 - `clasp push`: OK.
-- `clasp version`: criada versao 36.
-- `clasp deploy`: deployment oficial atualizado temporariamente para v36.
+- `clasp version`: criada versao 37.
+- `clasp deploy`: deployment oficial atualizado temporariamente para v37.
 
 ## Smoke real
 
@@ -74,15 +74,18 @@ Evidencia:
 
 ### Falha critica
 
-Login Carlos/admin nao concluiu. A tela permaneceu no overlay com status `Entrando...`:
+Login Carlos/admin com o PIN informado retornou erro:
 
+`Usuario ou PIN invalido.`
+
+Evidencia:
 - `loginAdmin.loginVisible=true`
 - `loginAdmin.appHidden=true`
-- `loginAdmin.error=Entrando...`
+- `loginAdmin.error=Usuario ou PIN invalido.`
 - `loginAdmin.header=""`
 - `loginAdmin.logoutVisible=false`
 
-Nenhum erro de console foi capturado durante esta tentativa.
+O PIN errado tambem nao destravou a tela, mas ficou em `Entrando...` no tempo observado antes da segunda tentativa.
 
 Por regra, foi feito rollback imediato para v33.
 
@@ -104,11 +107,11 @@ Por regra, foi feito rollback imediato para v33.
 
 ### Criticas
 
-- Login Carlos/admin nao conclui apos PIN correto; fluxo fica em `Entrando...`.
+- Login Carlos/admin falha com `Usuario ou PIN invalido` usando o PIN informado do bootstrap.
 
 ### Medias
 
-- Nenhuma.
+- PIN errado ficou em `Entrando...` no tempo observado antes da tentativa seguinte.
 
 ### Leves
 
@@ -116,11 +119,12 @@ Por regra, foi feito rollback imediato para v33.
 
 ## Proxima correcao
 
-Cursor deve investigar por que `loginHandover('carlos', PIN)` nao retorna ao front no Web App publicado. Pontos provaveis:
-- falha backend silenciosa na chamada `loginHandover`;
-- handler do `google.script.run` nao recebendo success/failure;
-- erro Apps Script em `loginHandover`, `validateUsuarioLogin_`, hash/salt ou acesso a `Usuarios_Handover`.
+Cursor deve investigar divergencia entre PIN informado no Logger e hash validado em `Usuarios_Handover`:
+- conferir salt em ScriptProperties;
+- conferir se `setupUsuariosHandover` foi executado antes/depois da troca de salt/codigo;
+- conferir `Ativo`, `Usuario`, `Perfil` e `Pin_Hash` de Carlos;
+- rodar `debugAuthUsuariosHandover_` / `selfTestAuthHandover_` pelo editor, se necessario.
 
 ## Veredito
 
-Publicado para teste, reprovado no smoke real e rollback executado para v33. O dashboard gated continua OK, mas login admin nao conclui.
+Publicado para teste, reprovado no smoke real e rollback executado para v33. Login deixou de travar em `Entrando...` na tentativa admin, mas Carlos/admin nao autentica com o PIN informado.
