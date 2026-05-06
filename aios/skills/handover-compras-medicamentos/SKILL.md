@@ -22,7 +22,8 @@ Operação de compras em planilha **sem abrir o Web App**: a aba `Compras_Medica
 ## Manual
 
 1. Após deploy/migração, rodar no editor: `sincronizarComprasMedicamentos_()` para alinhar linhas existentes.
-2. Compras editam `Status_Compra` na aba; demais colunas de controle são atualizadas pelo script quando aplicável.
+2. **Gatilho instalável (recomendado para edição na planilha):** executar `instalarTriggerComprasMedicamentos_()` uma vez (autorização do usuário). Listar: `listarTriggersHandover_()`; remover: `removerTriggerComprasMedicamentos_()`.
+3. Entrada única para edições em `Compras_Medicamentos`: `handleComprasMedicamentosEdit_(e)` (chamada por `onEdit` e pelo trigger instalável). Diagnóstico: `processarStatusCompraPorIdHandover_(id)`.
 
 ## Isolamento
 

@@ -446,6 +446,155 @@ function sincronizarComprasMedicamentos_() {
   return { ok: true, synced: n };
 }
 
+/**
+ * Parte 1: diagnóstico por ID_Handover — localiza Compras e Medicamentos; não aplica regra de status.
+ * MANUAL: pode ser executada no editor com um UUID de teste.
+ */
+function processarStatusCompraPorIdHandover_(idHandover) {
+  var id = sanitizeText_(idHandover);
+  if (!id) {
+    Logger.log('processarStatusCompraPorIdHandover_: id vazio');
+    return;
+  }
+  setupSpreadsheet();
+  var cSheet = getComprasMedicamentosSheet_();
+  var rCompras = findComprasRowByHandoverId_(cSheet, id);
+  var stCompra = '';
+  if (rCompras) {
+    var oC = rowToObjectFromSheetRow_(cSheet, rCompras);
+    stCompra = String(oC.Status_Compra != null ? oC.Status_Compra : '').trim();
+  }
+  var medLoc = findRowById_(SHEET_NAMES.MEDICAMENTOS, id);
+  Logger.log(
+    'processarStatusCompraPorIdHandover_: id=' +
+      id +
+      ' compras_encontrado=' +
+      (rCompras ? 'SIM' : 'NAO') +
+      ' Status_Compra=' +
+      stCompra +
+      ' medicamentos_encontrado=' +
+      (medLoc ? 'SIM' : 'NAO')
+  );
+}
+
+/**
+ * Gatilho instalável e onEdit simples: entrada única para edições na aba Compras_Medicamentos.
+ * Parte 1: valida contexto, registra log seguro e delega a processarStatusCompraPorIdHandover_ (somente diagnóstico).
+ */
+function handleComprasMedicamentosEdit_(e) {
+  if (!e || !e.range) {
+    return;
+  }
+  var sheet = e.range.getSheet();
+  var parentId = sheet.getParent().getId();
+  var officialId;
+  try {
+    officialId = getSpreadsheet_().getId();
+  } catch (ex) {
+    Logger.log('handleComprasMedicamentosEdit_: planilha ' + ex);
+    return;
+  }
+  if (parentId !== officialId) {
+    return;
+  }
+  if (sheet.getName() !== SHEET_NAMES.COMPRAS_MEDICAMENTOS) {
+    return;
+  }
+  var rowNumber = e.range.getRow();
+  if (rowNumber <= 1) {
+    return;
+  }
+  var colStatus;
+  try {
+    colStatus = getColumnIndex_(sheet, 'Status_Compra');
+  } catch (errCol) {
+    Logger.log('handleComprasMedicamentosEdit_: coluna Status_Compra ' + errCol);
+    return;
+  }
+  if (e.range.getColumn() !== colStatus) {
+    return;
+  }
+  var rowObj = rowToObjectFromSheetRow_(sheet, rowNumber);
+  var idHandover = sanitizeText_(rowObj.ID_Handover || '');
+  var statusCompra = String(
+    e.value !== undefined && e.value !== null ? e.value : rowObj.Status_Compra != null ? rowObj.Status_Compra : ''
+  ).trim();
+  Logger.log(
+    'handleComprasMedicamentosEdit_: linha=' +
+      rowNumber +
+      ' ID_Handover=' +
+      idHandover +
+      ' Status_Compra=' +
+      statusCompra
+  );
+  if (!idHandover) {
+    Logger.log('handleComprasMedicamentosEdit_: ID_Handover ausente');
+    return;
+  }
+  processarStatusCompraPorIdHandover_(idHandover);
+}
+
+/**
+ * MANUAL: instalar gatilho onEdit instalável apontando para handleComprasMedicamentosEdit_.
+ * Remove gatilhos duplicados do mesmo handler antes de criar.
+ */
+function instalarTriggerComprasMedicamentos_() {
+  var ss = getSpreadsheet_();
+  var all = ScriptApp.getProjectTriggers();
+  var toDelete = [];
+  var i;
+  for (i = 0; i < all.length; i++) {
+    if (all[i].getHandlerFunction() === 'handleComprasMedicamentosEdit_') {
+      toDelete.push(all[i]);
+    }
+  }
+  for (i = 0; i < toDelete.length; i++) {
+    ScriptApp.deleteTrigger(toDelete[i]);
+  }
+  ScriptApp.newTrigger('handleComprasMedicamentosEdit_').forSpreadsheet(ss).onEdit().create();
+  Logger.log(
+    'instalarTriggerComprasMedicamentos_: OK spreadsheetId=' + ss.getId() + ' nome=' + sanitizeText_(ss.getName())
+  );
+}
+
+/** MANUAL: listar gatilhos do projeto (handler, evento, sourceId). */
+function listarTriggersHandover_() {
+  var all = ScriptApp.getProjectTriggers();
+  Logger.log('listarTriggersHandover_: total=' + all.length);
+  for (var i = 0; i < all.length; i++) {
+    var t = all[i];
+    var sid = '';
+    try {
+      sid = t.getTriggerSourceId() || '';
+    } catch (ee) {
+      sid = '(indisponivel)';
+    }
+    Logger.log('  handler=' + t.getHandlerFunction() + ' event=' + t.getEventType() + ' sourceId=' + sid);
+  }
+}
+
+/** MANUAL: remover todos os gatilhos cujo handler é handleComprasMedicamentosEdit_. */
+function removerTriggerComprasMedicamentos_() {
+  var all = ScriptApp.getProjectTriggers();
+  var n = 0;
+  var toDelete = [];
+  var i;
+  for (i = 0; i < all.length; i++) {
+    if (all[i].getHandlerFunction() === 'handleComprasMedicamentosEdit_') {
+      toDelete.push(all[i]);
+    }
+  }
+  for (i = 0; i < toDelete.length; i++) {
+    ScriptApp.deleteTrigger(toDelete[i]);
+    n++;
+  }
+  Logger.log('removerTriggerComprasMedicamentos_: removidos=' + n);
+}
+
+/**
+ * Regra completa de Status_Compra → Medicamentos (Parte 2+).
+ * Não invocar de onEdit na Parte 1 — mantida para reutilização futura.
+ */
 function handleComprasMedicamentosStatusEdit_(sheet, rowNumber, newValue, oldValue) {
   var colStatus = getColumnIndex_(sheet, 'Status_Compra');
   var statusNew = normalizeComprasStatusCompraInput_(newValue);
@@ -1555,10 +1704,7 @@ function onEdit(e) {
 
   if (sheetName === SHEET_NAMES.COMPRAS_MEDICAMENTOS) {
     try {
-      var colSc = getColumnIndex_(sheet, 'Status_Compra');
-      if (e.range.getColumn() === colSc) {
-        handleComprasMedicamentosStatusEdit_(sheet, rowNumber, e.value, e.oldValue);
-      }
+      handleComprasMedicamentosEdit_(e);
     } catch (comprasEditErr) {
       Logger.log('onEdit Compras_Medicamentos: ' + comprasEditErr);
     }
