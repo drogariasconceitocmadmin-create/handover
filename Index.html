@@ -106,7 +106,8 @@
         border: 1px solid rgba(227, 234, 245, 0.9);
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 34px rgba(15, 23, 42, 0.06);
         position: relative;
-        overflow: hidden;
+        overflow: visible;
+        z-index: 1000;
       }
 
       .app-header::before {
@@ -267,6 +268,7 @@
 
       .dropdown-root {
         position: relative;
+        z-index: 2000;
       }
 
       .dropdown-panel {
@@ -278,7 +280,7 @@
         border: 1px solid var(--border);
         border-radius: 16px;
         box-shadow: var(--shadow-hover);
-        z-index: 40;
+        z-index: 10050;
         padding: 8px;
       }
 
@@ -2499,7 +2501,7 @@
               <p id="queue-subtitle" class="queue-subtitle ho-muted"></p>
               <div id="med-search-wrap" class="med-search-row hidden">
                 <label for="med-queue-search" class="ho-muted" style="display:block;font-size:12px;font-weight:700;margin-bottom:4px;">Buscar</label>
-                <input id="med-queue-search" type="search" placeholder="Medicamento ou atendente…" autocomplete="off">
+                <input id="med-queue-search" type="search" placeholder="Buscar por medicamento, cliente, telefone, atendente, preço, status..." autocomplete="off">
               </div>
               <div id="queue-filters-host"></div>
               <div id="historico-filters-panel" class="historico-filters hidden"></div>
@@ -3890,29 +3892,73 @@
         if (activeMainTab !== 'medicamentos') {
           return items;
         }
-        var q = String(medQueueSearchQuery || '').trim().toLowerCase();
+        function norm_(val) {
+          var s = String(val == null ? '' : val)
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+          return s;
+        }
+        function digits_(val) {
+          return String(val == null ? '' : val).replace(/\D+/g, '');
+        }
+        function priceTokens_(val) {
+          var s = String(val == null ? '' : val).trim();
+          if (!s) return '';
+          // Extract digits and expose common search forms: 50, 50,00, 50.00, 5000
+          var d = digits_(s);
+          if (!d) return norm_(s);
+          var tokens = [d, d.replace(/^0+/, '')];
+          if (d.length >= 3) {
+            var intPart = d.slice(0, -2);
+            var decPart = d.slice(-2);
+            tokens.push(intPart);
+            tokens.push(intPart + ',' + decPart);
+            tokens.push(intPart + '.' + decPart);
+            tokens.push('r$ ' + intPart + ',' + decPart);
+          }
+          return tokens.filter(Boolean).join(' ');
+        }
+        var qRaw = String(medQueueSearchQuery || '').trim();
+        var q = norm_(qRaw);
+        var qDigits = digits_(qRaw);
         if (!q) {
           return items;
         }
         return items.filter(function (item) {
-          var blob = item.searchBlob
-            ? String(item.searchBlob)
-            : [
-                item.title,
-                item.person,
-                item.description,
-                item.extraMeta,
-                item.metaCliente,
-                item.metaTelefone,
-                item.metaAtendente,
-              ].join(' ');
-          return (
-            String(item.title || '').toLowerCase().indexOf(q) >= 0 ||
-            String(item.person || '').toLowerCase().indexOf(q) >= 0 ||
-            String(item.description || '').toLowerCase().indexOf(q) >= 0 ||
-            String(item.extraMeta || '').toLowerCase().indexOf(q) >= 0 ||
-            blob.toLowerCase().indexOf(q) >= 0
-          );
+          // Build a "visible fields" haystack: anything that shows on the card should be searchable.
+          var parts = [
+            item.title,
+            item.originLabel,
+            item.statusLabel,
+            item.statusKey,
+            item.person,
+            item.description,
+            item.extraMeta,
+            item.metaCliente,
+            item.metaTelefone,
+            digits_(item.metaTelefone),
+            item.metaAtendente,
+            item.forecast,
+            item.price,
+            priceTokens_(item.price),
+            item.metaPrePago,
+            item.metaWhatsapp,
+            item.metaUltimaAcao,
+            item.timeLabel,
+          ];
+          // Ensure type (Falta/Encomenda) is searchable.
+          if (item.medTipo) {
+            parts.push(item.medTipo === 'falta' ? 'falta' : 'encomenda');
+          }
+          var hay = norm_(parts.filter(Boolean).join(' '));
+          if (hay.indexOf(q) >= 0) {
+            return true;
+          }
+          if (qDigits) {
+            return digits_(hay).indexOf(qDigits) >= 0;
+          }
+          return false;
         });
       }
 
