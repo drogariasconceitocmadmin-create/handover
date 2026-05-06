@@ -2409,7 +2409,7 @@
     </style>
   </head>
   <body>
-    <main class="page">
+    <main class="page hidden" id="handover-app" aria-hidden="true">
       <header class="app-header">
         <div class="app-header-left">
           <span class="brand-mark">Drogarias Conceito</span>
@@ -2745,7 +2745,7 @@
       </div>
     </div>
 
-    <div id="auth-login-overlay" class="modal-overlay hidden" aria-hidden="true">
+    <div id="auth-login-overlay" class="modal-overlay" aria-hidden="false">
       <div class="modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="auth-login-title">
         <div class="modal-head">
           <h2 id="auth-login-title">Login operacional</h2>
@@ -2852,6 +2852,8 @@
       };
       let dashboardAutoRefreshTimer = null;
       let lastDashboardSyncTs = Date.now();
+      let authState = 'checking'; // checking | logged_out | logged_in
+      let dashboardBootstrapped_ = false;
 
       const formModalOverlay = document.getElementById('form-modal-overlay');
       const formModalCloseBtn = document.getElementById('form-modal-close');
@@ -2898,6 +2900,7 @@
       const novoRegistroTrigger = document.getElementById('novo-registro-trigger');
       const novoRegistroMenu = document.getElementById('novo-registro-menu');
       const novoRegistroDropdown = document.getElementById('novo-registro-dropdown');
+      const appMain = document.getElementById('handover-app');
 
       let lastRenderedQueueItems = [];
 
@@ -2983,16 +2986,58 @@
       initOperadorBar_();
       updateMedicinePriceVisibility_();
       initChecklistTurnoUi_();
-      initDashboardSync_();
+      initializeAuthGate_();
       initAuth_();
+
+      function lockDashboardUntilAuth_() {
+        if (appMain) {
+          appMain.classList.add('hidden');
+          appMain.setAttribute('aria-hidden', 'true');
+        }
+      }
+
+      function unlockDashboardAfterAuth_() {
+        if (appMain) {
+          appMain.classList.remove('hidden');
+          appMain.setAttribute('aria-hidden', 'false');
+        }
+      }
+
+      function showLoginOverlay_(messageOpt) {
+        showAuthLogin_(messageOpt);
+      }
+
+      function hideLoginOverlay_() {
+        hideAuthLogin_();
+      }
+
+      function clearInvalidSession_() {
+        setSession_('', '', '', '', '');
+      }
+
+      function bootstrapDashboardAfterAuth_() {
+        if (dashboardBootstrapped_) {
+          return;
+        }
+        dashboardBootstrapped_ = true;
+        initDashboardSync_();
+        renderAll();
+      }
+
+      function initializeAuthGate_() {
+        authState = 'checking';
+        lockDashboardUntilAuth_();
+        showLoginOverlay_('Verificando sessão...');
+      }
 
       function runWithAuth_(fn) {
         var tok = String(handoverSessionToken_ || '').trim();
-        if (tok) {
+        if (tok && authState === 'logged_in') {
           fn(tok, String(handoverSessionDisplay_ || '').trim());
           return;
         }
         pendingAuthCallback_ = fn;
+        lockDashboardUntilAuth_();
         showAuthLogin_();
       }
 
@@ -3113,6 +3158,9 @@
         }
 
         if (handoverSessionToken_) {
+          authState = 'checking';
+          lockDashboardUntilAuth_();
+          showAuthLogin_('Verificando sessão...');
           getScriptRunner_()
             .withSuccessHandler(function (res) {
               if (res && res.success) {
@@ -3123,22 +3171,31 @@
                   res.perfil || '',
                   res.displayName || handoverSessionDisplay_ || ''
                 );
-                hideAuthLogin_();
+                authState = 'logged_in';
+                hideLoginOverlay_();
+                unlockDashboardAfterAuth_();
+                bootstrapDashboardAfterAuth_();
               } else {
-                setSession_('', '', '', '', '');
-                showAuthLogin_();
+                clearInvalidSession_();
+                authState = 'logged_out';
+                lockDashboardUntilAuth_();
+                showLoginOverlay_('Sessão inválida. Faça login.');
               }
             })
             .withFailureHandler(function () {
-              setSession_('', '', '', '', '');
-              showAuthLogin_('Não foi possível validar a sessão. Faça login novamente.');
+              clearInvalidSession_();
+              authState = 'logged_out';
+              lockDashboardUntilAuth_();
+              showLoginOverlay_('Não foi possível validar a sessão. Faça login novamente.');
             })
             .validateSessionHandover(handoverSessionToken_);
           return;
         }
 
-        setSession_('', '', '', '', '');
-        showAuthLogin_();
+        clearInvalidSession_();
+        authState = 'logged_out';
+        lockDashboardUntilAuth_();
+        showLoginOverlay_();
       }
 
       function authSubmitLogin_() {
@@ -3161,7 +3218,10 @@
               return;
             }
             setSession_(res.token, res.usuario || '', res.nome || '', res.perfil || '', res.displayName || '');
-            hideAuthLogin_();
+            authState = 'logged_in';
+            hideLoginOverlay_();
+            unlockDashboardAfterAuth_();
+            bootstrapDashboardAfterAuth_();
             var cb = pendingAuthCallback_;
             pendingAuthCallback_ = null;
             if (cb) {
@@ -3178,8 +3238,10 @@
 
       function logoutHandover_() {
         var tok = String(handoverSessionToken_ || '').trim();
-        setSession_('', '', '', '', '');
-        showAuthLogin_('Sessão encerrada. Faça login para continuar.');
+        clearInvalidSession_();
+        authState = 'logged_out';
+        lockDashboardUntilAuth_();
+        showLoginOverlay_('Sessão encerrada. Faça login para continuar.');
         if (!tok) return;
         getScriptRunner_()
           .withSuccessHandler(function () {})
