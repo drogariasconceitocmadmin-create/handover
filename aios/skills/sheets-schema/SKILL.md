@@ -10,6 +10,7 @@ Fonte de verdade no código: constante `HEADERS` e `SHEET_NAMES` em `Code.gs`. E
 | Medicamentos | `Medicamentos` |
 | Histórico | `Arquivo_Resolvidos` |
 | Checklist | `Checklist_Turnos` |
+| Compras (medicamentos) | `Compras_Medicamentos` |
 
 ## Geral
 
@@ -20,6 +21,12 @@ Colunas (ordem esperada pelo código):
 ## Medicamentos
 
 `ID`, `Timestamp`, `Tipo`, `Medicamento`, `Pre_Pago`, `Cliente`, `Atendente`, `Previsao_Entrega`, `Comprado`, `Entregue`, `Telefone`, `Status`, `Status_Aviso_WhatsApp`, `Data_Aviso_WhatsApp`, `Preco_Venda`, `Ultima_Acao_Por`, `Ultima_Acao_Em`
+
+## Compras_Medicamentos
+
+Espelho operacional para equipe de compras (chave `ID_Handover` = `ID` da aba Medicamentos):
+
+`ID_Handover`, `Data_Solicitacao`, `Tipo`, `Medicamento`, `Atendente`, `Cliente`, `Telefone`, `Previsao_Entrega`, `Preco_Venda`, `Pre_Pago`, `Status_Compra`, `Data_Compra`, `Comprado_Por`, `Observacao_Compra`, `Mensagem_Cliente`, `Status_Handover`, `Ultima_Atualizacao`
 
 ## Arquivo_Resolvidos
 

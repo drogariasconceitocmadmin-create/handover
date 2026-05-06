@@ -1628,6 +1628,11 @@
         color: #92400e;
       }
 
+      .badge.status-cancelado {
+        background: #e5e7eb;
+        color: #4b5563;
+      }
+
       .badge.status-entregue,
       .badge.status-feito {
         background: #dcfce7;
@@ -2787,6 +2792,7 @@
         'comprados',
         'comprados_sem_aviso',
         'entregues',
+        'cancelados',
         'vencidos_hoje',
         'resolvidos_parcialmente',
       ];
@@ -3800,6 +3806,7 @@
                 ['comprados', 'Comprados'],
                 ['comprados_sem_aviso', 'Comprados sem aviso'],
                 ['entregues', 'Entregues'],
+                ['cancelados', 'Cancelados'],
                 ['vencidos_hoje', 'Vencidos/Hoje'],
                 ['resolvidos_parcialmente', 'Resolvidos parcialmente'],
               ];
@@ -6045,9 +6052,10 @@
             : null;
 
           const actions = [];
-          if (!retryActionsMed) {
+            if (!retryActionsMed) {
             if (
               item.__syncState !== 'syncing' &&
+              status.key !== 'cancelado' &&
               (status.key === 'comprado' ||
                 status.key === 'entregue' ||
                 status.key === 'resolvido_parcialmente')
@@ -6058,7 +6066,7 @@
                 className: 'warning',
               });
             }
-            if (!item.Comprado && item.__syncState !== 'syncing') {
+            if (status.key !== 'cancelado' && !item.Comprado && item.__syncState !== 'syncing') {
               actions.push({
                 label: 'Marcar como comprado',
                 handler: 'markPurchased',
@@ -6074,7 +6082,7 @@
               });
             }
 
-            if (!item.Entregue && item.__syncState !== 'syncing') {
+            if (status.key !== 'cancelado' && !item.Entregue && item.__syncState !== 'syncing') {
               actions.push({
                 label: 'Marcar como entregue',
                 handler: 'markDelivered',
@@ -6192,6 +6200,10 @@
             return items.filter(function (item) {
               return item.statusKey === 'entregue';
             });
+          case 'cancelados':
+            return items.filter(function (item) {
+              return item.statusKey === 'cancelado';
+            });
           case 'resolvidos_parcialmente':
             return items.filter(function (item) {
               return item.statusKey === 'resolvido_parcialmente';
@@ -6256,6 +6268,7 @@
           resolvidos: 'Histórico / Resolvidos',
           resolvidos_parcialmente: 'Resolvidos parcialmente',
           comprados_sem_aviso: 'Comprados sem aviso',
+          cancelados: 'Cancelados',
           vencidos_hoje: 'Vencidos/Hoje',
         };
         return mapping[filterKey] || 'Todos';
@@ -6265,6 +6278,9 @@
         const statusText = String(item.Status || '')
           .trim()
           .toLowerCase();
+        if (statusText === 'cancelado') {
+          return { key: 'cancelado', label: 'Cancelado' };
+        }
         if (item.Entregue || statusText === 'entregue') {
           return { key: 'entregue', label: 'Entregue' };
         }
@@ -6962,6 +6978,9 @@
         }
         if (status === 'Comprado') {
           return 'status-comprado';
+        }
+        if (status === 'Cancelado') {
+          return 'status-cancelado';
         }
         return 'status-pendente';
       }
@@ -7810,6 +7829,9 @@
         const status = String(item.Status || '')
           .trim()
           .toLowerCase();
+        if (status === 'cancelado') {
+          return false;
+        }
         return Boolean(item.Comprado) || Boolean(item.Entregue) || status === 'resolvido parcialmente';
       }
 

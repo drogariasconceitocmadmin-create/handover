@@ -105,3 +105,11 @@ Registros criados: nenhum.
 ## Veredito
 
 Publicado e aprovado. Fase 1.3 visual publicada na versao 31 a partir da branch `release/handover-v29-visual-clean`, com guardrails visual-only aplicados, sem `Code.gs` novo, sem `2f45b08`, sem LockService e sem auto-refresh expandido novo.
+
+---
+
+## Registro — branch feat/handover-compras-medicamentos (nao publicado neste relatorio)
+
+- Skill criada: `aios/skills/handover-compras-medicamentos/SKILL.md`.
+- Skill atualizada: `aios/skills/sheets-schema/SKILL.md` (aba `Compras_Medicamentos`).
+- Escopo: planilha operacional de compras espelhando Medicamentos por `ID_Handover`; sem auth/PIN; base alinhada a `9a50a06` (pre-auth).
