@@ -7,23 +7,29 @@
     <title>Handover - Drogarias Conceito</title>
     <style>
       :root {
+        --brand-blue: #004bc7;
+        --brand-blue-2: #0057ff;
+        --brand-green: #8cd000;
+        --success: #16a34a;
+        --warning: #f97316;
+        --danger: #ef4444;
         --bg: #f6f9fe;
         --bg-alt: #f7faff;
-        --card: #ffffff;
-        --border: #e2e8f0;
+        --surface: #ffffff;
         --text: #0b1b3a;
         --muted: #64748b;
-        --primary: #2563eb;
-        --primary-dark: #1d4ed8;
-        --success: #15803d;
-        --whatsapp: #16a34a;
-        --warning: #ea580c;
-        --danger: #dc2626;
-        --danger-bg: #fee2e2;
-        --chip: #eef2ff;
+        --border: #e3eaf5;
+        --card: var(--surface);
+        --primary: var(--brand-blue);
+        --primary-dark: #003d9e;
+        --whatsapp: var(--success);
+        --chip: rgba(0, 75, 199, 0.08);
+        --danger-bg: rgba(239, 68, 68, 0.12);
         --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
-        --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.07);
-        --radius: 14px;
+        --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.06);
+        --shadow-hover: 0 12px 32px rgba(15, 23, 42, 0.1);
+        --radius: 18px;
+        --radius-sm: 14px;
       }
 
       * {
@@ -46,10 +52,10 @@
 
       .page {
         min-width: 0;
-        max-width: 1280px;
+        max-width: 1320px;
         width: 100%;
         margin: 0 auto;
-        padding: 20px 18px 32px;
+        padding: 20px 18px 40px;
       }
 
       .hidden {
@@ -74,82 +80,153 @@
       .app-header {
         display: flex;
         flex-wrap: wrap;
-        align-items: center;
+        align-items: stretch;
         justify-content: space-between;
-        gap: 14px;
-        margin-bottom: 14px;
+        gap: 16px 20px;
+        margin-bottom: 16px;
+        padding: 18px 22px;
+        border-radius: var(--radius);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-md);
       }
 
       .app-header-left {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
         min-width: 0;
       }
 
       .brand-mark {
         font-weight: 800;
-        font-size: 15px;
-        letter-spacing: -0.02em;
+        font-size: 17px;
+        letter-spacing: -0.03em;
+        color: var(--text);
       }
 
       .brand-sep {
         width: 1px;
-        height: 28px;
+        height: 36px;
         background: var(--border);
         flex-shrink: 0;
       }
 
       .brand-product {
-        font-weight: 700;
-        font-size: 14px;
-        color: var(--muted);
+        font-weight: 800;
+        font-size: 20px;
+        letter-spacing: -0.03em;
+        color: var(--brand-blue);
       }
 
       .app-header-right {
         display: flex;
         flex-wrap: wrap;
-        align-items: flex-end;
-        gap: 10px 14px;
+        align-items: center;
+        gap: 10px 12px;
         justify-content: flex-end;
       }
 
-      .app-header-right .field {
-        margin: 0;
+      .header-pill {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 8px 12px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: #fafcfe;
+        min-height: 48px;
+        justify-content: center;
       }
 
-      .app-header-right label {
-        font-size: 11px;
+      .header-pill-label {
+        font-size: 10px;
         font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
         color: var(--muted);
       }
 
-      .app-header-right input[type='text'] {
-        min-width: 160px;
-        padding: 8px 10px;
-        border: 1px solid var(--border);
-        border-radius: 10px;
+      .header-pill-value {
+        font-size: 13px;
+        font-weight: 650;
+        color: var(--text);
+      }
+
+      .operador-pill {
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+        padding-left: 10px;
+      }
+
+      .operador-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        background: linear-gradient(145deg, var(--brand-blue-2), var(--brand-blue));
+        color: #fff;
+        font-size: 14px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .operador-pill .field {
+        margin: 0;
+      }
+
+      .operador-pill input[type='text'] {
+        border: 0;
+        background: transparent;
+        padding: 4px 0;
+        min-width: 140px;
+        font-weight: 600;
         font-size: 13px;
       }
 
-      .sync-label {
-        font-size: 12px;
-        white-space: nowrap;
+      .operador-pill input[type='text']:focus {
+        outline: none;
+      }
+
+      .header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-header-secondary {
+        border: 1px solid var(--border) !important;
+        background: #fff !important;
+        color: var(--brand-blue) !important;
+        border-radius: var(--radius-sm) !important;
+        padding: 10px 14px !important;
+        font-weight: 700 !important;
+        font-size: 13px !important;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .btn-header-secondary:hover {
+        background: rgba(0, 75, 199, 0.05) !important;
       }
 
       .btn-primary-header {
         border: 0;
-        border-radius: 10px;
-        background: var(--primary);
+        border-radius: var(--radius-sm);
+        background: linear-gradient(180deg, var(--brand-blue-2) 0%, var(--brand-blue) 100%);
         color: #fff;
         cursor: pointer;
         font-size: 13px;
-        font-weight: 700;
-        padding: 10px 16px;
+        font-weight: 800;
+        padding: 10px 18px;
+        box-shadow: 0 4px 14px rgba(0, 75, 199, 0.35);
       }
 
       .btn-primary-header:hover {
-        background: var(--primary-dark);
+        filter: brightness(1.05);
       }
 
       .dropdown-root {
@@ -159,90 +236,364 @@
       .dropdown-panel {
         position: absolute;
         right: 0;
-        top: calc(100% + 6px);
-        min-width: 280px;
-        background: var(--card);
+        top: calc(100% + 8px);
+        min-width: 320px;
+        background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 12px;
-        box-shadow: var(--shadow-md);
+        border-radius: 16px;
+        box-shadow: var(--shadow-hover);
         z-index: 40;
-        padding: 6px;
+        padding: 8px;
       }
 
-      .dropdown-panel button {
-        display: block;
+      .dropdown-dd-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
         width: 100%;
         text-align: left;
-        background: transparent;
-        color: var(--text);
-        border-radius: 10px;
-        padding: 10px 12px;
         border: 0;
+        border-radius: 12px;
+        padding: 12px;
+        background: transparent;
         cursor: pointer;
-        font-weight: 600;
+        transition: background 0.15s ease;
       }
 
-      .dropdown-panel button:hover {
-        background: #f1f5f9;
+      .dropdown-dd-item:hover {
+        background: rgba(0, 75, 199, 0.06);
+      }
+
+      .dropdown-dd-ico {
+        width: 40px;
+        height: 40px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        background: rgba(0, 75, 199, 0.1);
+        flex-shrink: 0;
+      }
+
+      .dropdown-dd-item + .dropdown-dd-item {
+        margin-top: 4px;
+        border-top: 1px solid #eef2f8;
+        padding-top: 12px;
+      }
+
+      .dropdown-dd-item strong {
+        display: block;
+        font-size: 14px;
+        color: var(--text);
       }
 
       .dropdown-help {
         display: block;
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 500;
         color: var(--muted);
         margin-top: 2px;
+        line-height: 1.35;
       }
 
       .summary-strip {
         display: grid;
         grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 10px;
-        margin-bottom: 12px;
+        gap: 12px;
+        margin-bottom: 14px;
       }
 
-      .summary-box-click {
-        cursor: pointer;
-        transition: transform 0.12s ease, box-shadow 0.12s ease;
+      .kpi-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        box-shadow: var(--shadow-md);
+        transition: box-shadow 0.18s ease, transform 0.18s ease;
+        min-width: 0;
       }
 
-      .summary-box-click:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.09);
+      .summary-box-click.kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-hover);
       }
 
-      .summary-box-click:focus-visible {
-        outline: 2px solid var(--primary);
-        outline-offset: 2px;
+      .kpi-ico {
+        width: 42px;
+        height: 42px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
       }
 
-      .main-tabs {
+      .kpi-card.kpi-blue .kpi-ico {
+        background: rgba(0, 75, 199, 0.12);
+        color: var(--brand-blue);
+      }
+      .kpi-card.kpi-red .kpi-ico {
+        background: rgba(239, 68, 68, 0.12);
+        color: var(--danger);
+      }
+      .kpi-card.kpi-green .kpi-ico {
+        background: rgba(22, 163, 74, 0.12);
+        color: var(--success);
+      }
+      .kpi-card.kpi-orange .kpi-ico {
+        background: rgba(249, 115, 22, 0.14);
+        color: var(--warning);
+      }
+      .kpi-card.kpi-cl .kpi-ico {
+        background: rgba(140, 208, 0, 0.18);
+        color: #4d7300;
+      }
+
+      .kpi-body {
+        min-width: 0;
+      }
+
+      .kpi-card .label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+
+      .kpi-card .value {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.15;
+        margin-top: 4px;
+        color: var(--text);
+      }
+
+      .kpi-card .sub {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      .tabs-premium {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
-        margin-bottom: 12px;
-        align-items: center;
+        gap: 4px;
+        padding: 6px 8px 0;
+        margin-bottom: 14px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        box-shadow: var(--shadow-md);
+      }
+
+      .tab-ico {
+        font-size: 15px;
+        line-height: 1;
+        opacity: 0.75;
+      }
+
+      .main-tab.active .tab-ico {
+        opacity: 1;
       }
 
       .main-tab {
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        background: #fff;
-        color: var(--text);
+        position: relative;
+        border: 0;
+        border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+        background: transparent;
+        color: var(--muted);
         cursor: pointer;
         font-size: 13px;
-        font-weight: 700;
-        padding: 10px 16px;
+        font-weight: 650;
+        padding: 12px 14px 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: color 0.15s ease, background 0.15s ease;
+      }
+
+      .main-tab:hover {
+        color: var(--brand-blue);
+        background: rgba(0, 75, 199, 0.04);
       }
 
       .main-tab.active {
-        background: var(--chip);
-        border-color: #99a5d8;
-        color: #1e3a8a;
+        color: var(--brand-blue);
+        background: rgba(0, 75, 199, 0.06);
+        box-shadow: inset 0 -3px 0 var(--brand-blue-2);
+      }
+
+      .tab-badge {
+        font-size: 11px;
+        font-weight: 800;
+        min-width: 22px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: rgba(0, 75, 199, 0.12);
+        color: var(--brand-blue);
+      }
+
+      .main-tab.active .tab-badge {
+        background: var(--brand-blue);
+        color: #fff;
+      }
+
+      .tab-badge-green {
+        background: rgba(22, 163, 74, 0.15);
+        color: var(--success);
+      }
+
+      .main-tab.active .tab-badge-green {
+        background: var(--success);
+        color: #fff;
+      }
+
+      .tab-badge-muted {
+        background: #e8eef8;
+        color: var(--muted);
+      }
+
+      .main-tab.active .tab-badge-muted {
+        background: #64748b;
+        color: #fff;
+      }
+
+      .dropdown-dd-item > span:last-child {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .desk-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(252px, 30%);
+        gap: 14px;
+        align-items: start;
+      }
+
+      @media (max-width: 1366px) {
+        .desk-layout {
+          grid-template-columns: minmax(0, 1fr) minmax(240px, 28%);
+          gap: 12px;
+        }
+      }
+
+      .desk-main {
+        min-width: 0;
+      }
+
+      .desk-sidebar {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        position: sticky;
+        top: 12px;
+      }
+
+      .sidebar-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px;
+        box-shadow: var(--shadow-md);
+      }
+
+      .sidebar-card h3 {
+        margin: 0 0 10px;
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+
+      .sidebar-stat-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 12px;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 12px;
+      }
+
+      .sidebar-stat-grid strong {
+        display: block;
+        color: var(--text);
+        font-size: 15px;
+        font-weight: 800;
+      }
+
+      .sidebar-progress {
+        height: 8px;
+        border-radius: 999px;
+        background: #e8eef8;
+        overflow: hidden;
+        margin-bottom: 12px;
+      }
+
+      .sidebar-progress > span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--brand-blue), var(--brand-blue-2));
+      }
+
+      .sidebar-hist-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 12px;
+        max-height: 220px;
+        overflow: auto;
+      }
+
+      .sidebar-hist-item {
+        padding: 10px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: #fafcfe;
+        font-size: 12px;
+      }
+
+      .sidebar-hist-item strong {
+        display: block;
+        color: var(--text);
+        margin-bottom: 4px;
+      }
+
+      .sidebar-card .btn-sidebar {
+        width: 100%;
+        border-radius: var(--radius-sm);
+        padding: 10px;
+        font-weight: 700;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--brand-blue);
+        cursor: pointer;
+      }
+
+      .sidebar-card .btn-sidebar:hover {
+        background: rgba(0, 75, 199, 0.06);
       }
 
       .main-tab-panel {
-        margin-bottom: 14px;
+        margin-bottom: 0;
+      }
+
+      @media (max-width: 1100px) {
+        .desk-layout {
+          grid-template-columns: 1fr;
+        }
+        .desk-sidebar {
+          position: static;
+        }
       }
 
       .queue-panel-head h2 {
@@ -291,35 +642,50 @@
       .card-more-menu {
         position: absolute;
         right: 0;
-        top: calc(100% + 4px);
-        min-width: 220px;
-        background: var(--card);
+        top: calc(100% + 6px);
+        min-width: 232px;
+        background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 12px;
-        box-shadow: var(--shadow-md);
+        border-radius: 14px;
+        box-shadow: var(--shadow-hover);
         z-index: 25;
-        padding: 6px;
+        padding: 8px;
       }
 
       .card-more-menu button {
-        display: block;
+        display: flex;
+        align-items: center;
+        gap: 10px;
         width: 100%;
         text-align: left;
         background: transparent !important;
         color: var(--text) !important;
-        padding: 8px 10px !important;
-        border-radius: 8px !important;
-        font-size: 12px !important;
+        padding: 10px 10px !important;
+        border-radius: 10px !important;
+        font-size: 13px !important;
         font-weight: 600 !important;
+        border: 0 !important;
       }
 
       .card-more-menu button:hover:not(:disabled) {
-        background: #f1f5f9 !important;
+        background: rgba(0, 75, 199, 0.06) !important;
       }
 
       .card-more-menu button:disabled {
         opacity: 0.55;
         cursor: not-allowed;
+      }
+
+      .card-menu-ico {
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        background: rgba(0, 75, 199, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        flex-shrink: 0;
       }
 
       .card-detail-pre {
@@ -503,13 +869,57 @@
       }
 
       .badge.deadline-vencido {
-        background: var(--danger-bg);
-        color: var(--danger);
+        background: rgba(239, 68, 68, 0.14);
+        color: #b91c1c;
+        border: 1px solid rgba(239, 68, 68, 0.28);
       }
 
       .badge.deadline-hoje {
         background: #fef9c3;
         color: #854d0e;
+      }
+
+      .badge.badge-urgente {
+        background: rgba(239, 68, 68, 0.12);
+        color: #b91c1c;
+        border: 1px solid rgba(239, 68, 68, 0.22);
+      }
+
+      #queue-filters-host .filter-group {
+        gap: 8px;
+      }
+
+      #queue-filters-host .filter-button {
+        font-size: 11px;
+        padding: 6px 11px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--muted);
+        font-weight: 650;
+      }
+
+      #queue-filters-host .filter-button.active {
+        background: rgba(0, 75, 199, 0.09);
+        border-color: rgba(0, 75, 199, 0.22);
+        color: var(--brand-blue);
+      }
+
+      .filter-count-badge {
+        display: inline-block;
+        margin-left: 6px;
+        font-size: 10px;
+        font-weight: 800;
+        padding: 1px 6px;
+        border-radius: 999px;
+        background: rgba(0, 75, 199, 0.12);
+        color: var(--brand-blue);
+        vertical-align: middle;
+      }
+
+      #queue-filters-host .filter-button.active .filter-count-badge {
+        background: var(--brand-blue);
+        color: #fff;
       }
 
       button.light {
@@ -552,34 +962,6 @@
         font-size: 12px;
       }
 
-      .queue-list {
-        display: grid;
-        gap: 8px;
-      }
-
-      .queue-card {
-        min-width: 0;
-        width: 100%;
-        max-width: 100%;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        background: #fff;
-        padding: 10px;
-      }
-
-      .queue-card.overdue {
-        border-color: #ef4444;
-        background: #fef2f2;
-      }
-
-      .queue-head {
-        display: flex;
-        justify-content: space-between;
-        gap: 8px;
-        align-items: flex-start;
-        margin-bottom: 6px;
-      }
-
       .badge {
         display: inline-block;
         border-radius: 999px;
@@ -611,39 +993,249 @@
         color: #374151;
       }
 
-      .queue-time {
-        color: var(--muted);
-        font-size: 11px;
+      .queue-list {
+        display: grid;
+        gap: 12px;
       }
 
-      .queue-title-main {
-        font-size: 15px;
-        font-weight: 700;
+      .queue-card {
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        padding: 0;
       }
 
-      .queue-desc {
-        color: var(--muted);
-        font-size: 12px;
-        margin-top: 2px;
+      .qk-card-shell {
+        display: flex;
+        min-width: 0;
+        align-items: stretch;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        transition: box-shadow 0.18s ease;
       }
 
-      .queue-meta {
-        color: var(--muted);
-        font-size: 12px;
-        margin-top: 6px;
+      .queue-card:hover .qk-card-shell {
+        box-shadow: var(--shadow-hover);
       }
 
-      .queue-actions {
+      .queue-card.overdue .qk-card-shell {
+        background: #fff;
+        border-color: rgba(239, 68, 68, 0.28);
+        box-shadow: 0 8px 24px rgba(239, 68, 68, 0.07);
+      }
+
+      .qk-stripe {
+        width: 5px;
+        flex-shrink: 0;
+        align-self: stretch;
+      }
+
+      .qk-stripe-geral {
+        background: linear-gradient(180deg, var(--brand-blue-2), var(--brand-blue));
+      }
+
+      .qk-stripe-med {
+        background: linear-gradient(180deg, #22c55e, var(--success));
+      }
+
+      .qk-stripe-vencido {
+        background: linear-gradient(180deg, #f87171, var(--danger));
+      }
+
+      .qk-stripe-hoje {
+        background: linear-gradient(180deg, #fbbf24, var(--warning));
+      }
+
+      .qk-stripe-hist {
+        background: linear-gradient(180deg, #94a3b8, #64748b);
+      }
+
+      .qk-card-main {
+        flex: 1;
+        min-width: 0;
+        padding: 14px 14px 12px;
+      }
+
+      .qk-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .qk-badges {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
-        margin-top: 8px;
+        align-items: center;
       }
 
-      .queue-actions button {
-        font-size: 12px;
+      .qk-type-tag {
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+
+      .qk-top-right {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .qk-time {
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+        padding-top: 2px;
+      }
+
+      .qk-title {
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--text);
+        line-height: 1.25;
+      }
+
+      .qk-desc {
+        margin-top: 6px;
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .qk-meta {
+        margin: 12px 0 0;
+        padding: 10px 12px;
+        border-radius: var(--radius-sm);
+        background: #f8fafc;
+        border: 1px solid #eef2f8;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 8px 14px;
+      }
+
+      .qk-meta-row {
+        min-width: 0;
+      }
+
+      .qk-meta-row dt {
         margin: 0;
-        padding: 7px 10px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+
+      .qk-meta-row dd {
+        margin: 2px 0 0;
+        font-size: 12px;
+        font-weight: 650;
+        color: var(--text);
+        word-break: break-word;
+      }
+
+      .qk-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid #eef2f8;
+      }
+
+      .qk-actions button {
+        margin: 0;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 8px 13px;
+        border-radius: var(--radius-sm);
+      }
+
+      .qk-actions button.btn-queue-primary {
+        border: 0;
+        background: linear-gradient(180deg, var(--brand-blue-2), var(--brand-blue));
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(0, 75, 199, 0.28);
+      }
+
+      .qk-actions button.btn-queue-primary:hover {
+        filter: brightness(1.05);
+      }
+
+      .qk-actions button.btn-queue-secondary {
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--brand-blue);
+      }
+
+      .qk-actions button.btn-queue-secondary:hover {
+        background: rgba(0, 75, 199, 0.05);
+      }
+
+      .qk-actions button.btn-queue-light {
+        border: 1px solid var(--border);
+        background: #f8fafc;
+        color: var(--text);
+      }
+
+      .qk-actions button.btn-queue-light:hover {
+        background: #f1f5f9;
+      }
+
+      .qk-actions button.whatsapp {
+        border: 0;
+        background: var(--success);
+        color: #fff;
+      }
+
+      .qk-actions button.whatsapp:hover {
+        background: #15803d;
+      }
+
+      .qk-actions button.warning {
+        border: 0;
+        background: #f59e0b;
+        color: #1f2937;
+      }
+
+      .qk-actions button.secondary {
+        border: 0;
+        background: var(--success);
+        color: #fff;
+      }
+
+      .queue-head {
+        display: none;
+      }
+
+      .queue-title-main {
+        display: none;
+      }
+
+      .queue-desc {
+        display: none;
+      }
+
+      .queue-meta {
+        display: none;
+      }
+
+      .queue-actions {
+        display: none;
       }
 
       .section-title {
@@ -898,11 +1490,11 @@
         }
       }
 
-      .queue-card.syncing {
+      .queue-card.syncing .qk-card-shell {
         outline: 2px dashed #93c5fd;
       }
 
-      .queue-card.sync-error {
+      .queue-card.sync-error .qk-card-shell {
         outline: 2px solid var(--danger);
       }
 
@@ -1068,39 +1660,58 @@
   </head>
   <body>
     <main class="page">
-      <header class="app-header ho-card ho-card-pad">
+      <header class="app-header">
         <div class="app-header-left">
           <span class="brand-mark">Drogarias Conceito</span>
           <span class="brand-sep" aria-hidden="true"></span>
           <span class="brand-product">Handover</span>
         </div>
         <div class="app-header-right">
-          <label class="field">
-            <span class="ho-muted">Operador atual</span><br>
-            <input
-              id="operador-atual"
-              type="text"
-              name="operador-atual"
-              autocomplete="name"
-              placeholder="Nome no checklist e ações"
-            >
-          </label>
-          <span id="last-sync-label" class="sync-label ho-muted">Última atualização: --</span>
-          <span id="last-action-label" class="sync-label ho-muted">Última ação: —</span>
-          <button type="button" id="refresh-dashboard-btn" class="light" onclick="refreshDashboardNow_()">
-            Atualizar agora
-          </button>
-          <div id="novo-registro-dropdown" class="dropdown-root">
-            <button type="button" id="novo-registro-trigger" class="btn-primary-header" aria-expanded="false">
-              Novo registro ▾
+          <div class="header-pill operador-pill">
+            <span class="operador-avatar" id="operador-avatar-char" aria-hidden="true">?</span>
+            <label class="field">
+              <span class="header-pill-label">Operador atual</span>
+              <input
+                id="operador-atual"
+                type="text"
+                name="operador-atual"
+                autocomplete="name"
+                placeholder="Nome no checklist e ações"
+              >
+            </label>
+          </div>
+          <div class="header-pill">
+            <span class="header-pill-label">Última atualização</span>
+            <span id="last-sync-label" class="header-pill-value">—</span>
+          </div>
+          <div class="header-pill">
+            <span class="header-pill-label">Última ação</span>
+            <span id="last-action-label" class="header-pill-value">—</span>
+          </div>
+          <div class="header-actions">
+            <button type="button" id="refresh-dashboard-btn" class="btn-header-secondary" onclick="refreshDashboardNow_()">
+              Atualizar agora
             </button>
-            <div id="novo-registro-menu" class="dropdown-panel hidden" role="menu">
-              <button type="button" role="menuitem" onclick="openNovoRegistroPendencia_()">
-                <strong>Pendência da loja</strong><span class="dropdown-help">Registrar uma tarefa ou pendência</span>
+            <div id="novo-registro-dropdown" class="dropdown-root">
+              <button type="button" id="novo-registro-trigger" class="btn-primary-header" aria-expanded="false">
+                Novo registro ▾
               </button>
-              <button type="button" role="menuitem" onclick="openNovoRegistroMedicamento_()">
-                <strong>Medicamento solicitado</strong><span class="dropdown-help">Registrar falta ou encomenda</span>
-              </button>
+              <div id="novo-registro-menu" class="dropdown-panel hidden" role="menu">
+                <button type="button" class="dropdown-dd-item" role="menuitem" onclick="openNovoRegistroPendencia_()">
+                  <span class="dropdown-dd-ico" aria-hidden="true">📋</span>
+                  <span>
+                    <strong>Pendência da loja</strong>
+                    <span class="dropdown-help">Registrar uma tarefa ou pendência</span>
+                  </span>
+                </button>
+                <button type="button" class="dropdown-dd-item" role="menuitem" onclick="openNovoRegistroMedicamento_()">
+                  <span class="dropdown-dd-ico" aria-hidden="true">💊</span>
+                  <span>
+                    <strong>Medicamento solicitado</strong>
+                    <span class="dropdown-help">Registrar uma solicitação de medicamento</span>
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1108,27 +1719,59 @@
 
       <section id="operation-summary" class="summary-strip"></section>
 
-      <nav class="main-tabs ho-card ho-card-pad" aria-label="Áreas principais">
-        <button type="button" class="main-tab active" data-main-tab="pendencias">Pendências</button>
-        <button type="button" class="main-tab" data-main-tab="medicamentos">Medicamentos</button>
-        <button type="button" class="main-tab" data-main-tab="checklist">Checklist</button>
-        <button type="button" class="main-tab" data-main-tab="historico">Histórico</button>
+      <nav class="main-tabs tabs-premium" aria-label="Áreas principais">
+        <button type="button" class="main-tab active" data-main-tab="pendencias">
+          <span class="tab-ico" aria-hidden="true">📋</span>
+          <span>Pendências</span>
+          <span class="tab-badge" id="tab-badge-pendencias">0</span>
+        </button>
+        <button type="button" class="main-tab" data-main-tab="medicamentos">
+          <span class="tab-ico" aria-hidden="true">💊</span>
+          <span>Medicamentos</span>
+          <span class="tab-badge" id="tab-badge-medicamentos">0</span>
+        </button>
+        <button type="button" class="main-tab" data-main-tab="checklist">
+          <span class="tab-ico" aria-hidden="true">✓</span>
+          <span>Checklist</span>
+          <span class="tab-badge tab-badge-green" id="tab-badge-checklist">0</span>
+        </button>
+        <button type="button" class="main-tab" data-main-tab="historico">
+          <span class="tab-ico" aria-hidden="true">🕘</span>
+          <span>Histórico</span>
+          <span class="tab-badge tab-badge-muted" id="tab-badge-historico">–</span>
+        </button>
       </nav>
 
       <section id="panel-queue-wrap" class="main-tab-panel" data-main-tab-panel="queue">
-        <section class="card queue-panel-head">
-          <h2 id="queue-section-heading">Fila de pendências</h2>
-          <p id="queue-subtitle" class="queue-subtitle ho-muted"></p>
-          <div id="med-search-wrap" class="med-search-row hidden">
-            <label for="med-queue-search" class="ho-muted" style="display:block;font-size:12px;font-weight:700;margin-bottom:4px;">Buscar</label>
-            <input id="med-queue-search" type="search" placeholder="Medicamento ou atendente…" autocomplete="off">
+        <div class="desk-layout desk-queue-layout">
+          <div class="desk-main">
+            <section class="card queue-panel-head">
+              <h2 id="queue-section-heading">Fila de pendências</h2>
+              <p id="queue-subtitle" class="queue-subtitle ho-muted"></p>
+              <div id="med-search-wrap" class="med-search-row hidden">
+                <label for="med-queue-search" class="ho-muted" style="display:block;font-size:12px;font-weight:700;margin-bottom:4px;">Buscar</label>
+                <input id="med-queue-search" type="search" placeholder="Medicamento ou atendente…" autocomplete="off">
+              </div>
+              <div id="queue-filters-host"></div>
+              <div id="historico-filters-panel" class="historico-filters hidden"></div>
+              <div id="queue-list" class="queue-list"></div>
+              <div id="queue-empty" class="empty-box hidden">Nenhum item para o filtro selecionado.</div>
+              <div id="queue-status" class="status" aria-live="polite"></div>
+            </section>
           </div>
-          <div id="queue-filters-host"></div>
-          <div id="historico-filters-panel" class="historico-filters hidden"></div>
-          <div id="queue-list" class="queue-list"></div>
-          <div id="queue-empty" class="empty-box hidden">Nenhum item para o filtro selecionado.</div>
-          <div id="queue-status" class="status" aria-live="polite"></div>
-        </section>
+          <aside class="desk-sidebar" id="desk-sidebar-queue" aria-label="Resumo do turno e histórico">
+            <div class="sidebar-card">
+              <h3>Checklist do turno</h3>
+              <div id="sidebar-checklist-body"></div>
+              <button type="button" class="btn-sidebar" onclick="setMainTab('checklist')">Abrir checklist</button>
+            </div>
+            <div class="sidebar-card">
+              <h3>Histórico / Resolvidos</h3>
+              <div id="sidebar-historico-body"></div>
+              <button type="button" class="btn-sidebar" onclick="setMainTab('historico')">Abrir histórico</button>
+            </div>
+          </aside>
+        </div>
       </section>
 
       <section id="panel-checklist" class="main-tab-panel hidden" data-main-tab-panel="checklist">
@@ -1660,7 +2303,6 @@
         }
         var d = new Date(lastDashboardSyncTs);
         el.textContent =
-          'Última atualização: ' +
           String(d.getHours()).padStart(2, '0') +
           ':' +
           String(d.getMinutes()).padStart(2, '0') +
@@ -1789,6 +2431,8 @@
                 dashboardData.checklistTurno = normalizeChecklistData_(response.checklistTurno);
               }
               touchLastSyncTime_();
+              updateMainTabBadges_();
+              renderDeskSidebar_();
               renderChecklistSection();
               renderSummary();
               if (!silent) {
@@ -1821,6 +2465,15 @@
         );
       }
 
+      function syncOperadorAvatar_() {
+        var av = document.getElementById('operador-avatar-char');
+        if (!av || !operadorAtualInput) {
+          return;
+        }
+        var n = String(operadorAtualInput.value || '').trim();
+        av.textContent = n ? n.charAt(0).toUpperCase() : '?';
+      }
+
       function initOperadorBar_() {
         if (!operadorAtualInput) {
           return;
@@ -1830,15 +2483,18 @@
         } catch (e) {
           operadorAtualInput.value = '';
         }
+        syncOperadorAvatar_();
         operadorAtualInput.addEventListener('change', function () {
           try {
             localStorage.setItem(OPERADOR_STORAGE_KEY, operadorAtualInput.value.trim());
           } catch (err) {
             console.warn('Handover: localStorage indisponível.', err);
           }
+          syncOperadorAvatar_();
           syncAutorFieldFromOperador_();
         });
         operadorAtualInput.addEventListener('input', function () {
+          syncOperadorAvatar_();
           syncAutorFieldFromOperador_();
         });
       }
@@ -2351,6 +3007,9 @@
                 ['resolvidos_parcialmente', 'Resolvidos parcialmente'],
               ];
 
+        var mergedBase = buildWorkQueueItems(dashboardData);
+        mergedBase = filterItemsByMainTab_(mergedBase);
+
         host.innerHTML =
           '<div class="filter-group">' +
           spec
@@ -2358,6 +3017,8 @@
               var key = pair[0];
               var label = pair[1];
               var active = activeQueueFilter === key ? ' active' : '';
+              var count = filterQueueItemsByKey_(mergedBase, key).length;
+              var badge = '<span class="filter-count-badge">' + count + '</span>';
               return (
                 '<button type="button" class="filter-button' +
                 active +
@@ -2367,6 +3028,7 @@
                 escapeAttribute(key) +
                 "')\">" +
                 escapeHtml(label) +
+                badge +
                 '</button>'
               );
             })
@@ -2430,11 +3092,23 @@
           return items;
         }
         return items.filter(function (item) {
+          var blob = item.searchBlob
+            ? String(item.searchBlob)
+            : [
+                item.title,
+                item.person,
+                item.description,
+                item.extraMeta,
+                item.metaCliente,
+                item.metaTelefone,
+                item.metaAtendente,
+              ].join(' ');
           return (
             String(item.title || '').toLowerCase().indexOf(q) >= 0 ||
             String(item.person || '').toLowerCase().indexOf(q) >= 0 ||
             String(item.description || '').toLowerCase().indexOf(q) >= 0 ||
-            String(item.extraMeta || '').toLowerCase().indexOf(q) >= 0
+            String(item.extraMeta || '').toLowerCase().indexOf(q) >= 0 ||
+            blob.toLowerCase().indexOf(q) >= 0
           );
         });
       }
@@ -2467,7 +3141,7 @@
           return;
         }
         var line = computeLatestUltimaAcaoLine_(dashboardData);
-        el.textContent = line ? 'Última ação: ' + line : 'Última ação: —';
+        el.textContent = line || '—';
       }
 
       function ensureChecklistExpanded_() {
@@ -2510,6 +3184,43 @@
         });
       }
 
+      function buildCardDetailExtras_(item) {
+        var lines = [];
+        if (!item || item.type === 'historico') {
+          return '';
+        }
+        if (item.type === 'geral') {
+          lines.push('Autor: ' + (item.metaAuthor || item.person || '-'));
+          lines.push('Urgência: ' + (item.metaUrgencia || '-'));
+          if (item.metaDeadline) {
+            lines.push('Vence: ' + item.metaDeadline);
+          }
+          if (item.metaUltimaAcao) {
+            lines.push('Última ação: ' + item.metaUltimaAcao);
+          }
+        } else if (item.type === 'medicamento') {
+          if (item.medTipo === 'encomenda') {
+            lines.push('Cliente: ' + (item.metaCliente || '-'));
+            lines.push('Telefone: ' + (item.metaTelefone || '-'));
+          }
+          lines.push('Atendente: ' + (item.metaAtendente || '-'));
+          if (item.forecast) {
+            lines.push('Previsão: ' + item.forecast);
+          }
+          if (item.medTipo === 'encomenda') {
+            if (item.price) {
+              lines.push('Preço: ' + item.price);
+            }
+            lines.push('Pré-pago: ' + (item.metaPrePago || '-'));
+          }
+          lines.push('WhatsApp: ' + (item.metaWhatsapp || '-'));
+          if (item.metaUltimaAcao) {
+            lines.push('Última ação: ' + item.metaUltimaAcao);
+          }
+        }
+        return lines.length ? '\n\n' + lines.join('\n') : '';
+      }
+
       function cardMoreVerDetalhes_(id) {
         closeAllCardMenus_();
         var item = findQueueItemById_(id);
@@ -2517,10 +3228,12 @@
           showToast_('Item não encontrado.', true);
           return;
         }
+        var extras = buildCardDetailExtras_(item);
         var body =
           item.title +
           '\n\n' +
           item.description +
+          extras +
           (item.extraMeta ? '\n\n' + item.extraMeta : '');
         openCardDetailOverlay_(item.title, body);
       }
@@ -2532,10 +3245,12 @@
           showToast_('Item não encontrado.', true);
           return;
         }
+        var extras = buildCardDetailExtras_(item);
         var text =
           item.title +
           '\n' +
           item.description +
+          extras +
           (item.extraMeta ? '\n' + item.extraMeta : '');
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(text).then(
@@ -2581,10 +3296,107 @@
         });
       }
 
+      function renderDeskSidebar_() {
+        var clBody = document.getElementById('sidebar-checklist-body');
+        var hiBody = document.getElementById('sidebar-historico-body');
+        if (!clBody || !hiBody) {
+          return;
+        }
+
+        var checklist = dashboardData.checklistTurno || {};
+        var items = checklist.items || [];
+        var summary = checklist.summary || buildChecklistSummary_(items);
+        var pct = Number(summary.percentualConcluido || 0);
+        var pctClamped = Math.min(100, Math.max(0, pct));
+
+        clBody.innerHTML =
+          '<div class="sidebar-stat-grid">' +
+          '<div>Turno<strong>' +
+          escapeHtml(checklist.turno || '-') +
+          '</strong></div>' +
+          '<div>Total<strong>' +
+          escapeHtml(String(Number(summary.totalItens || 0))) +
+          '</strong></div>' +
+          '<div>Pendentes<strong>' +
+          escapeHtml(String(Number(summary.itensPendentes || 0))) +
+          '</strong></div>' +
+          '<div>Feitos<strong>' +
+          escapeHtml(String(Number(summary.itensFeitos || 0))) +
+          '</strong></div>' +
+          '<div>N/A<strong>' +
+          escapeHtml(String(Number(summary.itensNaoAplicaveis || 0))) +
+          '</strong></div>' +
+          '<div>Progresso<strong>' +
+          escapeHtml(String(pct)) +
+          '%</strong></div>' +
+          '</div>' +
+          '<div class="sidebar-progress" aria-hidden="true"><span style="width:' +
+          escapeAttribute(String(pctClamped)) +
+          '%"></span></div>';
+
+        if (historicoLoadState === 'ready' && historicoResolvidos && historicoResolvidos.length) {
+          var sorted = historicoResolvidos.slice().sort(function (a, b) {
+            return parseDateTime_(b.Timestamp) - parseDateTime_(a.Timestamp);
+          });
+          var pick = sorted.slice(0, 3);
+          hiBody.innerHTML =
+            '<div class="sidebar-hist-list">' +
+            pick
+              .map(function (row) {
+                var isGeral = String(row.Origem) === 'Geral';
+                var title = isGeral ? geralQueueTitleFromItem_(row) : row.Medicamento || 'Medicamento';
+                var sub = isGeral ? String(row.Autor || '') : String(row.Cliente || row.Atendente || '');
+                return (
+                  '<div class="sidebar-hist-item"><strong>' +
+                  escapeHtml(title) +
+                  '</strong>' +
+                  escapeHtml(formatDateTime(row.Timestamp)) +
+                  (sub ? ' · ' + escapeHtml(sub) : '') +
+                  '</div>'
+                );
+              })
+              .join('') +
+            '</div>';
+        } else {
+          hiBody.innerHTML =
+            '<p class="ho-muted" style="margin:0 0 10px;font-size:12px;line-height:1.45;">Carrega sob demanda ao abrir a aba Histórico.</p>';
+        }
+      }
+
+      function updateMainTabBadges_() {
+        function setText(id, txt) {
+          var el = document.getElementById(id);
+          if (el) {
+            el.textContent = txt;
+          }
+        }
+        var all = buildWorkQueueItems(dashboardData);
+        var pend = all.filter(function (i) {
+          return i.type === 'geral';
+        }).length;
+        var med = all.filter(function (i) {
+          return i.type === 'medicamento' && i.statusKey === 'pendente';
+        }).length;
+        var ck =
+          dashboardData.checklistTurno && dashboardData.checklistTurno.summary
+            ? Number(dashboardData.checklistTurno.summary.itensPendentes || 0)
+            : 0;
+        setText('tab-badge-pendencias', String(pend));
+        setText('tab-badge-medicamentos', String(med));
+        setText('tab-badge-checklist', String(ck));
+        if (historicoLoadState === 'ready') {
+          setText('tab-badge-historico', String(Math.min(999, historicoResolvidos.length)));
+        } else {
+          setText('tab-badge-historico', '–');
+        }
+      }
+
       initHandoverPhase1Layout_();
 
       function renderAll() {
         updateLastActionLabel_();
+        updateMainTabBadges_();
+        renderDeskSidebar_();
         renderSummary();
         renderQueue();
         renderChecklistSection();
@@ -2614,34 +3426,46 @@
         };
 
         summaryContainer.innerHTML = [
-          buildSummaryCard_('pendencias', 'Pendências', String(pendenciasCount), 'Solicitações gerais'),
-          buildSummaryCard_('urgentes', 'Urgentes', String(urgentesCount), 'Prioridade na loja'),
+          buildSummaryCard_('pendencias', 'Pendências', String(pendenciasCount), 'Solicitações gerais', 'kpi-blue', '📋'),
+          buildSummaryCard_('urgentes', 'Urgentes', String(urgentesCount), 'Prioridade na loja', 'kpi-red', '!'),
           buildSummaryCard_(
             'medicamentos',
             'Medicamentos solicitados',
             String(medicationPending.length),
-            'Faltas e encomendas'
+            'Faltas e encomendas',
+            'kpi-green',
+            '💊'
           ),
           buildSummaryCard_(
             'sem_aviso',
             'Comprados sem aviso',
             String(boughtWithoutWhatsapp.length),
-            'WhatsApp pendente'
+            'WhatsApp pendente',
+            'kpi-orange',
+            '📣'
           ),
           buildSummaryCard_(
             'checklist',
             'Checklist pendente',
             String(checklistSummaryData.itensPendentes),
-            'Itens do turno'
+            'Itens do turno',
+            'kpi-cl',
+            '✓'
           ),
         ].join('');
       }
 
-      function buildSummaryCard_(kind, label, value, sub) {
+      function buildSummaryCard_(kind, label, value, sub, kpiClass, iconChar) {
         return (
-          '<div class="summary-box summary-box-click ho-card" tabindex="0" role="button" data-summary-card="' +
+          '<div class="summary-box-click kpi-card ' +
+          escapeAttribute(kpiClass) +
+          '" tabindex="0" role="button" data-summary-card="' +
           escapeAttribute(kind) +
           '">' +
+          '<div class="kpi-ico" aria-hidden="true">' +
+          escapeHtml(iconChar) +
+          '</div>' +
+          '<div class="kpi-body">' +
           '<div class="label">' +
           escapeHtml(label) +
           '</div>' +
@@ -2650,6 +3474,7 @@
           '</div>' +
           '<div class="sub">' +
           escapeHtml(sub) +
+          '</div>' +
           '</div>' +
           '</div>'
         );
@@ -3123,9 +3948,86 @@
         });
       }
 
+      function queueCardStripeClass_(item) {
+        if (item.type === 'historico') {
+          return 'qk-stripe-hist';
+        }
+        if (item.vencidosTier === 'vencido') {
+          return 'qk-stripe-vencido';
+        }
+        if (item.vencidosTier === 'hoje') {
+          return 'qk-stripe-hoje';
+        }
+        if (item.type === 'medicamento') {
+          return 'qk-stripe-med';
+        }
+        return 'qk-stripe-geral';
+      }
+
+      function buildQueueMetaRowsHtml_(item) {
+        function row(label, val) {
+          var v = val == null ? '' : String(val).trim();
+          if (!v || v === '-') {
+            return '';
+          }
+          return (
+            '<div class="qk-meta-row">' +
+            '<dt>' +
+            escapeHtml(label) +
+            '</dt><dd>' +
+            escapeHtml(v) +
+            '</dd></div>'
+          );
+        }
+        var chunks = [];
+        if (item.type === 'geral') {
+          chunks.push(row('Autor', item.metaAuthor || item.person));
+          chunks.push(row('Urgência', item.metaUrgencia));
+          chunks.push(row('Vence', item.metaDeadline));
+          chunks.push(row('Última ação', item.metaUltimaAcao));
+        } else if (item.type === 'medicamento') {
+          if (item.medTipo === 'encomenda') {
+            chunks.push(row('Cliente', item.metaCliente));
+            chunks.push(row('Telefone', item.metaTelefone));
+          }
+          chunks.push(row('Atendente', item.metaAtendente));
+          chunks.push(row('Previsão', item.forecast));
+          if (item.medTipo === 'encomenda') {
+            chunks.push(row('Preço', item.price));
+            chunks.push(row('Pré-pago', item.metaPrePago));
+          }
+          chunks.push(row('WhatsApp', item.metaWhatsapp));
+          chunks.push(row('Última ação', item.metaUltimaAcao));
+        } else if (item.type === 'historico') {
+          chunks.push(row('Registro', item.timeLabel));
+          if (item.person) {
+            chunks.push(row('Responsável/Cliente', item.person));
+          }
+        }
+        var inner = chunks.filter(Boolean).join('');
+        if (!inner) {
+          return '';
+        }
+        return '<dl class="qk-meta">' + inner + '</dl>';
+      }
+
+      function queueActionButtonClass_(action) {
+        var h = action.handler || '';
+        var cn = action.className || '';
+        if (cn === 'whatsapp') return 'whatsapp';
+        if (cn === 'warning') return 'warning';
+        if (cn === 'light') return 'btn-queue-light';
+        if (cn === 'secondary') return 'btn-queue-secondary';
+        if (h === 'markResolved' || h === 'markDelivered') return 'btn-queue-primary';
+        if (h === 'markPurchased') return 'btn-queue-secondary';
+        if (h === 'notifyClientWhatsApp') return 'whatsapp';
+        if (h === 'revertMedicationToPending_' || h === 'openReopenHistoricoModal_') return 'warning';
+        return cn === '' ? 'btn-queue-primary' : cn + ' btn-queue-secondary';
+      }
+
       function buildQueueCardHtml_(item) {
-        const statusClass = item.statusKey ? ' status-' + item.statusKey : '';
-        const badges = [
+        var statusClass = item.statusKey ? ' status-' + item.statusKey : '';
+        var badges = [
           '<span class="badge">' + escapeHtml(item.originLabel) + '</span>',
           '<span class="badge' + statusClass + '">' + escapeHtml(item.statusLabel) + '</span>',
         ];
@@ -3140,27 +4042,70 @@
           badges.unshift('<span class="badge">Resolvendo...</span>');
         }
 
+        if (item.type === 'geral' && item.urgenciaKey === 'urgente') {
+          badges.push('<span class="badge badge-urgente">Urgente</span>');
+        }
+
         if (item.vencidosTier === 'vencido') {
           badges.push('<span class="badge deadline-vencido">Vencido</span>');
         } else if (item.vencidosTier === 'hoje') {
           badges.push('<span class="badge deadline-hoje">Hoje</span>');
         }
 
-        const metaLines = [
-          item.person ? 'Responsável/Cliente: ' + item.person : '',
-          item.deadlineLabel ? item.deadlineLabel : '',
-          item.forecast ? 'Previsão: ' + item.forecast : '',
-          item.price ? 'Preço de venda: ' + item.price : '',
-          item.extraMeta || '',
-        ].filter(Boolean);
+        var topTag =
+          item.type === 'geral'
+            ? item.originLabel === 'Solicitações'
+              ? 'Solicitações'
+              : 'Geral'
+            : item.originLabel || '';
+
+        var descPlain = escapeHtml(item.description || '');
+        var extras =
+          (item.__resolveError ? '<div class="card-inline-error">' + escapeHtml(item.__resolveError) + '</div>' : '') +
+          (item.syncError && item.syncState === 'error'
+            ? '<div class="card-inline-error">' + escapeHtml(item.syncError) + '</div>'
+            : '');
+        var descBlock =
+          descPlain || extras ? '<div class="qk-desc">' + descPlain + extras + '</div>' : '';
+
+        var metaBlock = buildQueueMetaRowsHtml_(item);
+
+        var actionsHtml = item.actions
+          .map(function (action) {
+            var cls = queueActionButtonClass_(action);
+            return (
+              '<button ' +
+              'data-queue-action="1" ' +
+              'class="' +
+              escapeHtml(cls) +
+              '" ' +
+              'type="button" ' +
+              'onclick="' +
+              escapeAttribute(action.handler) +
+              "('" +
+              escapeAttribute(item.id) +
+              "')\">" +
+              escapeHtml(action.label) +
+              '</button>'
+            );
+          })
+          .join('');
 
         return (
-          '<div class="queue-head">' +
-          '<div>' +
+          '<div class="qk-card-shell">' +
+          '<span class="qk-stripe ' +
+          queueCardStripeClass_(item) +
+          '" aria-hidden="true"></span>' +
+          '<div class="qk-card-main">' +
+          '<div class="qk-top">' +
+          '<div class="qk-badges">' +
+          '<span class="qk-type-tag">' +
+          escapeHtml(topTag) +
+          '</span>' +
           badges.join(' ') +
           '</div>' +
-          '<div class="queue-head-right">' +
-          '<div class="queue-time">' +
+          '<div class="qk-top-right">' +
+          '<div class="qk-time">' +
           escapeHtml(item.timeLabel) +
           '</div>' +
           '<div class="card-more" data-card-more-wrap="' +
@@ -3172,51 +4117,24 @@
           '<div class="card-more-menu hidden" role="menu">' +
           '<button type="button" onclick="cardMoreVerDetalhes_(\'' +
           escapeJsSingleQuoted_(item.id) +
-          '\')">Ver detalhes</button>' +
+          '\')"><span class="card-menu-ico" aria-hidden="true">👁</span>Ver detalhes</button>' +
+          '<button type="button" disabled title="Trilha detalhada será implementada em fase futura."><span class="card-menu-ico" aria-hidden="true">⏱</span>Ver trilha de auditoria</button>' +
           '<button type="button" onclick="cardMoreCopiar_(\'' +
           escapeJsSingleQuoted_(item.id) +
-          '\')">Copiar informações</button>' +
-          '<button type="button" disabled title="Trilha detalhada será implementada em fase futura.">Ver trilha de auditoria</button>' +
+          '\')"><span class="card-menu-ico" aria-hidden="true">⎘</span>Copiar informações</button>' +
           '</div>' +
           '</div>' +
           '</div>' +
           '</div>' +
-          '<div class="queue-title-main">' +
+          '<div class="qk-title">' +
           escapeHtml(item.title) +
           '</div>' +
-          '<div class="queue-desc">' +
-          escapeHtml(item.description) +
-          (item.__resolveError
-            ? '<div class="card-inline-error">' + escapeHtml(item.__resolveError) + '</div>'
-            : '') +
-          (item.syncError && item.syncState === 'error'
-            ? '<div class="card-inline-error">' + escapeHtml(item.syncError) + '</div>'
-            : '') +
+          descBlock +
+          metaBlock +
+          '<div class="qk-actions">' +
+          actionsHtml +
           '</div>' +
-          '<div class="queue-meta">' +
-          escapeHtml(metaLines.join(' | ')) +
           '</div>' +
-          '<div class="queue-meta">Ações</div>' +
-          '<div class="queue-actions">' +
-          item.actions
-            .map(function (action) {
-              return (
-                '<button ' +
-                'data-queue-action="1" ' +
-                'class="' +
-                escapeHtml(action.className || '') +
-                '" ' +
-                'type="button" ' +
-                'onclick="' +
-                escapeAttribute(action.handler) +
-                "('" +
-                escapeAttribute(item.id) +
-                "')\">" +
-                escapeHtml(action.label) +
-                '</button>'
-              );
-            })
-            .join('') +
           '</div>'
         );
       }
@@ -3229,14 +4147,17 @@
           var titleLine = titulo;
           var venTier = computeVencimentoTierGeral_(item);
           var dlbl = formatGeralVencimentoCardLine_(item);
-          var descLine =
-            'Autor: ' +
-            (item.Autor || '-') +
-            ' · Urgência: ' +
-            urg +
-            ' · Descrição: ' +
-            (item.Descricao || '-') +
-            (dlbl ? ' · ' + dlbl : '');
+          var descPlain = String(item.Descricao || '').trim() || '—';
+          var metaDeadline = '';
+          if (dlbl) {
+            metaDeadline = dlbl.replace(/^Vence:\s*/i, '').trim();
+          }
+          var metaUltima = '';
+          if (item.Ultima_Acao_Por) {
+            metaUltima =
+              item.Ultima_Acao_Por +
+              (item.Ultima_Acao_Em ? ' · ' + formatDateTime(item.Ultima_Acao_Em) : '');
+          }
           var urgLower = String(item.Urgencia || '')
             .trim()
             .toLowerCase();
@@ -3266,7 +4187,11 @@
             statusKey: 'pendente',
             urgenciaKey: urgenciaKey,
             title: titleLine,
-            description: descLine,
+            description: descPlain,
+            metaAuthor: item.Autor || '-',
+            metaUrgencia: urg,
+            metaDeadline: metaDeadline,
+            metaUltimaAcao: metaUltima,
             person: item.Autor || '-',
             forecast: '',
             deadlineLabel: dlbl,
@@ -3359,6 +4284,31 @@
           var venTierM = computeVencimentoTierMedicamento_(item);
           var tipoLow = medicationTipoFromRecord_(item);
           var revLine = formatMedicamentoRevertLine_(item);
+          var waShort = String(item.Status_Aviso_WhatsApp || 'Não registrado').trim();
+          var metaUltimaMed = '';
+          if (item.Ultima_Acao_Por) {
+            metaUltimaMed =
+              item.Ultima_Acao_Por +
+              (item.Ultima_Acao_Em ? ' · ' + formatDateTime(item.Ultima_Acao_Em) : '');
+          }
+          var descPlainMed =
+            'Tipo: ' +
+            (item.Tipo || '-') +
+            (tipoLow === 'falta' ? '' : ' · Pré-pago: ' + (item.Pre_Pago ? 'Sim' : 'Não'));
+          var searchBlob = [
+            item.Medicamento,
+            item.Tipo,
+            item.Cliente,
+            item.Atendente,
+            item.Telefone,
+            item.Status,
+            waShort,
+            auditMed,
+            revLine,
+            descPlainMed,
+          ]
+            .join(' ')
+            .toLowerCase();
 
           return {
             id: item.ID,
@@ -3368,10 +4318,13 @@
             statusKey: status.key,
             medTipo: tipoLow,
             title: item.Medicamento || 'Medicamento sem nome',
-            description:
-              'Tipo: ' +
-              (item.Tipo || '-') +
-              (tipoLow === 'falta' ? '' : ' | Pré-pago: ' + (item.Pre_Pago ? 'Sim' : 'Não')),
+            description: descPlainMed,
+            metaCliente: tipoLow === 'encomenda' ? item.Cliente || '' : '',
+            metaTelefone: tipoLow === 'encomenda' ? item.Telefone || '' : '',
+            metaAtendente: item.Atendente || '',
+            metaWhatsapp: waShort,
+            metaUltimaAcao: metaUltimaMed,
+            metaPrePago: tipoLow === 'falta' ? '' : item.Pre_Pago ? 'Sim' : 'Não',
             person:
               tipoLow === 'falta'
                 ? item.Atendente || '-'
@@ -3394,6 +4347,7 @@
             timeLabel: formatDateTime(item.Timestamp),
             timeSort: parseDateTime_(item.Timestamp),
             whatsappNotSent: whatsappAvailable && !whatsappSent,
+            searchBlob: searchBlob,
             actions: retryActionsMed || actions,
           };
         });
@@ -3409,8 +4363,8 @@
         });
       }
 
-      function filterQueueItems_(items) {
-        switch (activeQueueFilter) {
+      function filterQueueItemsByKey_(items, filterKey) {
+        switch (filterKey) {
           case 'urgentes':
             return items.filter(function (item) {
               return item.type === 'geral' && item.urgenciaKey === 'urgente';
@@ -3453,6 +4407,10 @@
           default:
             return items;
         }
+      }
+
+      function filterQueueItems_(items) {
+        return filterQueueItemsByKey_(items, activeQueueFilter);
       }
 
       function setQueueFilter(filterKey) {
