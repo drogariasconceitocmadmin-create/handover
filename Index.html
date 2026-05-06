@@ -3211,9 +3211,10 @@
           authLoginError.className = 'status';
         }
 
+        var loginRequestSettled = false;
         var loginCompletedOk = false;
         var loginTimer = window.setTimeout(function () {
-          if (!loginCompletedOk) {
+          if (!loginRequestSettled) {
             console.warn('[Handover] loginHandover: timeout aguardando resposta do servidor.');
             showAuthLogin_('Tempo esgotado ao entrar. Verifique a conexão e tente novamente.');
           }
@@ -3222,6 +3223,7 @@
         try {
           getScriptRunner_()
             .withSuccessHandler(function (res) {
+              loginRequestSettled = true;
               window.clearTimeout(loginTimer);
               try {
                 if (!res || res.success === false) {
@@ -3254,6 +3256,7 @@
               }
             })
             .withFailureHandler(function (err) {
+              loginRequestSettled = true;
               window.clearTimeout(loginTimer);
               var msg = err && err.message ? String(err.message) : 'Não foi possível entrar.';
               console.warn('[Handover] loginHandover failure:', err);
@@ -3261,6 +3264,7 @@
             })
             .loginHandover(usuario, pin);
         } catch (err) {
+          loginRequestSettled = true;
           window.clearTimeout(loginTimer);
           console.warn('[Handover] loginHandover throw:', err);
           showAuthLogin_(err && err.message ? String(err.message) : 'Não foi possível entrar.');

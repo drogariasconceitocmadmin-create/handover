@@ -234,11 +234,42 @@ function normalizeUsuarioHandover_(usuario) {
     .toLowerCase();
 }
 
-function getOrCreateAuthSalt_() {
+function usuariosHandoverHasAnyPinHash_() {
+  try {
+    var sheet = ensureUsuariosHandoverSheet_();
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) {
+      return false;
+    }
+    var colHash = getColumnIndex_(sheet, 'Pin_Hash');
+    var vals = sheet.getRange(2, colHash, lastRow, colHash).getValues();
+    for (var i = 0; i < vals.length; i++) {
+      if (String(vals[i][0] || '').trim() !== '') {
+        return true;
+      }
+    }
+  } catch (e) {
+    Logger.log('usuariosHandoverHasAnyPinHash_: ' + e);
+  }
+  return false;
+}
+
+/**
+ * Salt persistido em ScriptProperties (HANDOVER_PIN_SALT_V1).
+ * Cria salt apenas se ainda não existir e se não houver Pin_Hash na planilha
+ * (evita invalidar hashes após limpeza de propriedades ou deploy).
+ */
+function getHandoverPinSalt_() {
   var props = PropertiesService.getScriptProperties();
   var existing = props.getProperty(HANDOVER_AUTH_SALT_KEY);
   if (existing) {
     return existing;
+  }
+  if (usuariosHandoverHasAnyPinHash_()) {
+    Logger.log(
+      'getHandoverPinSalt_: salt_existe=NAO; ha Pin_Hash na aba Usuarios_Handover — nao sera criado salt novo. Restaure HANDOVER_PIN_SALT_V1 nas propriedades do script ou use resetPinUsuarioHandover_.'
+    );
+    return '';
   }
   var salt =
     Utilities.getUuid() +
@@ -247,7 +278,12 @@ function getOrCreateAuthSalt_() {
       Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(new Date().getTime()))
     );
   props.setProperty(HANDOVER_AUTH_SALT_KEY, salt);
+  Logger.log('getHandoverPinSalt_: salt criado e persistido (planilha sem Pin_Hash preexistente). salt_existe=SIM');
   return salt;
+}
+
+function getOrCreateAuthSalt_() {
+  return getHandoverPinSalt_();
 }
 
 function hashPin_(usuario, pin) {
@@ -256,7 +292,10 @@ function hashPin_(usuario, pin) {
   if (!u || !p) {
     return '';
   }
-  var salt = getOrCreateAuthSalt_();
+  var salt = getHandoverPinSalt_();
+  if (!salt) {
+    return '';
+  }
   var payload = salt + '|' + u + '|' + p;
   var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, payload, Utilities.Charset.UTF_8);
   return Utilities.base64EncodeWebSafe(digest);
@@ -272,7 +311,7 @@ function findUsuarioRowByUsername_(sheet, usuario) {
     return null;
   }
   var colUsuario = getColumnIndex_(sheet, 'Usuario');
-  var values = sheet.getRange(2, colUsuario, lastRow - 1, 1).getValues();
+  var values = sheet.getRange(2, colUsuario, lastRow, colUsuario).getValues();
   for (var i = 0; i < values.length; i++) {
     var cell = normalizeUsuarioHandover_(values[i][0]);
     if (cell === uname) {
@@ -285,7 +324,7 @@ function findUsuarioRowByUsername_(sheet, usuario) {
 function getUsuarioRecordByRow_(sheet, rowNumber) {
   var lastCol = Math.max(sheet.getLastColumn(), 1);
   var headerCells = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  var row = sheet.getRange(rowNumber, 1, 1, lastCol).getValues()[0];
+  var row = sheet.getRange(rowNumber, 1, rowNumber, lastCol).getValues()[0];
   var obj = rowCellsToObject_(headerCells, row);
   return obj;
 }
@@ -299,8 +338,11 @@ function isUsuarioAtivoPlanilha_(ativoVal) {
     return true;
   }
   var low = s.toLowerCase();
-  if (low === 'false' || low === 'nao' || low === 'não' || low === 'inativo' || low === 'no' || s === '0') {
+  if (low === 'falso' || low === 'false' || low === 'nao' || low === 'não' || low === 'inativo' || low === 'no' || s === '0') {
     return false;
+  }
+  if (low === 'verdadeiro') {
+    return true;
   }
   return (
     ativoVal === true ||
@@ -331,7 +373,11 @@ function validateUsuarioLogin_(usuario, pin) {
     return { ok: false, message: 'Usuário sem PIN configurado. Procure um administrador.' };
   }
   var candidate = hashPin_(usuario, pin);
-  if (candidate && candidate === expected) {
+  if (!candidate) {
+    Logger.log('validateUsuarioLogin_: hash candidato vazio (salt ausente?) u=' + normalizeUsuarioHandover_(usuario));
+    return { ok: false, message: 'Falha de configuração de autenticação. Contate o administrador.' };
+  }
+  if (candidate === expected) {
     return {
       ok: true,
       rowNumber: rowNumber,
@@ -341,8 +387,115 @@ function validateUsuarioLogin_(usuario, pin) {
       perfil: normalizePerfilHandover_(record.Perfil || 'operador'),
     };
   }
-  Logger.log('validateUsuarioLogin_: pin nao confere u=' + normalizeUsuarioHandover_(usuario));
+  var pinLen = String(String(pin || '').trim()).length;
+  var expPfx = expected.slice(0, 6);
+  var canPfx = candidate.slice(0, 6);
+  Logger.log(
+    'validateUsuarioLogin_: pin nao confere u=' +
+      normalizeUsuarioHandover_(usuario) +
+      ' pin_len=' +
+      pinLen +
+      ' hash_bateu=NAO exp_pfx=' +
+      expPfx +
+      ' cand_pfx=' +
+      canPfx
+  );
   return { ok: false, message: 'Usuário ou PIN inválido.' };
+}
+
+/**
+ * MANUAL / bootstrap administrativo — executar somente no editor Apps Script (não expor na UI).
+ * Atualiza apenas Pin_Hash; mantém Nome, Perfil, Ativo. PIN temporário só no Logger.
+ */
+function resetPinUsuarioHandover_(usuario) {
+  setupSpreadsheet();
+  var u = normalizeUsuarioHandover_(usuario);
+  if (!u) {
+    Logger.log('resetPinUsuarioHandover_: usuario vazio');
+    return;
+  }
+  if (!getHandoverPinSalt_()) {
+    Logger.log('resetPinUsuarioHandover_: impossivel — salt ausente e nao sera recriado automaticamente com Pin_Hash existente.');
+    return;
+  }
+  var sheet = ensureUsuariosHandoverSheet_();
+  var row = findUsuarioRowByUsername_(sheet, u);
+  if (!row) {
+    Logger.log('resetPinUsuarioHandover_: usuario nao encontrado u=' + u);
+    return;
+  }
+  var pin = String(Math.floor(100000 + Math.random() * 900000));
+  var h = hashPin_(u, pin);
+  if (!h) {
+    Logger.log('resetPinUsuarioHandover_: hash vazio u=' + u);
+    return;
+  }
+  var col = getColumnIndex_(sheet, 'Pin_Hash');
+  sheet.getRange(row, col).setValue(h);
+  var rec = getUsuarioRecordByRow_(sheet, row);
+  var nome = sanitizeText_(rec.Nome || rec.Usuario || '');
+  var perf = normalizePerfilHandover_(rec.Perfil || '');
+  var check = validateUsuarioLogin_(u, pin);
+  Logger.log(
+    'resetPinUsuarioHandover_: usuario=' +
+      u +
+      ' nome=' +
+      nome +
+      ' perfil=' +
+      perf +
+      ' pin_temp=' +
+      pin +
+      ' validacao_interna_pin_novo=' +
+      (check.ok ? 'OK' : 'FALHA')
+  );
+}
+
+/** MANUAL / bootstrap — somente editor Apps Script. Reseta PIN do usuario carlos. */
+function resetPinCarlosHandover_() {
+  resetPinUsuarioHandover_('carlos');
+}
+
+/** MANUAL — somente editor. Instruções; validação interna ocorre em resetPinCarlosHandover_. */
+function selfTestLoginCarlosHandover_() {
+  Logger.log(
+    'selfTestLoginCarlosHandover_: execute resetPinCarlosHandover_() no editor; o Log mostra pin_temp e validacao_interna_pin_novo=OK quando o fluxo de hash/salt esta consistente.'
+  );
+}
+
+/**
+ * MANUAL — somente editor Apps Script (Run). Diagnostico de hash sem gravar PIN na planilha.
+ * Nao loga o PIN; apenas comprimento e prefixos curtos de hash.
+ */
+function debugCheckPinUsuarioHandover_(usuario, pin) {
+  setupSpreadsheet();
+  var u = normalizeUsuarioHandover_(usuario);
+  var p = String(pin || '').trim();
+  if (!u || !p) {
+    Logger.log('debugCheckPinUsuarioHandover_: informe usuario e PIN na execucao (parametros da funcao).');
+    return;
+  }
+  var sheet = ensureUsuariosHandoverSheet_();
+  var row = findUsuarioRowByUsername_(sheet, u);
+  if (!row) {
+    Logger.log('debugCheckPinUsuarioHandover_: usuario nao encontrado u=' + u);
+    return;
+  }
+  var record = getUsuarioRecordByRow_(sheet, row);
+  var expected = String(record.Pin_Hash || '').trim();
+  var candidate = hashPin_(u, p);
+  var match = !!(candidate && expected && candidate === expected);
+  Logger.log(
+    'debugCheckPinUsuarioHandover_: u=' +
+      u +
+      ' pin_len=' +
+      p.length +
+      ' hash_bateu=' +
+      (match ? 'SIM' : 'NAO') +
+      ' exp_pfx=' +
+      (expected ? expected.slice(0, 6) : '') +
+      ' cand_pfx=' +
+      (candidate ? candidate.slice(0, 6) : '')
+  );
 }
 
 function criarSessaoHandover_(usuario, nome, perfil) {
@@ -612,7 +765,7 @@ function setupUsuariosHandover_() {
       Usuario: username,
       Pin_Hash: hashPin_(username, pin),
       Perfil: sanitizeText_(u.perfil || 'operador').toLowerCase(),
-      Ativo: true,
+      Ativo: 'TRUE',
       Criado_Em: now,
       Criado_Por: 'setupUsuariosHandover_',
       Ultimo_Login_Em: '',
