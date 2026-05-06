@@ -326,6 +326,9 @@ function computeStatusCompraMirrorFromMedicamento_(medItem, currentStatusCompra)
   if (cur === COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO) {
     return COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO;
   }
+  if (cur === COMPRAS_STATUS_COMPRA.COMPRADO || cur === COMPRAS_STATUS_COMPRA.CANCELADO) {
+    return cur;
+  }
   return COMPRAS_STATUS_COMPRA.PENDENTE;
 }
 
@@ -360,7 +363,13 @@ function buildComprasRowNamedValuesFromMedicamento_(medItem, existingStatusCompr
   };
 }
 
-function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId) {
+/**
+ * Espelha Medicamentos → Compras_Medicamentos por ID_Handover.
+ * @param {string} handoverId
+ * @param {{fromRevertToPending?: boolean}=} opt fromRevertToPending: após revertMedicationToPending no Handover (força Pendente de compra e limpa data/comprador).
+ */
+function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId, opt) {
+  opt = opt || {};
   var id = sanitizeText_(handoverId);
   if (!id) {
     return;
@@ -386,32 +395,50 @@ function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId) {
   if (existingRow && prevObj) {
     named.Observacao_Compra = sanitizeText_(prevObj.Observacao_Compra || '');
     named.Mensagem_Cliente = sanitizeText_(prevObj.Mensagem_Cliente || '');
-    if (normalizeComprasStatusCompraInput_(existingStatus) === COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO) {
-      named.Status_Compra = COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO;
-      if (!named.Mensagem_Cliente) {
-        named.Mensagem_Cliente = COMPRAS_MENSAGEM_CLIENTE_NAO_ENCONTRADO;
-      }
-    }
-    if (named.Status_Compra === COMPRAS_STATUS_COMPRA.COMPRADO) {
-      if (prevObj.Data_Compra) {
-        named.Data_Compra = prevObj.Data_Compra;
-      } else {
-        named.Data_Compra = new Date();
-      }
-      var cpp = sanitizeText_(prevObj.Comprado_Por || '');
-      if (cpp) {
-        named.Comprado_Por = cpp;
-      }
-    } else {
+
+    if (opt.fromRevertToPending) {
+      named.Status_Compra = COMPRAS_STATUS_COMPRA.PENDENTE;
+      named.Status_Handover = 'Pendente';
       named.Data_Compra = '';
       named.Comprado_Por = '';
+      named.Ultima_Atualizacao = new Date();
+    } else {
+      if (normalizeComprasStatusCompraInput_(existingStatus) === COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO) {
+        named.Status_Compra = COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO;
+        if (!named.Mensagem_Cliente) {
+          named.Mensagem_Cliente = COMPRAS_MENSAGEM_CLIENTE_NAO_ENCONTRADO;
+        }
+      }
+      if (named.Status_Compra === COMPRAS_STATUS_COMPRA.COMPRADO) {
+        if (prevObj.Data_Compra) {
+          named.Data_Compra = prevObj.Data_Compra;
+        } else {
+          named.Data_Compra = new Date();
+        }
+        var cpp = sanitizeText_(prevObj.Comprado_Por || '');
+        if (cpp) {
+          named.Comprado_Por = cpp;
+        }
+      } else {
+        if (prevObj.Data_Compra !== undefined && prevObj.Data_Compra !== null && prevObj.Data_Compra !== '') {
+          named.Data_Compra = prevObj.Data_Compra;
+        } else {
+          named.Data_Compra = '';
+        }
+        named.Comprado_Por = sanitizeText_(prevObj.Comprado_Por || '');
+      }
     }
     var rowVals = buildAppendRowValuesFromNamedMap_(cSheet, named);
     for (var i = 0; i < rowVals.length; i++) {
       cSheet.getRange(existingRow, i + 1).setValue(rowVals[i]);
     }
   } else {
-    if (named.Status_Compra === COMPRAS_STATUS_COMPRA.COMPRADO) {
+    if (opt.fromRevertToPending) {
+      named.Status_Compra = COMPRAS_STATUS_COMPRA.PENDENTE;
+      named.Status_Handover = 'Pendente';
+      named.Data_Compra = '';
+      named.Comprado_Por = '';
+    } else if (named.Status_Compra === COMPRAS_STATUS_COMPRA.COMPRADO) {
       named.Data_Compra = new Date();
     }
     cSheet.appendRow(buildAppendRowValuesFromNamedMap_(cSheet, named));
@@ -449,6 +476,7 @@ function sincronizarComprasMedicamentos_() {
 /**
  * Regra única Compras_Medicamentos → Medicamentos por ID_Handover (Parte 2).
  * Lê Status_Compra na linha de Compras; atualiza Medicamentos e colunas de apoio em Compras.
+ * Idempotente para disparo duplo (onEdit simples + trigger): repetir o mesmo estado não deve corromper dados.
  * MANUAL: pode ser executada no editor com um UUID válido.
  */
 function processarStatusCompraPorIdHandover_(idHandover) {
@@ -530,15 +558,6 @@ function processarStatusCompraPorIdHandover_(idHandover) {
   if (statusCompra === COMPRAS_STATUS_COMPRA.PENDENTE) {
     var medP = rowToObjectFromSheetRow_(sh, rn);
     normalizeItemForClient_(medP);
-    var curLow = sanitizeText_(medP.Status).toLowerCase();
-    if (curLow !== 'pendente') {
-      sh.getRange(rn, compradoCol).setValue(false);
-      sh.getRange(rn, entregueCol).setValue(false);
-      syncMedicationStatus_(sh, rn);
-      sh.getRange(rn, statusCol).setValue('Pendente');
-      medP = rowToObjectFromSheetRow_(sh, rn);
-      normalizeItemForClient_(medP);
-    }
     var finalP = sanitizeText_(medP.Status);
     cSheet.getRange(rCompras, colStatusH).setValue(finalP);
     cSheet.getRange(rCompras, colUltima).setValue(now);
@@ -548,7 +567,8 @@ function processarStatusCompraPorIdHandover_(idHandover) {
         ' Status_Compra_aplicado=' +
         COMPRAS_STATUS_COMPRA.PENDENTE +
         ' compras=SIM medicamentos=SIM status_final=' +
-        finalP
+        finalP +
+        ' (somente espelho Compras; nao altera Medicamentos)'
     );
     return { ok: true, statusFinal: finalP };
   }
@@ -1520,7 +1540,7 @@ function revertMedicationToPending(id, operador, motivo) {
 
   writeMedicationUltimaAcao_(sheet, rn, op);
   try {
-    mirrorComprasMedicamentosRowForMedicamentoId_(id);
+    mirrorComprasMedicamentosRowForMedicamentoId_(id, { fromRevertToPending: true });
   } catch (ce3) {
     Logger.log('revertMedicationToPending mirror compras: ' + ce3);
   }

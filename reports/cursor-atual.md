@@ -70,3 +70,21 @@ Regra: se o dado aparece no card de Medicamentos, ele deve ser encontrável pela
 
 - Criada: `aios/skills/handover-visual-only-guardrails/SKILL.md`
   - Motivo: evitar repetir o problema de **release visual-only contaminada** por lógica funcional (auto-refresh/polling/sync UI) herdada de commits mistos.
+
+---
+
+## Compras_Medicamentos — instruções pós-deploy (Codex / operação)
+
+Depois que o Codex publicar a versão com aba **Compras_Medicamentos** e triggers:
+
+1. Abrir o **Apps Script** do projeto Handover (mesmo script do Web App).
+2. Executar **`instalarTriggerComprasMedicamentos_()`** no editor.
+3. **Autorizar** permissões se o Google solicitar.
+4. Executar **`listarTriggersHandover_()`** e conferir no **Registro (Logger)** que existe gatilho com handler **`handleComprasMedicamentosEdit_`**.
+5. Abrir a planilha:  
+   https://docs.google.com/spreadsheets/d/1tHDX3I5yVx2UioNki695UIoNxHjXxpxCuKZwv2l7Dv8/edit  
+6. Na aba **Compras_Medicamentos**, editar **Status_Compra** e validar que **Medicamentos** atualiza conforme a regra (e que **Pendente de compra** na planilha não reverte comprado/entregue/cancelado no Handover).
+7. No Web App, clicar **Atualizar agora** para ver o painel:  
+   https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec  
+
+**Nota:** Se houver **onEdit** simples do projeto **e** trigger instalável no mesmo handler, uma edição pode disparar duas vezes; a lógica foi mantida idempotente onde possível.
