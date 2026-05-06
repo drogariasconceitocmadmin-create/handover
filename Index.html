@@ -52,10 +52,10 @@
 
       .page {
         min-width: 0;
-        max-width: min(100%, 1520px);
+        max-width: min(100%, 1560px);
         width: 100%;
         margin: 0 auto;
-        padding: 20px 18px 40px;
+        padding: 14px clamp(14px, 2vw, 22px) 32px;
       }
 
       .hidden {
@@ -77,44 +77,60 @@
         padding: 14px 18px;
       }
 
+      .ico-svg {
+        display: block;
+        flex-shrink: 0;
+        color: inherit;
+      }
+
+      .tab-ico {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .dropdown-dd-ico svg.ico-svg {
+        margin: auto;
+      }
+
       .app-header {
         display: flex;
         flex-wrap: wrap;
-        align-items: stretch;
+        align-items: center;
         justify-content: space-between;
-        gap: 16px 20px;
-        margin-bottom: 16px;
-        padding: 18px 22px;
-        border-radius: var(--radius);
+        gap: 10px 14px;
+        margin-bottom: 12px;
+        padding: 8px 14px;
+        border-radius: 14px;
         background: var(--surface);
         border: 1px solid var(--border);
-        box-shadow: var(--shadow-md);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 20px rgba(15, 23, 42, 0.05);
       }
 
       .app-header-left {
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: 10px;
         min-width: 0;
       }
 
       .brand-mark {
         font-weight: 800;
-        font-size: 17px;
+        font-size: 16px;
         letter-spacing: -0.03em;
         color: var(--text);
       }
 
       .brand-sep {
         width: 1px;
-        height: 36px;
+        height: 28px;
         background: var(--border);
         flex-shrink: 0;
       }
 
       .brand-product {
         font-weight: 800;
-        font-size: 20px;
+        font-size: 17px;
         letter-spacing: -0.03em;
         color: var(--brand-blue);
       }
@@ -123,38 +139,39 @@
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 10px 12px;
+        gap: 8px 10px;
         justify-content: flex-end;
       }
 
       .header-pill {
         display: flex;
         flex-direction: column;
-        gap: 2px;
-        padding: 8px 12px;
-        border-radius: var(--radius-sm);
+        gap: 1px;
+        padding: 5px 10px;
+        border-radius: 11px;
         border: 1px solid var(--border);
         background: #fafcfe;
-        min-height: 48px;
+        min-height: 0;
         justify-content: center;
       }
 
       .header-pill-label {
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.06em;
         color: var(--muted);
       }
 
       .header-pill-value {
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 650;
         color: var(--text);
+        line-height: 1.25;
       }
 
       .sync-state-pill {
-        min-width: 138px;
+        min-width: 124px;
       }
 
       .sync-state-pill .header-pill-value {
@@ -177,12 +194,12 @@
       }
 
       .operador-avatar {
-        width: 36px;
-        height: 36px;
+        width: 30px;
+        height: 30px;
         border-radius: 999px;
         background: linear-gradient(145deg, var(--brand-blue-2), var(--brand-blue));
         color: #fff;
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 800;
         display: flex;
         align-items: center;
@@ -197,10 +214,10 @@
       .operador-pill input[type='text'] {
         border: 0;
         background: transparent;
-        padding: 4px 0;
-        min-width: 140px;
+        padding: 2px 0;
+        min-width: 120px;
         font-weight: 600;
-        font-size: 13px;
+        font-size: 12px;
       }
 
       .operador-pill input[type='text']:focus {
@@ -211,17 +228,17 @@
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 8px;
+        gap: 7px;
       }
 
       .btn-header-secondary {
         border: 1px solid var(--border) !important;
         background: #fff !important;
         color: var(--brand-blue) !important;
-        border-radius: var(--radius-sm) !important;
-        padding: 10px 14px !important;
+        border-radius: 11px !important;
+        padding: 8px 12px !important;
         font-weight: 700 !important;
-        font-size: 13px !important;
+        font-size: 12px !important;
         box-shadow: var(--shadow-sm);
       }
 
@@ -231,13 +248,13 @@
 
       .btn-primary-header {
         border: 0;
-        border-radius: var(--radius-sm);
+        border-radius: 11px;
         background: linear-gradient(180deg, var(--brand-blue-2) 0%, var(--brand-blue) 100%);
         color: #fff;
         cursor: pointer;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 800;
-        padding: 10px 18px;
+        padding: 8px 14px;
         box-shadow: 0 4px 14px rgba(0, 75, 199, 0.35);
       }
 
@@ -287,9 +304,14 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 18px;
         background: rgba(0, 75, 199, 0.1);
         flex-shrink: 0;
+        color: var(--brand-blue);
+      }
+
+      .dropdown-dd-ico .ico-svg {
+        width: 20px;
+        height: 20px;
       }
 
       .dropdown-dd-item + .dropdown-dd-item {
@@ -316,18 +338,18 @@
       .summary-strip {
         display: grid;
         grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 12px;
-        margin-bottom: 14px;
+        gap: 10px;
+        margin-bottom: 12px;
       }
 
       .kpi-card {
         display: flex;
         align-items: flex-start;
-        gap: 12px;
+        gap: 10px;
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: var(--radius);
-        padding: 14px 16px;
+        padding: 11px 13px;
         box-shadow: var(--shadow-md);
         transition: box-shadow 0.18s ease, transform 0.18s ease;
         min-width: 0;
@@ -339,14 +361,18 @@
       }
 
       .kpi-ico {
-        width: 42px;
-        height: 42px;
+        width: 38px;
+        height: 38px;
         border-radius: 999px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 18px;
         flex-shrink: 0;
+      }
+
+      .kpi-ico .ico-svg {
+        width: 20px;
+        height: 20px;
       }
 
       .kpi-card.kpi-blue .kpi-ico {
@@ -383,76 +409,79 @@
       }
 
       .kpi-card .value {
-        font-size: 26px;
+        font-size: 23px;
         font-weight: 800;
         letter-spacing: -0.03em;
         line-height: 1.15;
-        margin-top: 4px;
+        margin-top: 2px;
         color: var(--text);
       }
 
       .kpi-card .sub {
-        font-size: 12px;
+        font-size: 11px;
         color: var(--muted);
-        margin-top: 4px;
+        margin-top: 2px;
       }
 
       .tabs-premium {
         display: flex;
         flex-wrap: wrap;
-        gap: 4px;
-        padding: 6px 8px 0;
-        margin-bottom: 14px;
+        gap: 2px;
+        padding: 4px 6px 0;
+        margin-bottom: 12px;
         border-radius: var(--radius);
         border: 1px solid var(--border);
         background: var(--surface);
-        box-shadow: var(--shadow-md);
+        box-shadow: var(--shadow-sm);
       }
 
-      .tab-ico {
-        font-size: 15px;
-        line-height: 1;
-        opacity: 0.75;
+      .tab-ico .ico-svg {
+        width: 17px;
+        height: 17px;
+        opacity: 0.72;
       }
 
-      .main-tab.active .tab-ico {
+      .main-tab.active .tab-ico .ico-svg {
         opacity: 1;
+        color: var(--brand-blue);
       }
 
       .main-tab {
         position: relative;
         border: 0;
-        border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+        border-radius: 12px 12px 0 0;
+        border-bottom: 2px solid transparent;
         background: transparent;
         color: var(--muted);
         cursor: pointer;
         font-size: 13px;
-        font-weight: 650;
-        padding: 12px 14px 14px;
+        font-weight: 600;
+        padding: 10px 12px 10px;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        transition: color 0.15s ease, background 0.15s ease;
+        gap: 7px;
+        transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
       }
 
       .main-tab:hover {
         color: var(--brand-blue);
-        background: rgba(0, 75, 199, 0.04);
+        background: rgba(0, 75, 199, 0.035);
       }
 
       .main-tab.active {
         color: var(--brand-blue);
-        background: rgba(0, 75, 199, 0.06);
-        box-shadow: inset 0 -3px 0 var(--brand-blue-2);
+        background: rgba(0, 75, 199, 0.055);
+        box-shadow: none;
+        border-bottom-color: rgba(0, 87, 255, 0.55);
       }
 
       .tab-badge {
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 800;
-        min-width: 22px;
-        padding: 2px 7px;
+        min-width: 21px;
+        padding: 2px 6px;
         border-radius: 999px;
-        background: rgba(0, 75, 199, 0.12);
+        background: rgba(0, 75, 199, 0.1);
         color: var(--brand-blue);
       }
 
@@ -518,16 +547,17 @@
       .sidebar-card {
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 16px;
-        box-shadow: var(--shadow-md);
+        border-radius: var(--radius-sm);
+        padding: 12px 14px;
+        box-shadow: var(--shadow-sm);
       }
 
       .sidebar-card h3 {
         margin: 0 0 10px;
-        font-size: 15px;
+        font-size: 13px;
         font-weight: 800;
         letter-spacing: -0.02em;
+        color: var(--text);
       }
 
       .sidebar-stat-grid {
@@ -547,9 +577,9 @@
       }
 
       .sidebar-progress {
-        height: 8px;
+        height: 9px;
         border-radius: 999px;
-        background: #e8eef8;
+        background: linear-gradient(90deg, #e8eef8, #eef2f8);
         overflow: hidden;
         margin-bottom: 12px;
       }
@@ -559,6 +589,7 @@
         height: 100%;
         border-radius: inherit;
         background: linear-gradient(90deg, var(--brand-blue), var(--brand-blue-2));
+        box-shadow: 0 0 12px rgba(0, 87, 255, 0.25);
       }
 
       .sidebar-hist-list {
@@ -577,9 +608,10 @@
         padding: 10px;
         border-radius: var(--radius-sm);
         border: 1px solid var(--border);
-        background: #fafcfe;
+        background: linear-gradient(180deg, #ffffff 0%, #fafcfe 100%);
         font-size: 12px;
         position: relative;
+        box-shadow: var(--shadow-sm);
       }
 
       .sidebar-hist-item-main strong {
@@ -591,16 +623,20 @@
       .sidebar-card .btn-sidebar {
         width: 100%;
         border-radius: var(--radius-sm);
-        padding: 10px;
+        padding: 9px 12px;
         font-weight: 700;
+        font-size: 12px;
+        letter-spacing: 0.02em;
         border: 1px solid var(--border);
-        background: #fff;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
         color: var(--brand-blue);
         cursor: pointer;
+        box-shadow: var(--shadow-sm);
       }
 
       .sidebar-card .btn-sidebar:hover {
         background: rgba(0, 75, 199, 0.06);
+        border-color: #cdd8ea;
       }
 
       .main-tab-panel {
@@ -704,8 +740,17 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 13px;
         flex-shrink: 0;
+      }
+
+      .card-menu-ico .ico-svg {
+        width: 15px;
+        height: 15px;
+        color: var(--brand-blue);
+      }
+
+      .card-more-menu button:disabled .card-menu-ico {
+        opacity: 0.55;
       }
 
       .card-detail-body {
@@ -1040,8 +1085,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 18px;
         flex-shrink: 0;
+        color: var(--brand-blue);
+      }
+
+      .audit-drawer-summary .ads-ico .ico-svg {
+        width: 22px;
+        height: 22px;
       }
 
       .audit-drawer-summary .ads-lines {
@@ -1337,15 +1387,18 @@
         background: #fff;
         color: var(--text);
         cursor: pointer;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
-        padding: 8px 12px;
+        padding: 6px 11px;
+        letter-spacing: 0.02em;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
       }
 
       .filter-button.active {
-        background: var(--chip);
-        border-color: #99a5d8;
-        color: #1e3a8a;
+        background: rgba(0, 75, 199, 0.09);
+        border-color: rgba(0, 87, 255, 0.35);
+        color: var(--brand-blue);
+        box-shadow: inset 0 -1px 0 rgba(0, 87, 255, 0.2);
       }
 
       #historico-filters-panel {
@@ -1518,9 +1571,10 @@
         border-radius: 999px;
         background: var(--chip);
         color: #1e3a8a;
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 700;
-        padding: 4px 8px;
+        padding: 3px 8px;
+        border: 1px solid rgba(0, 75, 199, 0.12);
       }
 
       .badge.status-pendente {
@@ -1546,7 +1600,7 @@
 
       .queue-list {
         display: grid;
-        gap: 12px;
+        gap: 10px;
       }
 
       .queue-card {
@@ -1610,15 +1664,15 @@
       .qk-card-main {
         flex: 1;
         min-width: 0;
-        padding: 14px 14px 12px;
+        padding: 10px 12px 10px;
       }
 
       .qk-top {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        gap: 10px;
-        margin-bottom: 10px;
+        gap: 8px;
+        margin-bottom: 6px;
       }
 
       .qk-badges {
@@ -1651,7 +1705,7 @@
       }
 
       .qk-title {
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 800;
         letter-spacing: -0.02em;
         color: var(--text);
@@ -1659,21 +1713,21 @@
       }
 
       .qk-desc {
-        margin-top: 6px;
-        font-size: 13px;
+        margin-top: 4px;
+        font-size: 12px;
         color: var(--muted);
-        line-height: 1.45;
+        line-height: 1.42;
       }
 
       .qk-meta {
-        margin: 12px 0 0;
-        padding: 10px 12px;
+        margin: 8px 0 0;
+        padding: 8px 10px;
         border-radius: var(--radius-sm);
         background: #f8fafc;
         border: 1px solid #eef2f8;
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 8px 14px;
+        grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+        gap: 6px 12px;
       }
 
       .qk-meta-row {
@@ -1700,19 +1754,19 @@
       .qk-actions {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 6px;
         justify-content: flex-end;
         align-items: center;
-        margin-top: 14px;
-        padding-top: 12px;
+        margin-top: 10px;
+        padding-top: 8px;
         border-top: 1px solid #eef2f8;
       }
 
       .qk-actions button {
         margin: 0;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
-        padding: 8px 13px;
+        padding: 7px 12px;
         border-radius: var(--radius-sm);
       }
 
@@ -1800,6 +1854,36 @@
         gap: 8px;
         align-items: center;
         margin-bottom: 8px;
+        flex-wrap: wrap;
+      }
+
+      .checklist-top .checklist-turn-field {
+        margin-bottom: 0;
+      }
+
+      .checklist-top .checklist-turn-field label {
+        font-size: 11px;
+      }
+
+      .checklist-top .checklist-turn-field select {
+        padding: 7px 10px;
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+      }
+
+      .checklist-top #checklist-toggle-btn.light {
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-sm) !important;
+        background: linear-gradient(180deg, #fff, #f8fafc) !important;
+        color: var(--brand-blue) !important;
+        font-weight: 750 !important;
+        font-size: 12px !important;
+        padding: 8px 14px !important;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .checklist-top #checklist-toggle-btn.light:hover {
+        background: rgba(0, 75, 199, 0.06) !important;
       }
 
       .checklist-summary {
@@ -1829,17 +1913,25 @@
         margin: 4px 0 8px;
       }
 
+      .checklist-shell.card {
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        box-shadow: var(--shadow-md);
+      }
+
       .checklist-categories {
         display: grid;
-        gap: 8px;
+        gap: 10px;
       }
 
       .checklist-category {
         min-width: 0;
         max-width: 100%;
         border: 1px solid var(--border);
-        border-radius: 10px;
-        background: #fff;
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
       }
 
       .checklist-category-head {
@@ -1849,16 +1941,17 @@
         align-items: center;
         width: 100%;
         border: 0;
-        border-radius: 10px 10px 0 0;
-        background: #f8fafc;
+        border-radius: 0;
+        background: linear-gradient(180deg, #fbfcfe 0%, #f1f5f9 100%);
         color: var(--text);
-        font-size: 12px;
+        font-size: 13px;
+        font-weight: 750;
         text-align: left;
-        padding: 8px 10px;
+        padding: 10px 12px;
       }
 
       .checklist-category-head:hover {
-        background: #f1f5f9;
+        background: linear-gradient(180deg, #f8fafc 0%, #e8eef5 100%);
       }
 
       .checklist-category-meta {
@@ -1868,16 +1961,17 @@
       }
 
       .checklist-items {
-        padding: 8px;
+        padding: 10px;
         display: grid;
-        gap: 7px;
+        gap: 8px;
       }
 
       .check-item {
         border: 1px solid var(--border);
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         background: #fff;
-        padding: 8px;
+        padding: 10px 12px;
+        box-shadow: var(--shadow-sm);
       }
 
       .check-item.late {
@@ -1905,49 +1999,93 @@
       .check-actions {
         display: flex;
         flex-wrap: wrap;
-        gap: 5px;
-        margin-top: 6px;
+        gap: 6px;
+        margin-top: 8px;
       }
 
       .check-actions button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
         font-size: 11px;
-        padding: 6px 8px;
+        font-weight: 750;
+        padding: 7px 11px;
+        border-radius: var(--radius-sm);
+      }
+
+      .check-actions button:not(.light):not(.secondary) {
+        border: 1px solid rgba(22, 163, 74, 0.35);
+        background: #fff;
+        color: var(--success);
+      }
+
+      .check-actions button:not(.light):not(.secondary):hover {
+        background: rgba(22, 163, 74, 0.06);
+      }
+
+      .check-actions button.secondary {
+        border: 1px solid var(--border) !important;
+        background: #fff !important;
+        color: var(--muted) !important;
+      }
+
+      .check-actions button.light {
+        border: 1px solid var(--border) !important;
+        background: #f8fafc !important;
+        color: var(--text) !important;
       }
 
       .check-actions button.active {
-        outline: 2px solid rgba(37, 99, 235, 0.35);
+        outline: 0;
+        box-shadow: 0 0 0 2px rgba(0, 87, 255, 0.2);
+      }
+
+      .check-actions button:not(.light):not(.secondary).active {
+        border-color: transparent;
+        background: linear-gradient(180deg, #22c55e, var(--success));
+        color: #fff;
+      }
+
+      .check-actions button.secondary.active {
+        border-color: transparent !important;
+        background: linear-gradient(180deg, #94a3b8, #64748b) !important;
+        color: #fff !important;
+      }
+
+      .chk-ico .ico-svg {
+        flex-shrink: 0;
       }
 
       .obs-bar {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-top: 6px;
+        margin-top: 8px;
         gap: 8px;
-      }
-
-      .obs-flag {
-        color: #0f766e;
-        font-size: 11px;
-        font-weight: 700;
       }
 
       .obs-panel {
         display: flex;
         flex-direction: column;
-        gap: 6px;
-        margin-top: 6px;
+        gap: 8px;
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: var(--radius-sm);
+        background: #fafcfe;
+        border: 1px solid #e8eef5;
       }
 
       .obs-panel textarea,
       .obs-panel input {
         border: 1px solid var(--border);
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         font: inherit;
         font-size: 12px;
-        padding: 8px;
+        padding: 8px 10px;
         width: 100%;
         box-sizing: border-box;
+        background: #fff;
       }
 
       .obs-panel textarea {
@@ -2253,14 +2391,14 @@
               </button>
               <div id="novo-registro-menu" class="dropdown-panel hidden" role="menu">
                 <button type="button" class="dropdown-dd-item" role="menuitem" onclick="openNovoRegistroPendencia_()">
-                  <span class="dropdown-dd-ico" aria-hidden="true">📋</span>
+                  <span class="dropdown-dd-ico" aria-hidden="true"><svg class="ico-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></span>
                   <span>
                     <strong>Pendência da loja</strong>
                     <span class="dropdown-help">Registrar uma tarefa ou pendência</span>
                   </span>
                 </button>
                 <button type="button" class="dropdown-dd-item" role="menuitem" onclick="openNovoRegistroMedicamento_()">
-                  <span class="dropdown-dd-ico" aria-hidden="true">💊</span>
+                  <span class="dropdown-dd-ico" aria-hidden="true"><svg class="ico-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><rect x="5.5" y="9.5" width="13" height="5" rx="2.5" transform="rotate(-45 12 12)"/></svg></span>
                   <span>
                     <strong>Medicamento solicitado</strong>
                     <span class="dropdown-help">Registrar uma solicitação de medicamento</span>
@@ -2276,22 +2414,22 @@
 
       <nav class="main-tabs tabs-premium" aria-label="Áreas principais">
         <button type="button" class="main-tab active" data-main-tab="pendencias">
-          <span class="tab-ico" aria-hidden="true">📋</span>
+          <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></span>
           <span>Pendências</span>
           <span class="tab-badge" id="tab-badge-pendencias">0</span>
         </button>
         <button type="button" class="main-tab" data-main-tab="medicamentos">
-          <span class="tab-ico" aria-hidden="true">💊</span>
+          <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><rect x="5.5" y="9.5" width="13" height="5" rx="2.5" transform="rotate(-45 12 12)"/></svg></span>
           <span>Medicamentos</span>
           <span class="tab-badge" id="tab-badge-medicamentos">0</span>
         </button>
         <button type="button" class="main-tab" data-main-tab="checklist">
-          <span class="tab-ico" aria-hidden="true">✓</span>
+          <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M20 6 9 17l-5-5"/></svg></span>
           <span>Checklist</span>
           <span class="tab-badge tab-badge-green" id="tab-badge-checklist">0</span>
         </button>
         <button type="button" class="main-tab" data-main-tab="historico">
-          <span class="tab-ico" aria-hidden="true">🕘</span>
+          <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
           <span>Histórico</span>
           <span class="tab-badge tab-badge-muted" id="tab-badge-historico">–</span>
         </button>
@@ -4210,15 +4348,15 @@
         };
 
         summaryContainer.innerHTML = [
-          buildSummaryCard_('pendencias', 'Pendências', String(pendenciasCount), 'Solicitações gerais', 'kpi-blue', '📋'),
-          buildSummaryCard_('urgentes', 'Urgentes', String(urgentesCount), 'Prioridade na loja', 'kpi-red', '!'),
+          buildSummaryCard_('pendencias', 'Pendências', String(pendenciasCount), 'Solicitações gerais', 'kpi-blue', 'clipboard'),
+          buildSummaryCard_('urgentes', 'Urgentes', String(urgentesCount), 'Prioridade na loja', 'kpi-red', 'bang'),
           buildSummaryCard_(
             'medicamentos',
             'Medicamentos solicitados',
             String(medicationPending.length),
             'Faltas e encomendas',
             'kpi-green',
-            '💊'
+            'pill'
           ),
           buildSummaryCard_(
             'sem_aviso',
@@ -4226,7 +4364,7 @@
             String(boughtWithoutWhatsapp.length),
             'WhatsApp pendente',
             'kpi-orange',
-            '📣'
+            'bell'
           ),
           buildSummaryCard_(
             'checklist',
@@ -4234,12 +4372,12 @@
             String(checklistSummaryData.itensPendentes),
             'Itens do turno',
             'kpi-cl',
-            '✓'
+            'check'
           ),
         ].join('');
       }
 
-      function buildSummaryCard_(kind, label, value, sub, kpiClass, iconChar) {
+      function buildSummaryCard_(kind, label, value, sub, kpiClass, iconKind) {
         return (
           '<div class="summary-box-click kpi-card ' +
           escapeAttribute(kpiClass) +
@@ -4247,7 +4385,7 @@
           escapeAttribute(kind) +
           '">' +
           '<div class="kpi-ico" aria-hidden="true">' +
-          escapeHtml(iconChar) +
+          iconSvg_(iconKind, 20) +
           '</div>' +
           '<div class="kpi-body">' +
           '<div class="label">' +
@@ -4903,7 +5041,7 @@
             : raw.Medicamento || 'Medicamento';
         var tipo = historicoTipoLinha_(raw);
         var estado = raw.Estado_Arquivo || raw.Status || '-';
-        var ico = String(raw.Origem || '') === 'Geral' ? '📋' : '💊';
+        var auditHeadSvg = iconSvg_(String(raw.Origem || '') === 'Geral' ? 'clipboard' : 'pill', 22);
 
         var headLines =
           '<strong>' +
@@ -5023,7 +5161,7 @@
           '<div class="audit-drawer-summary">' +
           '<div class="ads-head">' +
           '<div class="ads-ico" aria-hidden="true">' +
-          ico +
+          auditHeadSvg +
           '</div>' +
           '<div class="ads-lines">' +
           headLines +
@@ -5512,7 +5650,7 @@
 
         var descExtra =
           item.histResumoExtra && item.type === 'historico'
-            ? '<div class="qk-desc" style="margin-top:4px;font-size:11px;color:var(--muted);">' +
+            ? '<div class="qk-desc" style="margin-top:4px;font-size:12px;color:var(--muted);">' +
               escapeHtml(item.histResumoExtra) +
               '</div>'
             : '';
@@ -5597,13 +5735,19 @@
           '<div class="card-more-menu hidden" role="menu">' +
           '<button type="button" onclick="openHistoricoDetailById_(\'' +
           escapeJsSingleQuoted_(item.id) +
-          '\')"><span class="card-menu-ico" aria-hidden="true">👁</span>Ver detalhes</button>' +
+          '\')"><span class="card-menu-ico" aria-hidden="true">' +
+          iconSvg_('eye', 15) +
+          '</span>Ver detalhes</button>' +
           '<button type="button" onclick="cardMoreVerTrilha_(\'' +
           escapeJsSingleQuoted_(item.id) +
-          '\')"><span class="card-menu-ico" aria-hidden="true">📑</span>Ver trilha de auditoria</button>' +
+          '\')"><span class="card-menu-ico" aria-hidden="true">' +
+          iconSvg_('layers', 15) +
+          '</span>Ver trilha de auditoria</button>' +
           '<button type="button" onclick="cardMoreCopiarHistorico_(\'' +
           escapeJsSingleQuoted_(item.id) +
-          '\')"><span class="card-menu-ico" aria-hidden="true">⎘</span>Copiar informações</button>' +
+          '\')"><span class="card-menu-ico" aria-hidden="true">' +
+          iconSvg_('copy', 15) +
+          '</span>Copiar informações</button>' +
           '</div>' +
           '</div>' +
           '</div>' +
@@ -5820,11 +5964,17 @@
           '<div class="card-more-menu hidden" role="menu">' +
           '<button type="button" onclick="cardMoreVerDetalhes_(\'' +
           escapeJsSingleQuoted_(item.id) +
-          '\')"><span class="card-menu-ico" aria-hidden="true">👁</span>Ver detalhes</button>' +
-          '<button type="button" disabled title="A trilha completa fica na aba Histórico (arquivo)."><span class="card-menu-ico" aria-hidden="true">⏱</span>Ver trilha de auditoria</button>' +
+          '\')"><span class="card-menu-ico" aria-hidden="true">' +
+          iconSvg_('eye', 15) +
+          '</span>Ver detalhes</button>' +
+          '<button type="button" disabled title="A trilha completa fica na aba Histórico (arquivo)."><span class="card-menu-ico" aria-hidden="true">' +
+          iconSvg_('clock', 15) +
+          '</span>Ver trilha de auditoria</button>' +
           '<button type="button" onclick="cardMoreCopiar_(\'' +
           escapeJsSingleQuoted_(item.id) +
-          '\')"><span class="card-menu-ico" aria-hidden="true">⎘</span>Copiar informações</button>' +
+          '\')"><span class="card-menu-ico" aria-hidden="true">' +
+          iconSvg_('copy', 15) +
+          '</span>Copiar informações</button>' +
           '</div>' +
           '</div>' +
           '</div>' +
@@ -6646,14 +6796,13 @@
           (statusNow === 'Feito' || statusNow === 'Não aplicável') && !isActive ? ' correction' : '';
         var statusClass = (className ? ' ' + className : '') + correction;
         var activeClass = isActive ? ' active' : '';
-        var label = statusLabel;
-        if (statusLabel === 'Feito' && isActive) {
-          label = 'Feito ✓';
+        var shortLabel = statusLabel === 'Não aplicável' && !isActive ? 'N/A' : statusLabel;
+        var innerIco = '';
+        if (isActive && statusLabel === 'Feito') {
+          innerIco = '<span class="chk-ico" aria-hidden="true">' + iconSvg_('check', 13) + '</span>';
+        } else if (isActive && statusLabel === 'Não aplicável') {
+          innerIco = '<span class="chk-ico" aria-hidden="true">' + iconSvg_('minus', 13) + '</span>';
         }
-        if (statusLabel === 'Não aplicável' && isActive) {
-          label = 'N/A ✓';
-        }
-        var shortLabel = statusLabel === 'Não aplicável' && !isActive ? 'N/A' : label;
         var savingAttr =
           checklistDraftKey_(checklistPendingItemId) === checklistDraftKey_(itemId) ? ' disabled' : '';
         return (
@@ -6670,8 +6819,10 @@
           "', '" +
           escapeAttribute(statusLabel) +
           "')\">" +
+          innerIco +
+          '<span class="chk-lbl">' +
           escapeHtml(shortLabel) +
-          '</button>'
+          '</span></button>'
         );
       }
 
@@ -7724,6 +7875,62 @@
         const date = new Date(value + 'T00:00:00');
         if (Number.isNaN(date.getTime())) return String(value);
         return date.toLocaleDateString('pt-BR');
+      }
+
+      function iconSvg_(kind, size) {
+        var wh = size == null ? 18 : size;
+        var a =
+          ' xmlns="http://www.w3.org/2000/svg" class="ico-svg" width="' +
+          wh +
+          '" height="' +
+          wh +
+          '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+        switch (kind) {
+          case 'clipboard':
+            return (
+              '<svg' +
+              a +
+              '><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>'
+            );
+          case 'pill':
+            return (
+              '<svg' + a + '><rect x="5.5" y="9.5" width="13" height="5" rx="2.5" transform="rotate(-45 12 12)"/></svg>'
+            );
+          case 'check':
+            return '<svg' + a + '><path d="M20 6 9 17l-5-5"/></svg>';
+          case 'clock':
+            return '<svg' + a + '><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
+          case 'bang':
+            return '<svg' + a + '><circle cx="12" cy="12" r="10"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>';
+          case 'bell':
+            return (
+              '<svg' +
+              a +
+              '><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>'
+            );
+          case 'eye':
+            return (
+              '<svg' +
+              a +
+              '><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="3"/></svg>'
+            );
+          case 'layers':
+            return (
+              '<svg' +
+              a +
+              '><path d="m12.83 2.18 8 3.63a1 1 0 0 1 0 1.82l-8 3.63a2 2 0 0 1-1.66 0l-8-3.63a1 1 0 0 1 0-1.82l8-3.63a2 2 0 0 1 1.66 0Z"/><path d="M2 11.82 12 16l10-4.18"/><path d="M2 17 12 21l10-4"/></svg>'
+            );
+          case 'copy':
+            return (
+              '<svg' +
+              a +
+              '><rect width="13" height="13" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h9a2 2 0 0 1 2 2"/></svg>'
+            );
+          case 'minus':
+            return '<svg' + a + '><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>';
+          default:
+            return '';
+        }
       }
 
       function escapeHtml(value) {
