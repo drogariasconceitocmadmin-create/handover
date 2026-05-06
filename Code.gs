@@ -447,39 +447,187 @@ function sincronizarComprasMedicamentos_() {
 }
 
 /**
- * Parte 1: diagnóstico por ID_Handover — localiza Compras e Medicamentos; não aplica regra de status.
- * MANUAL: pode ser executada no editor com um UUID de teste.
+ * Regra única Compras_Medicamentos → Medicamentos por ID_Handover (Parte 2).
+ * Lê Status_Compra na linha de Compras; atualiza Medicamentos e colunas de apoio em Compras.
+ * MANUAL: pode ser executada no editor com um UUID válido.
  */
 function processarStatusCompraPorIdHandover_(idHandover) {
   var id = sanitizeText_(idHandover);
   if (!id) {
     Logger.log('processarStatusCompraPorIdHandover_: id vazio');
-    return;
+    return { ok: false, reason: 'id_vazio' };
   }
   setupSpreadsheet();
+  var now = new Date();
   var cSheet = getComprasMedicamentosSheet_();
   var rCompras = findComprasRowByHandoverId_(cSheet, id);
-  var stCompra = '';
-  if (rCompras) {
-    var oC = rowToObjectFromSheetRow_(cSheet, rCompras);
-    stCompra = String(oC.Status_Compra != null ? oC.Status_Compra : '').trim();
-  }
   var medLoc = findRowById_(SHEET_NAMES.MEDICAMENTOS, id);
-  Logger.log(
-    'processarStatusCompraPorIdHandover_: id=' +
-      id +
-      ' compras_encontrado=' +
-      (rCompras ? 'SIM' : 'NAO') +
-      ' Status_Compra=' +
-      stCompra +
-      ' medicamentos_encontrado=' +
-      (medLoc ? 'SIM' : 'NAO')
-  );
+
+  if (!rCompras) {
+    Logger.log(
+      'processarStatusCompraPorIdHandover_: id=' +
+        id +
+        ' compras_encontrado=NAO medicamentos_encontrado=' +
+        (medLoc ? 'SIM' : 'NAO') +
+        ' abort=compras_linha'
+    );
+    return { ok: false, reason: 'compras_linha' };
+  }
+  if (!medLoc) {
+    var oCx = rowToObjectFromSheetRow_(cSheet, rCompras);
+    Logger.log(
+      'processarStatusCompraPorIdHandover_: id=' +
+        id +
+        ' compras_encontrado=SIM medicamentos_encontrado=NAO Status_Compra=' +
+        normalizeComprasStatusCompraInput_(oCx.Status_Compra) +
+        ' abort=med_linha'
+    );
+    return { ok: false, reason: 'medicamento' };
+  }
+
+  var oCompras = rowToObjectFromSheetRow_(cSheet, rCompras);
+  var statusCompra = normalizeComprasStatusCompraInput_(oCompras.Status_Compra);
+  var known =
+    statusCompra === COMPRAS_STATUS_COMPRA.PENDENTE ||
+    statusCompra === COMPRAS_STATUS_COMPRA.COMPRADO ||
+    statusCompra === COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO ||
+    statusCompra === COMPRAS_STATUS_COMPRA.CANCELADO;
+  if (!known) {
+    Logger.log(
+      'processarStatusCompraPorIdHandover_: id=' +
+        id +
+        ' compras=SIM medicamentos=SIM Status_Compra_invalido=' +
+        String(oCompras.Status_Compra || '').trim()
+    );
+    return { ok: false, reason: 'status_invalido' };
+  }
+
+  var sh = medLoc.sheet;
+  var rn = medLoc.rowNumber;
+  var compradoCol = getColumnIndex_(sh, 'Comprado');
+  var entregueCol = getColumnIndex_(sh, 'Entregue');
+  var statusCol = getColumnIndex_(sh, 'Status');
+  var colUltima = getColumnIndex_(cSheet, 'Ultima_Atualizacao');
+  var colStatusH = getColumnIndex_(cSheet, 'Status_Handover');
+  var colMsg = getColumnIndex_(cSheet, 'Mensagem_Cliente');
+  var colDataCompra = getColumnIndex_(cSheet, 'Data_Compra');
+  var colCompradoPor = getColumnIndex_(cSheet, 'Comprado_Por');
+
+  var med0 = rowToObjectFromSheetRow_(sh, rn);
+  normalizeItemForClient_(med0);
+  var medLow0 = sanitizeText_(med0.Status).toLowerCase();
+  if (medLow0 === 'cancelado' && statusCompra !== COMPRAS_STATUS_COMPRA.CANCELADO) {
+    Logger.log(
+      'processarStatusCompraPorIdHandover_: id=' +
+        id +
+        ' Status_Compra=' +
+        statusCompra +
+        ' compras=SIM medicamentos=SIM abort=item_ja_cancelado'
+    );
+    return { ok: false, reason: 'ja_cancelado' };
+  }
+
+  if (statusCompra === COMPRAS_STATUS_COMPRA.PENDENTE) {
+    var medP = rowToObjectFromSheetRow_(sh, rn);
+    normalizeItemForClient_(medP);
+    var curLow = sanitizeText_(medP.Status).toLowerCase();
+    if (curLow !== 'pendente') {
+      sh.getRange(rn, compradoCol).setValue(false);
+      sh.getRange(rn, entregueCol).setValue(false);
+      syncMedicationStatus_(sh, rn);
+      sh.getRange(rn, statusCol).setValue('Pendente');
+      medP = rowToObjectFromSheetRow_(sh, rn);
+      normalizeItemForClient_(medP);
+    }
+    var finalP = sanitizeText_(medP.Status);
+    cSheet.getRange(rCompras, colStatusH).setValue(finalP);
+    cSheet.getRange(rCompras, colUltima).setValue(now);
+    Logger.log(
+      'processarStatusCompraPorIdHandover_: id=' +
+        id +
+        ' Status_Compra_aplicado=' +
+        COMPRAS_STATUS_COMPRA.PENDENTE +
+        ' compras=SIM medicamentos=SIM status_final=' +
+        finalP
+    );
+    return { ok: true, statusFinal: finalP };
+  }
+
+  if (statusCompra === COMPRAS_STATUS_COMPRA.COMPRADO) {
+    sh.getRange(rn, compradoCol).setValue(true);
+    sh.getRange(rn, entregueCol).setValue(false);
+    syncMedicationStatus_(sh, rn);
+    var medA = rowToObjectFromSheetRow_(sh, rn);
+    normalizeItemForClient_(medA);
+    var finalC = sanitizeText_(medA.Status);
+    var curDc = cSheet.getRange(rCompras, colDataCompra).getValue();
+    if (curDc === '' || curDc === null || curDc === undefined) {
+      cSheet.getRange(rCompras, colDataCompra).setValue(now);
+    }
+    var por = getEditorEmailForSheetHook_();
+    if (por) {
+      var curPor = String(cSheet.getRange(rCompras, colCompradoPor).getValue() || '').trim();
+      if (!curPor) {
+        cSheet.getRange(rCompras, colCompradoPor).setValue(por);
+      }
+    }
+    cSheet.getRange(rCompras, colStatusH).setValue(finalC);
+    cSheet.getRange(rCompras, colUltima).setValue(now);
+    Logger.log(
+      'processarStatusCompraPorIdHandover_: id=' +
+        id +
+        ' Status_Compra_aplicado=' +
+        COMPRAS_STATUS_COMPRA.COMPRADO +
+        ' compras=SIM medicamentos=SIM status_final=' +
+        finalC
+    );
+    return { ok: true, statusFinal: finalC };
+  }
+
+  if (statusCompra === COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO) {
+    sh.getRange(rn, compradoCol).setValue(false);
+    sh.getRange(rn, entregueCol).setValue(false);
+    syncMedicationStatus_(sh, rn);
+    sh.getRange(rn, statusCol).setValue('Pendente');
+    var medN = rowToObjectFromSheetRow_(sh, rn);
+    normalizeItemForClient_(medN);
+    var finalN = sanitizeText_(medN.Status);
+    cSheet.getRange(rCompras, colMsg).setValue(COMPRAS_MENSAGEM_CLIENTE_NAO_ENCONTRADO);
+    cSheet.getRange(rCompras, colStatusH).setValue(finalN);
+    cSheet.getRange(rCompras, colUltima).setValue(now);
+    Logger.log(
+      'processarStatusCompraPorIdHandover_: id=' +
+        id +
+        ' Status_Compra_aplicado=' +
+        COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO +
+        ' compras=SIM medicamentos=SIM status_final=' +
+        finalN
+    );
+    return { ok: true, statusFinal: finalN };
+  }
+
+  if (statusCompra === COMPRAS_STATUS_COMPRA.CANCELADO) {
+    sh.getRange(rn, compradoCol).setValue(false);
+    sh.getRange(rn, entregueCol).setValue(false);
+    sh.getRange(rn, statusCol).setValue('Cancelado');
+    cSheet.getRange(rCompras, colStatusH).setValue('Cancelado');
+    cSheet.getRange(rCompras, colUltima).setValue(now);
+    Logger.log(
+      'processarStatusCompraPorIdHandover_: id=' +
+        id +
+        ' Status_Compra_aplicado=' +
+        COMPRAS_STATUS_COMPRA.CANCELADO +
+        ' compras=SIM medicamentos=SIM status_final=Cancelado'
+    );
+    return { ok: true, statusFinal: 'Cancelado' };
+  }
+
+  return { ok: false, reason: 'fim' };
 }
 
 /**
  * Gatilho instalável e onEdit simples: entrada única para edições na aba Compras_Medicamentos.
- * Parte 1: valida contexto, registra log seguro e delega a processarStatusCompraPorIdHandover_ (somente diagnóstico).
+ * Valida contexto, registra log mínimo e delega a processarStatusCompraPorIdHandover_ (regra única).
  */
 function handleComprasMedicamentosEdit_(e) {
   if (!e || !e.range) {
@@ -531,7 +679,13 @@ function handleComprasMedicamentosEdit_(e) {
     Logger.log('handleComprasMedicamentosEdit_: ID_Handover ausente');
     return;
   }
-  processarStatusCompraPorIdHandover_(idHandover);
+  try {
+    processarStatusCompraPorIdHandover_(idHandover);
+  } catch (procErr) {
+    Logger.log(
+      'handleComprasMedicamentosEdit_: erro processar id=' + idHandover + ' msg=' + (procErr && procErr.message ? procErr.message : procErr)
+    );
+  }
 }
 
 /**
@@ -592,91 +746,20 @@ function removerTriggerComprasMedicamentos_() {
 }
 
 /**
- * Regra completa de Status_Compra → Medicamentos (Parte 2+).
- * Não invocar de onEdit na Parte 1 — mantida para reutilização futura.
+ * Legado: entrada por (sheet, linha, valores). Regra real apenas em processarStatusCompraPorIdHandover_.
  */
 function handleComprasMedicamentosStatusEdit_(sheet, rowNumber, newValue, oldValue) {
-  var colStatus = getColumnIndex_(sheet, 'Status_Compra');
   var statusNew = normalizeComprasStatusCompraInput_(newValue);
   var statusOld = normalizeComprasStatusCompraInput_(oldValue);
   if (!statusNew || statusNew === statusOld) {
     return;
   }
-
   var rowObj = rowToObjectFromSheetRow_(sheet, rowNumber);
   var handoverId = sanitizeText_(rowObj.ID_Handover || '');
   if (!handoverId) {
     return;
   }
-
-  var medLoc = findRowById_(SHEET_NAMES.MEDICAMENTOS, handoverId);
-  if (!medLoc) {
-    Logger.log('handleComprasMedicamentosStatusEdit_: medicamento nao encontrado id=' + handoverId);
-    return;
-  }
-
-  var medBase = rowToObjectFromSheetRow_(medLoc.sheet, medLoc.rowNumber);
-  normalizeItemForClient_(medBase);
-  var medStatusLow = sanitizeText_(medBase.Status).toLowerCase();
-  if (medStatusLow === 'cancelado' && statusNew !== COMPRAS_STATUS_COMPRA.CANCELADO) {
-    Logger.log('handleComprasMedicamentosStatusEdit_: item ja Cancelado no Handover id=' + handoverId);
-    return;
-  }
-
-  var now = new Date();
-  var colUltima = getColumnIndex_(sheet, 'Ultima_Atualizacao');
-  var colStatusH = getColumnIndex_(sheet, 'Status_Handover');
-  var colMsg = getColumnIndex_(sheet, 'Mensagem_Cliente');
-  var colObs = getColumnIndex_(sheet, 'Observacao_Compra');
-  var colDataCompra = getColumnIndex_(sheet, 'Data_Compra');
-  var colCompradoPor = getColumnIndex_(sheet, 'Comprado_Por');
-  var obs = sanitizeText_(rowObj.Observacao_Compra || '');
-  var por = getEditorEmailForSheetHook_();
-
-  if (statusNew === COMPRAS_STATUS_COMPRA.PENDENTE) {
-    sheet.getRange(rowNumber, colUltima).setValue(now);
-    var medPeek = rowToObjectFromSheetRow_(medLoc.sheet, medLoc.rowNumber);
-    normalizeItemForClient_(medPeek);
-    sheet.getRange(rowNumber, colStatusH).setValue(sanitizeText_(medPeek.Status || ''));
-    return;
-  }
-
-  if (statusNew === COMPRAS_STATUS_COMPRA.COMPRADO) {
-    if (medStatusLow === 'cancelado') {
-      return;
-    }
-    medLoc.sheet.getRange(medLoc.rowNumber, getColumnIndex_(medLoc.sheet, 'Comprado')).setValue(true);
-    syncMedicationStatus_(medLoc.sheet, medLoc.rowNumber);
-    var medAfter = rowToObjectFromSheetRow_(medLoc.sheet, medLoc.rowNumber);
-    normalizeItemForClient_(medAfter);
-    sheet.getRange(rowNumber, colDataCompra).setValue(now);
-    if (por) {
-      sheet.getRange(rowNumber, colCompradoPor).setValue(por);
-    }
-    sheet.getRange(rowNumber, colStatusH).setValue(sanitizeText_(medAfter.Status || ''));
-    sheet.getRange(rowNumber, colUltima).setValue(now);
-    return;
-  }
-
-  if (statusNew === COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO) {
-    sheet.getRange(rowNumber, colMsg).setValue(COMPRAS_MENSAGEM_CLIENTE_NAO_ENCONTRADO);
-    sheet.getRange(rowNumber, colUltima).setValue(now);
-    var medN = rowToObjectFromSheetRow_(medLoc.sheet, medLoc.rowNumber);
-    normalizeItemForClient_(medN);
-    sheet.getRange(rowNumber, colStatusH).setValue(sanitizeText_(medN.Status || ''));
-    return;
-  }
-
-  if (statusNew === COMPRAS_STATUS_COMPRA.CANCELADO) {
-    medLoc.sheet.getRange(medLoc.rowNumber, getColumnIndex_(medLoc.sheet, 'Comprado')).setValue(false);
-    medLoc.sheet.getRange(medLoc.rowNumber, getColumnIndex_(medLoc.sheet, 'Entregue')).setValue(false);
-    medLoc.sheet.getRange(medLoc.rowNumber, getColumnIndex_(medLoc.sheet, 'Status')).setValue('Cancelado');
-    sheet.getRange(rowNumber, colStatusH).setValue('Cancelado');
-    sheet.getRange(rowNumber, colUltima).setValue(now);
-    if (obs) {
-      sheet.getRange(rowNumber, colObs).setValue(obs);
-    }
-  }
+  processarStatusCompraPorIdHandover_(handoverId);
 }
 
 function getChecklistTemplate_() {
