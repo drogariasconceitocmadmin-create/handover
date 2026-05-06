@@ -58,6 +58,11 @@ const HEADERS = {
     'Tem_Vencimento',
     'Data_Vencimento',
     'Hora_Vencimento',
+    'Excluido',
+    'Excluido_Por',
+    'Data_Exclusao',
+    'Motivo_Exclusao',
+    'Excluido_Por_Perfil',
   ],
   Medicamentos: [
     'ID',
@@ -81,6 +86,11 @@ const HEADERS = {
     'Data_Reversao',
     'Status_Anterior',
     'Motivo_Reversao',
+    'Excluido',
+    'Excluido_Por',
+    'Data_Exclusao',
+    'Motivo_Exclusao',
+    'Excluido_Por_Perfil',
   ],
   Arquivo_Resolvidos: [
     'Origem',
@@ -375,6 +385,35 @@ function resolveOperadorFromSessionOrThrow_(sessionToken) {
   return nome ? nome + ' (' + usuario + ')' : usuario;
 }
 
+function requireSessionHandover_(sessionToken) {
+  var sess = validarSessaoHandover_(sessionToken);
+  if (!sess) {
+    throw new Error('Sessão inválida ou expirada. Faça login novamente.');
+  }
+  return sess;
+}
+
+function normalizePerfilHandover_(perfil) {
+  return String(perfil || '')
+    .trim()
+    .toLowerCase();
+}
+
+function canDeleteHandoverBySession_(sess) {
+  var p = normalizePerfilHandover_(sess && sess.perfil);
+  return p === 'admin' || p === 'gerente';
+}
+
+function requireDeleteRoleOrThrow_(sess) {
+  if (!canDeleteHandoverBySession_(sess)) {
+    throw new Error('Apenas admin ou gerente podem excluir itens.');
+  }
+}
+
+function isRowExcluded_(item) {
+  return toBoolean_(item && item.Excluido);
+}
+
 function loginHandover(usuario, pin) {
   setupSpreadsheet();
   var u = normalizeUsuarioHandover_(usuario);
@@ -437,16 +476,27 @@ function setupUsuariosHandover_() {
 
   var created = 0;
   var now = new Date();
-  var bootstrapUsers = ['carlos', 'marco', 'jelcinei', 'ainale', 'joao', 'priscila', 'marcelo'];
+  var bootstrapUsers = [
+    { nome: 'Ainale', usuario: 'ainale', perfil: 'operador' },
+    { nome: 'Marco', usuario: 'marco', perfil: 'admin' },
+    { nome: 'Carlos', usuario: 'carlos', perfil: 'admin' },
+    { nome: 'Jelcinei', usuario: 'jelcinei', perfil: 'gerente' },
+    { nome: 'Priscila', usuario: 'priscila', perfil: 'operador' },
+    { nome: 'Marcelo', usuario: 'marcelo', perfil: 'operador' },
+  ];
 
   bootstrapUsers.forEach(function (u) {
+    var username = normalizeUsuarioHandover_(u.usuario);
+    if (!username) {
+      return;
+    }
     var pin = String(Math.floor(100000 + Math.random() * 900000)); // 6 dígitos
     var row = buildRowFromHeaders_(HANDOVER_USERS_HEADERS, {
       ID: Utilities.getUuid(),
-      Nome: u,
-      Usuario: u,
-      Pin_Hash: hashPin_(u, pin),
-      Perfil: u === 'marco' ? 'admin' : 'operador',
+      Nome: sanitizeText_(u.nome || u.usuario || ''),
+      Usuario: username,
+      Pin_Hash: hashPin_(username, pin),
+      Perfil: sanitizeText_(u.perfil || 'operador').toLowerCase(),
       Ativo: true,
       Criado_Em: now,
       Criado_Por: 'setupUsuariosHandover_',
@@ -454,7 +504,7 @@ function setupUsuariosHandover_() {
     });
     sheet.appendRow(row);
     created++;
-    Logger.log('Handover bootstrap user=' + u + ' pin=' + pin);
+    Logger.log('Handover bootstrap user=' + username + ' perfil=' + (u.perfil || 'operador') + ' pin=' + pin);
   });
 
   return { success: true, created: created };
@@ -847,9 +897,11 @@ function refreshDashboardBundle(checklistTurnoOpt) {
   var turno = sanitizeChecklistTurno_(checklistTurnoOpt || inferDefaultChecklistTurno_());
   return {
     geral: fetchSheetItems_(SHEET_NAMES.GERAL).filter(function (item) {
-      return !item.Resolvido;
+      return !item.Resolvido && !isRowExcluded_(item);
     }),
-    medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS),
+    medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS).filter(function (item) {
+      return !isRowExcluded_(item);
+    }),
     checklistTurno: buildChecklistTurnoPayload_(turno),
     bundleTurno: turno,
   };
@@ -1029,11 +1081,88 @@ function fetchData() {
 
   return {
     geral: fetchSheetItems_(SHEET_NAMES.GERAL).filter(function (item) {
-      return !item.Resolvido;
+      return !item.Resolvido && !isRowExcluded_(item);
     }),
-    medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS),
+    medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS).filter(function (item) {
+      return !isRowExcluded_(item);
+    }),
     checklistTurno: buildChecklistTurnoPayload_(inferDefaultChecklistTurno_()),
   };
+}
+
+function findItemLocationForDelete_(id, tabOpt) {
+  var rid = sanitizeText_(id);
+  var tab = sanitizeText_(tabOpt);
+  if (!rid) {
+    return null;
+  }
+
+  if (tab === SHEET_NAMES.GERAL || tab === 'Geral') {
+    var locG = findRowById_(SHEET_NAMES.GERAL, rid);
+    if (locG) return { sheetName: SHEET_NAMES.GERAL, sheet: locG.sheet, rowNumber: locG.rowNumber };
+  }
+
+  if (tab === SHEET_NAMES.MEDICAMENTOS || tab === 'Medicamentos') {
+    var locM = findRowById_(SHEET_NAMES.MEDICAMENTOS, rid);
+    if (locM) return { sheetName: SHEET_NAMES.MEDICAMENTOS, sheet: locM.sheet, rowNumber: locM.rowNumber };
+  }
+
+  // tab não confiável: tenta resolver por busca nas abas ativas
+  var g = findRowById_(SHEET_NAMES.GERAL, rid);
+  if (g) return { sheetName: SHEET_NAMES.GERAL, sheet: g.sheet, rowNumber: g.rowNumber };
+  var m = findRowById_(SHEET_NAMES.MEDICAMENTOS, rid);
+  if (m) return { sheetName: SHEET_NAMES.MEDICAMENTOS, sheet: m.sheet, rowNumber: m.rowNumber };
+
+  return null;
+}
+
+function deleteItemHandover(id, tabOpt, sessionToken, motivoOpt) {
+  var started = Date.now();
+  setupSpreadsheet();
+
+  var sess = requireSessionHandover_(sessionToken);
+  requireDeleteRoleOrThrow_(sess);
+
+  var loc = findItemLocationForDelete_(id, tabOpt);
+  if (!loc) {
+    throw new Error('Item não encontrado para exclusão: ' + sanitizeText_(id));
+  }
+
+  var sheet = loc.sheet;
+  var rn = loc.rowNumber;
+  var now = new Date();
+  var op = resolveOperadorFromSessionOrThrow_(sessionToken);
+  var perfil = normalizePerfilHandover_(sess.perfil || '');
+  var motivo = sanitizeText_(motivoOpt || '');
+
+  // se já estiver excluído, idempotente
+  try {
+    var rowObj = rowToObjectFromSheetRow_(sheet, rn);
+    if (toBoolean_(rowObj.Excluido)) {
+      return { success: true, removedId: sanitizeText_(id), tab: loc.sheetName, alreadyExcluded: true };
+    }
+  } catch (e) {
+    // segue
+  }
+
+  sheet.getRange(rn, getColumnIndex_(sheet, 'Excluido')).setValue(true);
+  sheet.getRange(rn, getColumnIndex_(sheet, 'Excluido_Por')).setValue(op);
+  sheet.getRange(rn, getColumnIndex_(sheet, 'Data_Exclusao')).setValue(now);
+  try {
+    sheet.getRange(rn, getColumnIndex_(sheet, 'Motivo_Exclusao')).setValue(motivo);
+  } catch (e2) {}
+  try {
+    sheet.getRange(rn, getColumnIndex_(sheet, 'Excluido_Por_Perfil')).setValue(perfil);
+  } catch (e3) {}
+
+  // atualiza auditoria padrão quando existir
+  try {
+    sheet.getRange(rn, getColumnIndex_(sheet, 'Ultima_Acao_Por')).setValue(op);
+    sheet.getRange(rn, getColumnIndex_(sheet, 'Ultima_Acao_Em')).setValue(now);
+  } catch (e4) {}
+
+  Logger.log('deleteItemHandover ms=' + (Date.now() - started) + ' tab=' + loc.sheetName + ' id=' + id);
+  return { success: true, removedId: sanitizeText_(id), tab: loc.sheetName };
 }
 
 function fetchHistoricoResolvidos(limit) {

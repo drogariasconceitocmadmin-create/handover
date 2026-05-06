@@ -2792,6 +2792,9 @@
 
     <script>
       const HANDOVER_SESSION_TOKEN_KEY = 'handover_session_token_v1';
+      const HANDOVER_SESSION_USER_KEY = 'handover_session_user_v1';
+      const HANDOVER_SESSION_NAME_KEY = 'handover_session_name_v1';
+      const HANDOVER_SESSION_ROLE_KEY = 'handover_session_role_v1';
       const HANDOVER_SESSION_DISPLAY_KEY = 'handover_session_display_v1';
       const QUEUE_FILTERS_PENDENCIAS = ['pendentes', 'todos', 'urgentes', 'vencidos_hoje'];
       const QUEUE_FILTERS_MEDICAMENTOS = [
@@ -2831,6 +2834,9 @@
 
       let pendingAuthCallback_ = null;
       let handoverSessionToken_ = '';
+      let handoverSessionUser_ = '';
+      let handoverSessionName_ = '';
+      let handoverSessionRole_ = '';
       let handoverSessionDisplay_ = '';
       let activeChecklistTurno =
         dashboardData.checklistTurno && dashboardData.checklistTurno.turno
@@ -3025,15 +3031,24 @@
         }
       }
 
-      function setSession_(token, displayName) {
+      function setSession_(token, sessionUser, sessionName, sessionRole, displayName) {
         handoverSessionToken_ = String(token || '').trim();
+        handoverSessionUser_ = String(sessionUser || '').trim();
+        handoverSessionName_ = String(sessionName || '').trim();
+        handoverSessionRole_ = String(sessionRole || '').trim();
         handoverSessionDisplay_ = String(displayName || '').trim();
         try {
           if (handoverSessionToken_) {
             localStorage.setItem(HANDOVER_SESSION_TOKEN_KEY, handoverSessionToken_);
+            localStorage.setItem(HANDOVER_SESSION_USER_KEY, handoverSessionUser_);
+            localStorage.setItem(HANDOVER_SESSION_NAME_KEY, handoverSessionName_);
+            localStorage.setItem(HANDOVER_SESSION_ROLE_KEY, handoverSessionRole_);
             localStorage.setItem(HANDOVER_SESSION_DISPLAY_KEY, handoverSessionDisplay_);
           } else {
             localStorage.removeItem(HANDOVER_SESSION_TOKEN_KEY);
+            localStorage.removeItem(HANDOVER_SESSION_USER_KEY);
+            localStorage.removeItem(HANDOVER_SESSION_NAME_KEY);
+            localStorage.removeItem(HANDOVER_SESSION_ROLE_KEY);
             localStorage.removeItem(HANDOVER_SESSION_DISPLAY_KEY);
           }
         } catch (err) {
@@ -3043,8 +3058,14 @@
       }
 
       function syncOperadorUiFromSession_() {
+        var baseName = String(handoverSessionName_ || '').trim() || String(handoverSessionUser_ || '').trim();
+        var role = String(handoverSessionRole_ || '').trim();
+        var headerText = baseName ? baseName : '';
+        if (headerText && role) {
+          headerText = headerText + ' · ' + role;
+        }
         if (operadorAtualInput) {
-          operadorAtualInput.value = handoverSessionDisplay_ || '';
+          operadorAtualInput.value = headerText || handoverSessionDisplay_ || '';
         }
         syncAutorFieldFromOperador_();
         updateOperadorAvatar_();
@@ -3054,12 +3075,23 @@
         }
       }
 
+      function canCurrentUserDelete_() {
+        var role = String(handoverSessionRole_ || '').trim().toLowerCase();
+        return role === 'admin' || role === 'gerente';
+      }
+
       function initAuth_() {
         try {
           handoverSessionToken_ = localStorage.getItem(HANDOVER_SESSION_TOKEN_KEY) || '';
+          handoverSessionUser_ = localStorage.getItem(HANDOVER_SESSION_USER_KEY) || '';
+          handoverSessionName_ = localStorage.getItem(HANDOVER_SESSION_NAME_KEY) || '';
+          handoverSessionRole_ = localStorage.getItem(HANDOVER_SESSION_ROLE_KEY) || '';
           handoverSessionDisplay_ = localStorage.getItem(HANDOVER_SESSION_DISPLAY_KEY) || '';
         } catch (err) {
           handoverSessionToken_ = '';
+          handoverSessionUser_ = '';
+          handoverSessionName_ = '';
+          handoverSessionRole_ = '';
           handoverSessionDisplay_ = '';
         }
 
@@ -3084,22 +3116,28 @@
           getScriptRunner_()
             .withSuccessHandler(function (res) {
               if (res && res.success) {
-                setSession_(handoverSessionToken_, res.displayName || handoverSessionDisplay_ || '');
+                setSession_(
+                  handoverSessionToken_,
+                  res.usuario || '',
+                  res.nome || '',
+                  res.perfil || '',
+                  res.displayName || handoverSessionDisplay_ || ''
+                );
                 hideAuthLogin_();
               } else {
-                setSession_('', '');
+                setSession_('', '', '', '', '');
                 showAuthLogin_();
               }
             })
             .withFailureHandler(function () {
-              setSession_('', '');
+              setSession_('', '', '', '', '');
               showAuthLogin_('Não foi possível validar a sessão. Faça login novamente.');
             })
             .validateSessionHandover(handoverSessionToken_);
           return;
         }
 
-        setSession_('', '');
+        setSession_('', '', '', '', '');
         showAuthLogin_();
       }
 
@@ -3122,7 +3160,7 @@
               showAuthLogin_('Login inválido.');
               return;
             }
-            setSession_(res.token, res.displayName || '');
+            setSession_(res.token, res.usuario || '', res.nome || '', res.perfil || '', res.displayName || '');
             hideAuthLogin_();
             var cb = pendingAuthCallback_;
             pendingAuthCallback_ = null;
@@ -3140,7 +3178,7 @@
 
       function logoutHandover_() {
         var tok = String(handoverSessionToken_ || '').trim();
-        setSession_('', '');
+        setSession_('', '', '', '', '');
         showAuthLogin_('Sessão encerrada. Faça login para continuar.');
         if (!tok) return;
         getScriptRunner_()
@@ -4273,6 +4311,73 @@
       function closeAllCardMenus_() {
         document.querySelectorAll('.card-more-menu').forEach(function (m) {
           m.classList.add('hidden');
+        });
+      }
+
+      function resolveTabForId_(id) {
+        var gid = (dashboardData.geral || []).some(function (g) {
+          return String(g.ID || '') === String(id);
+        });
+        if (gid) return 'Geral';
+        var mid = (dashboardData.medicamentos || []).some(function (m) {
+          return String(m.ID || '') === String(id);
+        });
+        if (mid) return 'Medicamentos';
+        return '';
+      }
+
+      function removeItemByIdFromUi_(id, tab) {
+        if (tab === 'Geral') {
+          dashboardData.geral = (dashboardData.geral || []).filter(function (g) {
+            return String(g.ID || '') !== String(id);
+          });
+        } else if (tab === 'Medicamentos') {
+          dashboardData.medicamentos = (dashboardData.medicamentos || []).filter(function (m) {
+            return String(m.ID || '') !== String(id);
+          });
+        } else {
+          // fallback: remove from both
+          dashboardData.geral = (dashboardData.geral || []).filter(function (g) {
+            return String(g.ID || '') !== String(id);
+          });
+          dashboardData.medicamentos = (dashboardData.medicamentos || []).filter(function (m) {
+            return String(m.ID || '') !== String(id);
+          });
+        }
+      }
+
+      function deleteItemFromCard_(id) {
+        closeAllCardMenus_();
+        if (!canCurrentUserDelete_()) {
+          showToast_('Apenas admin ou gerente podem excluir itens.', true);
+          return;
+        }
+        var tabGuess = resolveTabForId_(id);
+        if (!window.confirm('Excluir este item? A exclusão é lógica (não apaga a linha) e ficará registrada na auditoria.')) {
+          return;
+        }
+        runWithAuth_(function (sessionToken) {
+          var started = Date.now();
+          try {
+            getScriptRunner_()
+              .withSuccessHandler(function (res) {
+                perfLog_('deleteItemHandover', started);
+                if (res && res.success) {
+                  removeItemByIdFromUi_(id, res.tab || tabGuess || '');
+                  renderAll();
+                  showToast_('Item excluído.');
+                  return;
+                }
+                showToast_('Não foi possível excluir.', true);
+              })
+              .withFailureHandler(function (error) {
+                perfLog_('deleteItemHandover_fail', started);
+                showToast_(getErrorMessage(error), true);
+              })
+              .deleteItemHandover(id, tabGuess, sessionToken, '');
+          } catch (e) {
+            showToast_(e.message, true);
+          }
         });
       }
 
@@ -5816,6 +5921,13 @@
           '\')"><span class="card-menu-ico" aria-hidden="true">' +
           iconSvg_('copy', 15) +
           '</span>Copiar informações</button>' +
+          (canCurrentUserDelete_()
+            ? '<button type="button" class="danger" onclick="deleteItemFromCard_(\'' +
+              escapeJsSingleQuoted_(item.id) +
+              '\')"><span class="card-menu-ico" aria-hidden="true">' +
+              iconSvg_('minus', 15) +
+              '</span>Excluir item</button>'
+            : '') +
           '</div>' +
           '</div>' +
           '</div>' +
@@ -6043,6 +6155,13 @@
           '\')"><span class="card-menu-ico" aria-hidden="true">' +
           iconSvg_('copy', 15) +
           '</span>Copiar informações</button>' +
+          (canCurrentUserDelete_()
+            ? '<button type="button" class="danger" onclick="deleteItemFromCard_(\'' +
+              escapeJsSingleQuoted_(item.id) +
+              '\')"><span class="card-menu-ico" aria-hidden="true">' +
+              iconSvg_('minus', 15) +
+              '</span>Excluir item</button>'
+            : '') +
           '</div>' +
           '</div>' +
           '</div>' +
@@ -7424,7 +7543,7 @@
                 renderAll();
                 showToast_('Erro ao salvar', true);
                 if (/Sessão inválida|sessão inválida|expirada/i.test(getErrorMessage(error))) {
-                  setSession_('', '');
+                  setSession_('', '', '', '', '');
                   showAuthLogin_('Sessão expirada. Faça login novamente.');
                 }
               })

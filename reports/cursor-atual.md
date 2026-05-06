@@ -75,3 +75,11 @@ Regra: se o dado aparece no card de Medicamentos, ele deve ser encontrável pela
   - Motivo: padronizar login operacional (usuário+PIN), sessão e autoria/auditoria sem vazar PIN em texto puro.
   - Quando usar: qualquer mudança em `Usuarios_Handover`, hash de PIN, sessão/token e validações em ações críticas.
   - Regras-chave: sem deploy/clasp sem autorização; sem `git add .`; schema defensivo (somente adicionar no final); nunca armazenar PIN em texto puro; backend não confia em operador vindo do front.
+
+## Auth (PIN) — perfis e exclusão lógica
+
+- Perfis suportados na sessão: `admin`, `gerente`, `operador`.
+- Exclusão lógica:
+  - Nova ação `deleteItemHandover` (backend) exige sessão válida e perfil `admin`/`gerente`.
+  - Itens excluídos não aparecem mais nas filas operacionais (`fetchData`/`refreshDashboardBundle` filtram `Excluido`).
+  - Não há delete físico de linha; auditoria é registrada nas colunas `Excluido*`.
