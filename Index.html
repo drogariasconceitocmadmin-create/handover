@@ -100,11 +100,25 @@
         justify-content: space-between;
         gap: 10px 14px;
         margin-bottom: 12px;
-        padding: 8px 14px;
+        padding: 10px 16px;
         border-radius: 14px;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 20px rgba(15, 23, 42, 0.05);
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        border: 1px solid rgba(227, 234, 245, 0.92);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 34px rgba(15, 23, 42, 0.06);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .app-header::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--brand-blue-2), var(--brand-blue), rgba(140, 208, 0, 0.85));
+        opacity: 0.85;
+        pointer-events: none;
       }
 
       .app-header-left {
@@ -116,7 +130,7 @@
 
       .brand-mark {
         font-weight: 800;
-        font-size: 16px;
+        font-size: 17px;
         letter-spacing: -0.03em;
         color: var(--text);
       }
@@ -124,13 +138,13 @@
       .brand-sep {
         width: 1px;
         height: 28px;
-        background: var(--border);
+        background: linear-gradient(180deg, rgba(100, 116, 139, 0.2), rgba(100, 116, 139, 0.08));
         flex-shrink: 0;
       }
 
       .brand-product {
         font-weight: 800;
-        font-size: 17px;
+        font-size: 18px;
         letter-spacing: -0.03em;
         color: var(--brand-blue);
       }
@@ -216,8 +230,8 @@
       }
 
       .btn-header-secondary {
-        border: 1px solid var(--border) !important;
-        background: #fff !important;
+        border: 1px solid rgba(227, 234, 245, 0.95) !important;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
         color: var(--brand-blue) !important;
         border-radius: 11px !important;
         padding: 8px 12px !important;
@@ -228,6 +242,7 @@
 
       .btn-header-secondary:hover {
         background: rgba(0, 75, 199, 0.05) !important;
+        border-color: rgba(0, 87, 255, 0.28) !important;
       }
 
       .btn-primary-header {
@@ -239,7 +254,7 @@
         font-size: 12px;
         font-weight: 800;
         padding: 8px 14px;
-        box-shadow: 0 4px 14px rgba(0, 75, 199, 0.35);
+        box-shadow: 0 10px 26px rgba(0, 75, 199, 0.26);
       }
 
       .btn-primary-header:hover {
@@ -331,12 +346,14 @@
         align-items: flex-start;
         gap: 10px;
         background: var(--surface);
-        border: 1px solid var(--border);
+        border: 1px solid rgba(227, 234, 245, 0.95);
         border-radius: var(--radius);
-        padding: 11px 13px;
-        box-shadow: var(--shadow-md);
+        padding: 12px 14px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 34px rgba(15, 23, 42, 0.06);
         transition: box-shadow 0.18s ease, transform 0.18s ease;
         min-width: 0;
+        position: relative;
+        overflow: hidden;
       }
 
       .summary-box-click.kpi-card:hover {
@@ -344,9 +361,20 @@
         box-shadow: var(--shadow-hover);
       }
 
+      .kpi-card::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, rgba(0, 87, 255, 0.22), rgba(0, 75, 199, 0.06));
+        opacity: 0.9;
+      }
+
       .kpi-ico {
-        width: 38px;
-        height: 38px;
+        width: 42px;
+        height: 42px;
         border-radius: 999px;
         display: flex;
         align-items: center;
@@ -355,8 +383,8 @@
       }
 
       .kpi-ico .ico-svg {
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
       }
 
       .kpi-card.kpi-blue .kpi-ico {
@@ -385,15 +413,15 @@
       }
 
       .kpi-card .label {
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.06em;
         color: var(--muted);
       }
 
       .kpi-card .value {
-        font-size: 23px;
+        font-size: 28px;
         font-weight: 800;
         letter-spacing: -0.03em;
         line-height: 1.15;
@@ -410,12 +438,12 @@
       .tabs-premium {
         display: flex;
         flex-wrap: wrap;
-        gap: 2px;
-        padding: 4px 6px 0;
+        gap: 4px;
+        padding: 8px 10px 0;
         margin-bottom: 12px;
         border-radius: var(--radius);
-        border: 1px solid var(--border);
-        background: var(--surface);
+        border: 1px solid rgba(227, 234, 245, 0.95);
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
         box-shadow: var(--shadow-sm);
       }
 
@@ -440,7 +468,7 @@
         cursor: pointer;
         font-size: 13px;
         font-weight: 600;
-        padding: 10px 12px 10px;
+        padding: 12px 14px 12px;
         display: inline-flex;
         align-items: center;
         gap: 7px;
@@ -454,7 +482,7 @@
 
       .main-tab.active {
         color: var(--brand-blue);
-        background: rgba(0, 75, 199, 0.055);
+        background: rgba(0, 87, 255, 0.07);
         box-shadow: none;
         border-bottom-color: rgba(0, 87, 255, 0.55);
       }
@@ -462,8 +490,8 @@
       .tab-badge {
         font-size: 10px;
         font-weight: 800;
-        min-width: 21px;
-        padding: 2px 6px;
+        min-width: 22px;
+        padding: 2px 7px;
         border-radius: 999px;
         background: rgba(0, 75, 199, 0.1);
         color: var(--brand-blue);
@@ -1457,14 +1485,15 @@
       }
 
       .badge.deadline-vencido {
-        background: rgba(239, 68, 68, 0.14);
-        color: #b91c1c;
-        border: 1px solid rgba(239, 68, 68, 0.28);
+        background: rgba(239, 68, 68, 0.09);
+        color: #991b1b;
+        border: 1px solid rgba(239, 68, 68, 0.18);
       }
 
       .badge.deadline-hoje {
-        background: #fef9c3;
-        color: #854d0e;
+        background: rgba(249, 115, 22, 0.11);
+        color: #9a3412;
+        border: 1px solid rgba(249, 115, 22, 0.18);
       }
 
       .badge.badge-urgente {
@@ -1582,6 +1611,24 @@
         color: #374151;
       }
 
+      .queue-card.med-falta .badge.status-na {
+        background: rgba(100, 116, 139, 0.1);
+        color: #334155;
+        border: 1px solid rgba(100, 116, 139, 0.18);
+      }
+
+      .queue-card.med-encomenda .badge.status-comprado {
+        background: rgba(0, 87, 255, 0.08);
+        color: var(--brand-blue);
+        border: 1px solid rgba(0, 87, 255, 0.16);
+      }
+
+      .queue-card.med-encomenda .badge.status-entregue {
+        background: rgba(22, 163, 74, 0.1);
+        color: #166534;
+        border: 1px solid rgba(22, 163, 74, 0.18);
+      }
+
       .queue-list {
         display: grid;
         gap: 10px;
@@ -1617,6 +1664,11 @@
         background: #fff;
         border-color: rgba(239, 68, 68, 0.28);
         box-shadow: 0 8px 24px rgba(239, 68, 68, 0.07);
+      }
+
+      .queue-card.overdue .qk-meta-row {
+        background: rgba(239, 68, 68, 0.06);
+        border-color: rgba(239, 68, 68, 0.14);
       }
 
       .qk-stripe {
@@ -1705,10 +1757,10 @@
 
       .qk-meta {
         margin: 8px 0 0;
-        padding: 8px 10px;
+        padding: 0;
         border-radius: var(--radius-sm);
-        background: #f8fafc;
-        border: 1px solid #eef2f8;
+        background: transparent;
+        border: 0;
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
         gap: 6px 12px;
@@ -1733,6 +1785,17 @@
         font-weight: 650;
         color: var(--text);
         word-break: break-word;
+      }
+
+      .qk-meta-row dd {
+        padding: 0;
+      }
+
+      .qk-meta-row {
+        padding: 8px 10px;
+        border-radius: 14px;
+        background: rgba(100, 116, 139, 0.06);
+        border: 1px solid rgba(227, 234, 245, 0.95);
       }
 
       .qk-actions {
@@ -1789,6 +1852,14 @@
         border: 0;
         background: var(--success);
         color: #fff;
+      }
+
+      .queue-card.med-encomenda .qk-actions button.whatsapp {
+        box-shadow: 0 10px 22px rgba(22, 163, 74, 0.18);
+      }
+
+      .queue-card.med-encomenda .qk-actions button.whatsapp:hover {
+        filter: brightness(1.02);
       }
 
       .qk-actions button.whatsapp:hover {
@@ -5461,6 +5532,9 @@
           if (item.syncState === 'error') {
             cardClass += ' sync-error';
           }
+          if (item.type === 'medicamento') {
+            cardClass += item.medTipo === 'encomenda' ? ' med-encomenda' : ' med-falta';
+          }
           if (item.type === 'historico') {
             cardClass += ' queue-card--historico';
           }
@@ -5708,6 +5782,17 @@
           '<span class="badge' + statusClass + '">' + escapeHtml(item.statusLabel) + '</span>',
         ];
 
+        if (item.type === 'medicamento') {
+          if (item.medTipo === 'falta') {
+            badges.unshift('<span class="badge status-na">Falta</span>');
+          } else if (item.medTipo === 'encomenda') {
+            badges.unshift('<span class="badge status-comprado">Encomenda</span>');
+          }
+          if (item.medTipo === 'encomenda' && item.price) {
+            badges.push('<span class="badge status-entregue">' + escapeHtml(item.price) + '</span>');
+          }
+        }
+
         if (item.syncState === 'syncing') {
           badges.unshift('<span class="badge">Sincronizando...</span>');
         }
@@ -5894,7 +5979,7 @@
                 ? retryActions
                 : [
                     {
-                      label: 'Marcar como resolvido',
+                      label: 'Resolver',
                       handler: 'markResolved',
                       className: '',
                     },
