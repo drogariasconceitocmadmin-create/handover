@@ -1,101 +1,109 @@
 {
   "projeto": "Handover - Drogarias Conceito",
-  "status_geral": "OK",
+  "status_geral": "FALHA",
   "pasta": "C:\\Users\\Marco\\Desktop\\Sis Drogaria\\Handover",
-  "branch_publicada": "release/handover-v29-visual-clean",
-  "commit_publicado": "465c85b",
-  "commit_visual_alvo": "26ad132",
-  "commits_incluidos": [
-    {
-      "hash": "26ad132",
-      "mensagem": "style(handover): acabamento premium fino desktop fase 1.3"
-    },
-    {
-      "hash": "465c85b",
-      "mensagem": "docs(handover): adiciona skill de guardrails visual-only"
-    }
+  "branch_validada": "feat/handover-auth-pin",
+  "commits_validados": [
+    "95eaf37",
+    "211d3b6"
   ],
-  "base_publicada_anterior": "v30 / v29 visual limpa",
-  "scriptId": "1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd",
+  "base_publicada_atual": "v33 estavel",
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
-  "versao_publicada": 31,
+  "publicado": false,
+  "versao_publicada": null,
   "rollback_feito": false,
   "pop_tocado": false,
-  "registros_criados": [],
-  "skill_aplicada": {
-    "arquivo": "aios/skills/handover-visual-only-guardrails/SKILL.md",
-    "commit": "465c85b",
-    "motivo": "Bloquear contaminacao de release visual-only por backend, sync, polling, locks ou auto-refresh expandido."
-  },
-  "pre_deploy": {
+  "preflight": {
     "resultado": "OK",
     "branch_correta": true,
-    "branch": "release/handover-v29-visual-clean",
-    "head": "465c85b",
-    "commit_26ad132_presente": true,
     "scriptId_handover": true,
-    "nao_master": true,
-    "code_gs_alterado": false,
-    "appsscript_alterado": false,
-    "clasp_json_alterado": false,
-    "schema_alterado": false,
-    "commit_2f45b08_incluido": false,
-    "lockservice": false,
-    "polling_novo": false,
-    "auto_refresh_expandido": false,
-    "pill_atualizacao_automatica": false,
-    "handover_auto_refresh_constantes": false,
-    "dashboard_fingerprint": false,
-    "sheet_clear": false,
-    "pop_referenciado": false,
-    "observacao_guardrail": "setInterval/dashboardAutoRefreshTimer existem no baseline e5aa219 aprovado; nao foram classificados como entrada nova da Fase 1.3."
+    "pop_no_diff": true,
+    "alteracoes_esperadas": [
+      "Code.gs",
+      "Index.html",
+      "aios/skills/handover-auth-audit/SKILL.md",
+      "reports/cursor-atual.md"
+    ],
+    "sheet_clear": false
+  },
+  "seguranca_estatica": {
+    "pin_texto_puro_planilha": false,
+    "pin_hash": true,
+    "sha256": true,
+    "salt_script_properties": true,
+    "login_retorna_token": true,
+    "validate_session": true,
+    "logout_invalida": true,
+    "backend_nao_confia_perfil_front": true,
+    "autoria_derivada_sessao": true,
+    "usuario_inativo_bloqueado": true
+  },
+  "acoes_criticas_session_token": {
+    "saveData": true,
+    "markAsPurchased": true,
+    "markAsDelivered": true,
+    "markAsResolved": true,
+    "revertMedicationToPending": true,
+    "reopenHistoricoItem": true,
+    "updateChecklistItemStatus": true,
+    "updateChecklistItemObservation": true,
+    "registerWhatsAppAttempt": true,
+    "deleteItemHandover": true
+  },
+  "exclusao_logica": {
+    "deleteItemHandover_existe": true,
+    "valida_sessao": true,
+    "exige_admin_gerente": true,
+    "nao_deleta_linha": true,
+    "marca_excluido": true,
+    "marca_excluido_por": true,
+    "marca_data_exclusao": true,
+    "marca_motivo_exclusao": true,
+    "marca_perfil": true,
+    "fetchData_filtra_excluido": true,
+    "refreshDashboardBundle_filtra_excluido": true,
+    "menu_admin_gerente": true,
+    "operador_bloqueado_backend": true,
+    "observacao": "deleteRow legado existe em moveRowToResolved, nao em deleteItemHandover e nao foi introduzido por esta branch."
+  },
+  "usuarios_iniciais": {
+    "setupUsuariosHandover_validado_estatico": true,
+    "usuarios_esperados_presentes": [
+      "Ainale/ainale/operador",
+      "Marco/marco/admin",
+      "Carlos/carlos/admin",
+      "Jelcinei/jelcinei/gerente",
+      "Priscila/priscila/operador",
+      "Marcelo/marcelo/operador"
+    ],
+    "pin_temporario_logger": true,
+    "pin_puro_planilha": false,
+    "pin_hash_planilha": true,
+    "setup_executado_via_clasp": false,
+    "erro_clasp_run": "Script function not found. Please make sure script is deployed as API executable.",
+    "usuarios_configurados": false,
+    "pins_obtidos": "NAO obtidos; setup nao executou via clasp."
   },
   "publicacao": {
-    "clasp_status": "OK",
-    "clasp_push": "OK",
-    "clasp_version": 31,
-    "clasp_deploy": "OK",
-    "deployment_oficial_mantido": true,
-    "url_oficial_mantida": true
+    "clasp_push": true,
+    "clasp_deploy": false,
+    "nova_versao": false,
+    "deployment_oficial_preservado": true
   },
-  "smoke_real_desktop": {
-    "abertura": "OK",
-    "console_sem_erro_critico": true,
-    "sem_pill_atualizacao_automatica": true,
-    "sem_texto_atualizando_fixo": true,
-    "botao_atualizar_agora": true,
-    "header_height": 73,
-    "kpis": 5,
-    "svg_icons": 23,
-    "tabs": [
-      "Pendencias",
-      "Medicamentos",
-      "Checklist",
-      "Historico"
-    ],
-    "cards_pendencias": 4,
-    "sidebar": true,
-    "overflow_1366": false
-  },
-  "regressao_minima": {
-    "pendencias_abre": true,
-    "medicamentos_abre": true,
-    "checklist_abre": true,
-    "historico_abre": true,
-    "novo_registro_dropdown": true,
-    "novo_registro_geral": true,
-    "novo_registro_medicamentos": true,
-    "falta_sem_campos_indevidos": true,
-    "encomenda_com_campos_corretos": true,
-    "checklist_rascunho_preservado": true,
-    "menu_sem_imprimir": true,
-    "whatsapp": "Botao nao estava visivel em estado seguro; nao acionado."
+  "smoke_real": {
+    "executado": false,
+    "motivo": "Sem usuarios/PINs confirmados, publicar poderia bloquear o uso da loja."
   },
   "falhas": {
-    "criticas": [],
+    "criticas": [
+      "Nao foi possivel executar setupUsuariosHandover_ via clasp run; usuarios/PINs iniciais nao foram confirmados."
+    ],
     "medias": [],
-    "leves": []
+    "leves": [
+      "deleteRow legado permanece em moveRowToResolved; nao faz parte da nova exclusao logica."
+    ]
   },
-  "veredito": "Publicado e aprovado. Fase 1.3 visual publicada como versao 31 com guardrails visual-only aplicados, sem Code.gs novo, sem 2f45b08, sem LockService e sem auto-refresh expandido novo."
+  "proxima_acao": "Carlos deve rodar setupUsuariosHandover_ manualmente no Apps Script Editor do Handover, coletar PINs no Logger e confirmar login admin antes de nova tentativa de publicacao.",
+  "veredito": "Publicacao bloqueada. v33 estavel mantida."
 }
