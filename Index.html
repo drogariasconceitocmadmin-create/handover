@@ -170,22 +170,6 @@
         line-height: 1.25;
       }
 
-      .sync-state-pill {
-        min-width: 124px;
-      }
-
-      .sync-state-pill .header-pill-value {
-        color: var(--brand-blue);
-      }
-
-      .sync-state-pill.is-paused .header-pill-value {
-        color: var(--warning);
-      }
-
-      .sync-state-pill.is-error .header-pill-value {
-        color: var(--danger);
-      }
-
       .operador-pill {
         flex-direction: row;
         align-items: center;
@@ -2373,10 +2357,6 @@
             <span class="header-pill-label">Última atualização</span>
             <span id="last-sync-label" class="header-pill-value">—</span>
           </div>
-          <div id="sync-state-pill" class="header-pill sync-state-pill">
-            <span class="header-pill-label">Atualização automática</span>
-            <span id="sync-state-label" class="header-pill-value">Ativa</span>
-          </div>
           <div class="header-pill">
             <span class="header-pill-label">Última ação</span>
             <span id="last-action-label" class="header-pill-value">—</span>
@@ -2721,8 +2701,6 @@
 
     <script>
       const OPERADOR_STORAGE_KEY = 'handover_operador_atual_v14';
-      const HANDOVER_AUTO_REFRESH_MS = 30000;
-      const HANDOVER_AUTO_REFRESH_ENABLED = true;
       const QUEUE_FILTERS_PENDENCIAS = ['pendentes', 'todos', 'urgentes', 'vencidos_hoje'];
       const QUEUE_FILTERS_MEDICAMENTOS = [
         'pendentes',
@@ -2773,10 +2751,6 @@
         estado: 'todos',
       };
       let dashboardAutoRefreshTimer = null;
-      let dashboardRelativeTimer = null;
-      let dashboardRefreshInFlight = false;
-      let dashboardLastFingerprint = '';
-      let dashboardLastRefreshError = '';
       let lastDashboardSyncTs = Date.now();
 
       const formModalOverlay = document.getElementById('form-modal-overlay');
@@ -2812,8 +2786,6 @@
       const historicoFiltersPanel = document.getElementById('historico-filters-panel');
       const checklistTurnSelect = document.getElementById('checklist-turno-select');
       const checklistTurnTitleEl = document.getElementById('checklist-turn-title');
-      const syncStatePill = document.getElementById('sync-state-pill');
-      const syncStateLabel = document.getElementById('sync-state-label');
 
       const panelQueueWrap = document.getElementById('panel-queue-wrap');
       const panelChecklist = document.getElementById('panel-checklist');
@@ -2922,7 +2894,6 @@
         if (operadorRequiredOverlay) {
           operadorRequiredOverlay.classList.remove('hidden');
           operadorRequiredOverlay.setAttribute('aria-hidden', 'false');
-          updateAutoRefreshStatus_();
           window.setTimeout(function () {
             if (operadorModalInput) {
               operadorModalInput.focus();
@@ -2965,7 +2936,6 @@
           operadorRequiredOverlay.classList.add('hidden');
           operadorRequiredOverlay.setAttribute('aria-hidden', 'true');
         }
-        updateAutoRefreshStatus_();
       }
 
       function cancelReopenHistoricoModal_() {
@@ -2974,7 +2944,6 @@
           reopenConfirmOverlay.classList.add('hidden');
           reopenConfirmOverlay.setAttribute('aria-hidden', 'true');
         }
-        updateAutoRefreshStatus_();
       }
 
       function confirmReopenHistoricoModal_() {
@@ -3032,54 +3001,25 @@
           reopenConfirmOverlay.classList.remove('hidden');
           reopenConfirmOverlay.setAttribute('aria-hidden', 'false');
         }
-        updateAutoRefreshStatus_();
       }
 
       function touchLastSyncTime_() {
         lastDashboardSyncTs = Date.now();
-        dashboardLastRefreshError = '';
         var el = document.getElementById('last-sync-label');
-        if (el) {
-          var d = new Date(lastDashboardSyncTs);
-          el.textContent =
-            String(d.getHours()).padStart(2, '0') +
-            ':' +
-            String(d.getMinutes()).padStart(2, '0') +
-            ':' +
-            String(d.getSeconds()).padStart(2, '0');
-        }
-        updateAutoRefreshStatus_();
-      }
-
-      function secondsSinceLastSync_() {
-        return Math.max(0, Math.floor((Date.now() - lastDashboardSyncTs) / 1000));
-      }
-
-      function setAutoRefreshStatus_(text, stateClass) {
-        if (syncStateLabel) {
-          syncStateLabel.textContent = text;
-        }
-        if (syncStatePill) {
-          syncStatePill.classList.toggle('is-paused', stateClass === 'paused');
-          syncStatePill.classList.toggle('is-error', stateClass === 'error');
-        }
-      }
-
-      function updateAutoRefreshStatus_() {
-        if (dashboardRefreshInFlight) {
-          setAutoRefreshStatus_('Atualizando...', '');
+        if (!el) {
           return;
         }
-        if (dashboardLastRefreshError) {
-          setAutoRefreshStatus_('Erro ao atualizar', 'error');
-          return;
-        }
-        if (shouldPauseAutoRefresh_()) {
-          setAutoRefreshStatus_('Pausado durante ediÃ§Ã£o', 'paused');
-          return;
-        }
-        setAutoRefreshStatus_('Atualizado hÃ¡ ' + secondsSinceLastSync_() + 's', '');
+        var d = new Date(lastDashboardSyncTs);
+        el.textContent =
+          String(d.getHours()).padStart(2, '0') +
+          ':' +
+          String(d.getMinutes()).padStart(2, '0') +
+          ':' +
+          String(d.getSeconds()).padStart(2, '0');
       }
+
+      // Mantido como no-op para compatibilidade com chamadas legadas do frontend.
+      function updateAutoRefreshStatus_() {}
 
       function isAnyBlockingModalOpen_() {
         var auditOv = document.getElementById('audit-drawer-overlay');
@@ -3096,106 +3036,17 @@
         return checklistObservationEditMode.size > 0;
       }
 
-      function isImportantInputActive_() {
-        var ae = document.activeElement;
-        if (!ae || ae === document.body || ae === document.documentElement) {
-          return false;
-        }
-        var tag = String(ae.tagName || '').toLowerCase();
-        if (tag === 'textarea' || tag === 'select') {
-          return true;
-        }
-        if (tag === 'input') {
-          var type = String(ae.type || 'text').toLowerCase();
-          return ['button', 'checkbox', 'radio', 'submit', 'reset'].indexOf(type) === -1;
-        }
-        return ae.isContentEditable === true;
-      }
-
-      function isLocalSyncBusy_() {
-        return (
-          checklistPendingItemId ||
-          (dashboardData.geral || []).some(function (g) {
-            return g.__syncState === 'syncing' || g.__resolveState === 'resolving';
-          }) ||
-          (dashboardData.medicamentos || []).some(function (m) {
-            return m.__syncState === 'syncing';
-          })
-        );
-      }
-
-      function shouldPauseAutoRefresh_() {
-        return (
-          isAnyBlockingModalOpen_() ||
-          isChecklistObservationEditing_() ||
-          isImportantInputActive_() ||
-          isLocalSyncBusy_() ||
-          (typeof document !== 'undefined' && document.visibilityState === 'hidden')
-        );
-      }
-
       function initDashboardSync_() {
         touchLastSyncTime_();
-        dashboardLastFingerprint = buildDashboardFingerprint_(dashboardData);
         if (dashboardAutoRefreshTimer) {
           window.clearInterval(dashboardAutoRefreshTimer);
         }
-        if (dashboardRelativeTimer) {
-          window.clearInterval(dashboardRelativeTimer);
-        }
-        dashboardRelativeTimer = window.setInterval(updateAutoRefreshStatus_, 5000);
-        document.addEventListener('visibilitychange', updateAutoRefreshStatus_);
-        document.addEventListener('focusin', updateAutoRefreshStatus_, true);
-        document.addEventListener(
-          'focusout',
-          function () {
-            window.setTimeout(updateAutoRefreshStatus_, 80);
-          },
-          true
-        );
-        if (!HANDOVER_AUTO_REFRESH_ENABLED) {
-          setAutoRefreshStatus_('Desativada', 'paused');
-          return;
-        }
         dashboardAutoRefreshTimer = window.setInterval(function () {
-          if (shouldPauseAutoRefresh_()) {
-            updateAutoRefreshStatus_();
+          if (isAnyBlockingModalOpen_() || isChecklistObservationEditing_()) {
             return;
           }
-          refreshDashboardNow_(true, 'auto');
-        }, HANDOVER_AUTO_REFRESH_MS);
-      }
-
-      function buildDashboardFingerprint_(data) {
-        data = data || {};
-        function recKey(item) {
-          return [
-            item.ID || '',
-            item.Status || '',
-            item.Resolvido || '',
-            item.Comprado || '',
-            item.Entregue || '',
-            item.Ultima_Acao_Em || '',
-            item.Data_Resolucao || '',
-            item.Data_Aviso_WhatsApp || '',
-            item.Data_Hora_Check || '',
-            item.Responsavel || '',
-            item.Observacao || '',
-          ].join('~');
-        }
-        var geral = (data.geral || []).map(recKey).sort();
-        var med = (data.medicamentos || []).map(recKey).sort();
-        var check = ((data.checklistTurno && data.checklistTurno.items) || []).map(recKey).sort();
-        return [geral.join('|'), med.join('|'), check.join('|')].join('::');
-      }
-
-      function countFingerprintChanges_(before, after) {
-        if (!before || !after || before === after) {
-          return 0;
-        }
-        var a = before.split('|');
-        var b = after.split('|');
-        return Math.max(1, Math.abs(b.length - a.length));
+          refreshDashboardNow_(true);
+        }, 60000);
       }
 
       function mergeServerIntoDashboard_(bundle) {
@@ -3232,55 +3083,33 @@
         updateLastActionLabel_();
       }
 
-      function refreshDashboardNow_(silent, source) {
+      function refreshDashboardNow_(silent) {
         if (!silent && isAnyBlockingModalOpen_()) {
           showToast_('Feche os modais para atualizar.', true);
-          updateAutoRefreshStatus_();
-          return;
-        }
-        if (dashboardRefreshInFlight) {
           return;
         }
         captureObservationDraftsFromDom_();
-        dashboardRefreshInFlight = true;
-        dashboardLastRefreshError = '';
-        updateAutoRefreshStatus_();
         var started = Date.now();
-        var beforeFingerprint = dashboardLastFingerprint || buildDashboardFingerprint_(dashboardData);
         try {
           getScriptRunner_()
             .withSuccessHandler(function (bundle) {
               perfLog_('refreshDashboardBundle', started);
               mergeServerIntoDashboard_(bundle);
-              var afterFingerprint = buildDashboardFingerprint_(dashboardData);
-              var changes = beforeFingerprint && beforeFingerprint !== afterFingerprint;
-              var changeCount = countFingerprintChanges_(beforeFingerprint, afterFingerprint);
-              dashboardLastFingerprint = afterFingerprint;
               touchLastSyncTime_();
               initChecklistTurnoUi_();
               renderAll();
-              dashboardRefreshInFlight = false;
-              updateAutoRefreshStatus_();
               if (!silent) {
                 showToast_('Dados atualizados');
-              } else if (source === 'auto' && changes) {
-                showToast_(changeCount > 1 ? changeCount + ' alteraÃ§Ãµes recebidas' : 'Handover atualizado');
               }
             })
             .withFailureHandler(function (error) {
               perfLog_('refreshDashboardBundle_fail', started);
-              dashboardRefreshInFlight = false;
-              dashboardLastRefreshError = getErrorMessage(error);
-              updateAutoRefreshStatus_();
               if (!silent) {
                 showToast_(getErrorMessage(error), true);
               }
             })
             .refreshDashboardBundle(activeChecklistTurno);
         } catch (error) {
-          dashboardRefreshInFlight = false;
-          dashboardLastRefreshError = error.message;
-          updateAutoRefreshStatus_();
           if (!silent) {
             showToast_(error.message, true);
           }
