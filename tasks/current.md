@@ -2,7 +2,7 @@
 
 ## Título
 
-**Fase 1 — Layout desktop base do Handover**
+**Fase 1.3 — Acabamento premium fino do layout desktop**
 
 ---
 
@@ -10,33 +10,33 @@
 
 | Campo | Valor |
 |--------|--------|
-| **Estado** | **Concluído (Fase 1 layout desktop em Index.html)** |
-| **Versão base** | **25** (publicada e estável; preservar fluxos) |
+| **Estado** | **Em andamento** |
+| **Versão base** | **30** (publicada e aprovada; release visual-only) |
 | **Relatórios (referência)** | `reports/validacao-handover-atual.md`, `reports/validacao-handover-atual.json`, `reports/cursor-atual.md` |
 
 ---
 
 ## Escopo
 
-- Header novo (marca + Handover, operador, última atualização, última ação, Atualizar agora, Novo registro com dropdown).
-- Cards de resumo operacional no topo (clicáveis quando seguro).
-- Abas principais: **Pendências**, **Medicamentos**, **Checklist**, **Histórico**.
-- Separação visual e funcional: Pendências = apenas Geral; Medicamentos = apenas Falta/Encomenda.
-- Dropdown Novo registro: Pendência da loja (modal Geral) e Medicamento solicitado (modal Medicamentos).
-- Checklist e Histórico como áreas por aba (sem redesign profundo do checklist).
-- Preservar todos os fluxos atuais (operador modal, otimista, checklist rascunho, WhatsApp, reversão, filtros existentes onde aplicável).
+- Refinamento visual do **header** (mais institucional).
+- Refinamento visual dos **KPIs** (hierarquia e presença).
+- Cards de **Pendências** mais premium (menos “tabela”).
+- Cards de **Medicamentos** mais claros (identidade Falta vs Encomenda, sem mudar regra).
+- **Checklist aberto** mais organizado (somente visual, preservando rascunho).
+- **Sidebar** mais refinada (checklist/histórico).
+- Menu **⋮** refinado e **sem “Imprimir”**.
+- Desktop **1366px** sem rolagem horizontal grosseira.
 
 ---
 
-## Fora de escopo (Fase 1)
+## Fora de escopo (Fase 1.3)
 
-- Trilha de Auditoria lateral completa.
-- Timeline antes/depois.
-- Checklist “premium”.
-- Histórico “premium”.
-- `Auditoria_JSON` nova ou reestruturação de backend.
-- Real-time complexo.
-- Mudança profunda de schema.
+- Auditoria / trilha de auditoria completa / histórico premium.
+- Sync/polling/auto-refresh/locks.
+- Backend / `Code.gs` / schema / migrações.
+- Mudança de regra de negócio (Pendências/Medicamentos/Checklist/WhatsApp).
+- Busca funcional nova.
+- Deploy.
 
 ---
 
