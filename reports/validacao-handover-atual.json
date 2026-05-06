@@ -6,58 +6,59 @@
   "commits_publicados_temporariamente": [
     "95eaf37",
     "211d3b6",
-    "e8e17a6"
+    "00527e6"
   ],
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
-  "versao_publicada_teste": 34,
+  "versao_publicada_teste": 35,
   "versao_rollback": 33,
   "rollback_feito": true,
   "pop_tocado": false,
   "registros_criados": [],
-  "usuarios": {
-    "configurados": true,
-    "pins_obtidos": "Logger do Apps Script apos execucao manual de setupUsuariosHandover",
-    "pin_puro_planilha": false,
-    "pin_hash_planilha": true
-  },
+  "usuarios_configurados": true,
   "pre_deploy": {
     "resultado": "OK",
     "branch_correta": true,
+    "commits_obrigatorios_presentes": true,
     "scriptId_handover": true,
     "pop_referenciado": false,
     "sheet_clear": false,
-    "exclusao_logica_estatica": true
+    "pin_hash_sha256": true,
+    "salt_script_properties": true,
+    "sessao_cache_service": true,
+    "exclusao_logica_estatica": true,
+    "deleteItemHandover_exige_admin_gerente": true,
+    "dashboard_gated_codigo": true
   },
   "publicacao": {
     "clasp_push": "OK",
-    "clasp_version": 34,
+    "clasp_version": 35,
     "clasp_deploy": "OK",
     "deployment_oficial_mantido": true,
     "url_oficial_mantida": true
   },
   "smoke_real": {
     "executado": true,
-    "login_tela_aparece": false,
-    "dashboard_sem_sessao": true,
-    "auth_overlay_class": "modal-overlay hidden",
-    "local_storage_token": null,
-    "header_usuario": "",
-    "logout_oculto": true,
-    "login_admin": "NAO TESTADO - bloqueado por falha P0 de login inicial",
+    "dashboard_bloqueado_antes_login": true,
+    "overlay_login_aparece": true,
+    "token_local": null,
+    "pin_errado": "INCONCLUSIVO - fluxo quebrou antes de retorno final",
+    "login_admin": false,
+    "erro_console": "updateOperadorAvatar_ is not defined",
+    "login_operator": "NAO TESTADO",
     "perfis": "NAO TESTADO",
     "exclusao_logica": "NAO TESTADO",
     "regressao": "NAO TESTADO"
   },
   "falhas": {
     "criticas": [
-      "Sem sessao/token, tela de login fica oculta e dashboard fica acessivel."
+      "updateOperadorAvatar_ is not defined quebra o fluxo de login; admin nao consegue entrar."
     ],
     "medias": [],
     "leves": [
       "deleteRow legado permanece em moveRowToResolved; nao faz parte da nova exclusao logica."
     ]
   },
-  "proxima_correcao": "Forcar tela de login quando nao houver sessao valida antes de renderizar/liberar dashboard.",
+  "proxima_correcao": "Corrigir chamada/definicao inconsistente de avatar no front; syncOperadorUiFromSession_ chama updateOperadorAvatar_, possivelmente deveria chamar syncOperadorAvatar_.",
   "veredito": "Publicado para teste, reprovado no smoke real e rollback executado para v33."
 }

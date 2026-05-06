@@ -1,4 +1,4 @@
-# Validacao Handover - Auth PIN / perfis / exclusao logica
+# Validacao Handover - Auth PIN / dashboard gated
 
 Projeto: Handover - Drogarias Conceito
 
@@ -9,9 +9,9 @@ Branch validada/publicada temporariamente: `feat/handover-auth-pin`
 Commits validados/publicados temporariamente:
 - `95eaf37 - feat(handover): login operacional por PIN e sessao`
 - `211d3b6 - feat(handover): perfis e exclusao logica com auditoria`
-- `e8e17a6 - fix(handover): expose user bootstrap runner`
+- `00527e6 - fix(handover): bloqueia dashboard ate sessao validada`
 
-Base publicada anterior: v33 estavel
+Base estavel: v33
 
 Deployment oficial: `AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw`
 
@@ -21,7 +21,7 @@ URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklp
 
 Status geral: FALHA
 
-Versao publicada para teste: 34.
+Versao publicada para teste: 35.
 
 Rollback feito: SIM, deployment oficial voltou para v33.
 
@@ -32,54 +32,67 @@ Registros criados: nenhum.
 ## Usuarios
 
 - Usuarios configurados: SIM.
-- PINs foram obtidos pelo Logger do Apps Script apos execucao manual de `setupUsuariosHandover`.
-- PIN puro nao foi gravado na planilha pelo codigo; apenas `Pin_Hash`.
+- PINs obtidos via Logger do Apps Script apos execucao manual de `setupUsuariosHandover`.
+- Existe admin configurado: SIM (Carlos/Marco).
 
 ## Pre-deploy
 
 - Branch atual confirmada: `feat/handover-auth-pin`.
-- Commits `95eaf37`, `211d3b6` e wrapper `e8e17a6` presentes.
+- Commits `95eaf37`, `211d3b6` e `00527e6` presentes.
 - `.clasp.json`: scriptId oficial do Handover.
 - POP proibido: nao encontrado.
 - `sheet.clear`: ausente.
+- PIN com `Pin_Hash`, SHA-256 e salt em ScriptProperties.
+- Sessao em `CacheService`.
 - Exclusao logica validada estaticamente em `deleteItemHandover`.
+- `deleteItemHandover` exige admin/gerente e nao usa `deleteRow`.
+- `deleteRow` legado existe apenas em `moveRowToResolved`.
 
 ## Publicacao
 
 - `clasp push`: OK.
-- `clasp version`: criada versao 34.
-- `clasp deploy`: deployment oficial atualizado temporariamente para v34.
+- `clasp version`: criada versao 35.
+- `clasp deploy`: deployment oficial atualizado temporariamente para v35.
 
 ## Smoke real
 
-### Falha critica encontrada
+### Resultado parcial antes da falha
 
-Sem sessao/token no navegador, o Web App abriu o dashboard diretamente e a tela de login ficou oculta:
+- Dashboard bloqueado antes do login: OK.
+- Overlay de login aparece: OK.
+- Sem token local: OK.
 
-- `auth-login-overlay`: `modal-overlay hidden`
-- `handover_session_token_v1`: `null`
-- header usuario vazio
-- botao Sair oculto
-- dashboard renderizado
+Evidencia:
+- `loginVisible=true`
+- `appHidden=true`
+- `bodyHasDashboardText=false`
+- `token=null`
 
-Isso falha o requisito P0:
+### Falha critica
 
-- Tela de login deve aparecer antes do uso.
-- Login operacional por PIN deve controlar a entrada.
+Login admin nao concluiu.
 
-Como a tela de login nao apareceu, os testes de login/perfis/exclusao nao foram prosseguidos. Publicar assim deixaria o Handover acessivel sem login inicial, mesmo que acoes criticas chamem autenticacao depois.
+Erro de console capturado:
+
+`updateOperadorAvatar_ is not defined`
+
+Com isso:
+- PIN errado nao retornou conclusivamente mensagem final, ficou em `Entrando...`.
+- Login admin ficou em `Entrando...`.
+- Header nao recebeu `Carlos · admin`.
+- Testes de perfis, exclusao logica e regressao nao puderam prosseguir.
 
 ## Rollback
 
-- Comando executado: deployment oficial atualizado de volta para v33.
+- Deployment oficial restaurado para v33.
 - URL oficial preservada.
-- v33 estavel mantida para uso operacional.
+- v33 estavel mantida para operacao.
 
 ## Falhas
 
 ### Criticas
 
-- Login inicial nao aparece sem sessao. Dashboard fica acessivel sem token.
+- `updateOperadorAvatar_ is not defined` quebra o fluxo de login; admin nao consegue entrar.
 
 ### Medias
 
@@ -89,6 +102,14 @@ Como a tela de login nao apareceu, os testes de login/perfis/exclusao nao foram 
 
 - `deleteRow` legado permanece em `moveRowToResolved`; nao faz parte da nova exclusao logica.
 
+## Proxima correcao
+
+Cursor deve corrigir a chamada/definicao inconsistente de avatar no front:
+- `syncOperadorUiFromSession_` chama `updateOperadorAvatar_`;
+- verificar se a funcao real foi renomeada/removida ou deveria chamar `syncOperadorAvatar_`.
+
+Depois commitar/pushar e devolver para Codex publicar/testar novamente.
+
 ## Veredito
 
-Publicado para teste, reprovado no smoke real e rollback executado para v33. Proxima correcao para Cursor: forcar tela de login quando nao houver sessao valida antes de renderizar/liberar dashboard.
+Publicado para teste, reprovado no smoke real e rollback executado para v33. Dashboard gated foi corrigido, mas login admin quebra por funcao JavaScript ausente.
