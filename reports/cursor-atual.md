@@ -70,3 +70,8 @@ Regra: se o dado aparece no card de Medicamentos, ele deve ser encontrável pela
 
 - Criada: `aios/skills/handover-visual-only-guardrails/SKILL.md`
   - Motivo: evitar repetir o problema de **release visual-only contaminada** por lógica funcional (auto-refresh/polling/sync UI) herdada de commits mistos.
+
+- Criada: `aios/skills/handover-auth-audit/SKILL.md`
+  - Motivo: padronizar login operacional (usuário+PIN), sessão e autoria/auditoria sem vazar PIN em texto puro.
+  - Quando usar: qualquer mudança em `Usuarios_Handover`, hash de PIN, sessão/token e validações em ações críticas.
+  - Regras-chave: sem deploy/clasp sem autorização; sem `git add .`; schema defensivo (somente adicionar no final); nunca armazenar PIN em texto puro; backend não confia em operador vindo do front.

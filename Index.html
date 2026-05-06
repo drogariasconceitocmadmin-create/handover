@@ -2417,16 +2417,17 @@
           <span class="brand-product">Handover</span>
         </div>
         <div class="app-header-right">
-          <div class="header-pill operador-pill">
+          <div class="header-pill operador-pill" id="auth-user-pill">
             <span class="operador-avatar" id="operador-avatar-char" aria-hidden="true">?</span>
             <label class="field">
-              <span class="header-pill-label">Operador atual</span>
+              <span class="header-pill-label">Usuário</span>
               <input
                 id="operador-atual"
                 type="text"
                 name="operador-atual"
                 autocomplete="name"
-                placeholder="Nome no checklist e ações"
+                placeholder="Faça login para continuar"
+                readonly
               >
             </label>
           </div>
@@ -2439,6 +2440,15 @@
             <span id="last-action-label" class="header-pill-value">—</span>
           </div>
           <div class="header-actions">
+            <button
+              type="button"
+              id="logout-btn"
+              class="btn-header-secondary hidden"
+              onclick="logoutHandover_()"
+              title="Trocar usuário"
+            >
+              Sair
+            </button>
             <button type="button" id="refresh-dashboard-btn" class="btn-header-secondary" onclick="refreshDashboardNow_()">
               Atualizar agora
             </button>
@@ -2735,22 +2745,26 @@
       </div>
     </div>
 
-    <div
-      id="operador-required-overlay"
-      class="modal-overlay hidden"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="operador-modal-title">
+    <div id="auth-login-overlay" class="modal-overlay hidden" aria-hidden="true">
+      <div class="modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="auth-login-title">
         <div class="modal-head">
-          <h2 id="operador-modal-title">Informe o operador atual</h2>
+          <h2 id="auth-login-title">Login operacional</h2>
+        </div>
+        <p class="muted" style="margin-top:0;">
+          Entre com seu usuário e PIN para registrar autoria real das ações.
+        </p>
+        <div class="field">
+          <label for="auth-usuario-input">Usuário</label>
+          <input id="auth-usuario-input" type="text" autocomplete="username" placeholder="ex.: carlos">
         </div>
         <div class="field">
-          <label for="operador-modal-input">Nome</label>
-          <input id="operador-modal-input" type="text" autocomplete="name" placeholder="Nome do operador">
+          <label for="auth-pin-input">PIN</label>
+          <input id="auth-pin-input" type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••••">
         </div>
+        <div id="auth-login-error" class="status" aria-live="polite"></div>
         <div class="form-actions">
-          <button type="button" class="light" onclick="cancelOperadorRequiredModal_()">Cancelar</button>
-          <button type="button" onclick="confirmOperadorRequiredModal_()">Confirmar</button>
+          <button type="button" class="light" onclick="authClearLoginForm_()">Limpar</button>
+          <button type="button" onclick="authSubmitLogin_()">Entrar</button>
         </div>
       </div>
     </div>
@@ -2777,7 +2791,8 @@
     <div id="toast-root" aria-live="polite"></div>
 
     <script>
-      const OPERADOR_STORAGE_KEY = 'handover_operador_atual_v14';
+      const HANDOVER_SESSION_TOKEN_KEY = 'handover_session_token_v1';
+      const HANDOVER_SESSION_DISPLAY_KEY = 'handover_session_display_v1';
       const QUEUE_FILTERS_PENDENCIAS = ['pendentes', 'todos', 'urgentes', 'vencidos_hoje'];
       const QUEUE_FILTERS_MEDICAMENTOS = [
         'pendentes',
@@ -2814,7 +2829,9 @@
       const openChecklistCategories = new Set();
       const checklistObservationEditMode = new Set();
 
-      let pendingOperadorCallback_ = null;
+      let pendingAuthCallback_ = null;
+      let handoverSessionToken_ = '';
+      let handoverSessionDisplay_ = '';
       let activeChecklistTurno =
         dashboardData.checklistTurno && dashboardData.checklistTurno.turno
           ? dashboardData.checklistTurno.turno
@@ -2857,8 +2874,11 @@
       const checklistStatus = document.getElementById('checklist-status');
       const checklistGenerateBtn = document.getElementById('checklist-generate-btn');
       const operadorAtualInput = document.getElementById('operador-atual');
-      const operadorRequiredOverlay = document.getElementById('operador-required-overlay');
-      const operadorModalInput = document.getElementById('operador-modal-input');
+      const authLoginOverlay = document.getElementById('auth-login-overlay');
+      const authUsuarioInput = document.getElementById('auth-usuario-input');
+      const authPinInput = document.getElementById('auth-pin-input');
+      const authLoginError = document.getElementById('auth-login-error');
+      const logoutBtn = document.getElementById('logout-btn');
       const reopenConfirmOverlay = document.getElementById('reopen-confirm-overlay');
       const historicoFiltersPanel = document.getElementById('historico-filters-panel');
       const checklistTurnSelect = document.getElementById('checklist-turno-select');
@@ -2948,8 +2968,9 @@
           closeCardDetailOverlay_();
           return;
         }
-        if (operadorRequiredOverlay && !operadorRequiredOverlay.classList.contains('hidden')) {
-          cancelOperadorRequiredModal_();
+        if (authLoginOverlay && !authLoginOverlay.classList.contains('hidden')) {
+          // Login é bloqueante: não fecha no ESC para evitar ações sem autoria.
+          return;
         }
       });
 
@@ -2957,62 +2978,175 @@
       updateMedicinePriceVisibility_();
       initChecklistTurnoUi_();
       initDashboardSync_();
+      initAuth_();
 
-      function runWithOperador_(fn) {
-        var op = getOperadorAtual_();
-        if (op) {
-          fn(op);
+      function runWithAuth_(fn) {
+        var tok = String(handoverSessionToken_ || '').trim();
+        if (tok) {
+          fn(tok, String(handoverSessionDisplay_ || '').trim());
           return;
         }
-        pendingOperadorCallback_ = fn;
-        if (operadorModalInput) {
-          operadorModalInput.value = '';
+        pendingAuthCallback_ = fn;
+        showAuthLogin_();
+      }
+
+      function showAuthLogin_(errorTextOpt) {
+        if (authLoginError) {
+          authLoginError.textContent = String(errorTextOpt || '').trim();
+          authLoginError.className = String(errorTextOpt || '').trim() ? 'status error' : 'status';
         }
-        if (operadorRequiredOverlay) {
-          operadorRequiredOverlay.classList.remove('hidden');
-          operadorRequiredOverlay.setAttribute('aria-hidden', 'false');
+        if (authPinInput) {
+          authPinInput.value = '';
+        }
+        if (authLoginOverlay) {
+          authLoginOverlay.classList.remove('hidden');
+          authLoginOverlay.setAttribute('aria-hidden', 'false');
           window.setTimeout(function () {
-            if (operadorModalInput) {
-              operadorModalInput.focus();
+            if (authUsuarioInput) {
+              authUsuarioInput.focus();
             }
-          }, 50);
+          }, 60);
         }
       }
 
-      function confirmOperadorRequiredModal_() {
-        var v = operadorModalInput ? String(operadorModalInput.value || '').trim() : '';
-        if (!v) {
-          showToast_('Informe um nome para continuar.', true);
-          return;
+      function hideAuthLogin_() {
+        if (authLoginOverlay) {
+          authLoginOverlay.classList.add('hidden');
+          authLoginOverlay.setAttribute('aria-hidden', 'true');
         }
-        if (operadorAtualInput) {
-          operadorAtualInput.value = v;
+      }
+
+      function authClearLoginForm_() {
+        if (authUsuarioInput) authUsuarioInput.value = '';
+        if (authPinInput) authPinInput.value = '';
+        if (authLoginError) {
+          authLoginError.textContent = '';
+          authLoginError.className = 'status';
         }
+      }
+
+      function setSession_(token, displayName) {
+        handoverSessionToken_ = String(token || '').trim();
+        handoverSessionDisplay_ = String(displayName || '').trim();
         try {
-          localStorage.setItem(OPERADOR_STORAGE_KEY, v);
+          if (handoverSessionToken_) {
+            localStorage.setItem(HANDOVER_SESSION_TOKEN_KEY, handoverSessionToken_);
+            localStorage.setItem(HANDOVER_SESSION_DISPLAY_KEY, handoverSessionDisplay_);
+          } else {
+            localStorage.removeItem(HANDOVER_SESSION_TOKEN_KEY);
+            localStorage.removeItem(HANDOVER_SESSION_DISPLAY_KEY);
+          }
         } catch (err) {
           console.warn('Handover: localStorage indisponível.', err);
         }
+        syncOperadorUiFromSession_();
+      }
+
+      function syncOperadorUiFromSession_() {
+        if (operadorAtualInput) {
+          operadorAtualInput.value = handoverSessionDisplay_ || '';
+        }
         syncAutorFieldFromOperador_();
-        closeOperadorRequiredModal_();
-        var cb = pendingOperadorCallback_;
-        pendingOperadorCallback_ = null;
-        if (cb) {
-          cb(v);
+        updateOperadorAvatar_();
+        if (logoutBtn) {
+          if (handoverSessionToken_) logoutBtn.classList.remove('hidden');
+          else logoutBtn.classList.add('hidden');
         }
       }
 
-      function cancelOperadorRequiredModal_() {
-        pendingOperadorCallback_ = null;
-        closeOperadorRequiredModal_();
-        showToast_('Operador obrigatório para esta ação', true);
+      function initAuth_() {
+        try {
+          handoverSessionToken_ = localStorage.getItem(HANDOVER_SESSION_TOKEN_KEY) || '';
+          handoverSessionDisplay_ = localStorage.getItem(HANDOVER_SESSION_DISPLAY_KEY) || '';
+        } catch (err) {
+          handoverSessionToken_ = '';
+          handoverSessionDisplay_ = '';
+        }
+
+        if (authUsuarioInput) {
+          authUsuarioInput.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Enter') {
+              ev.preventDefault();
+              authSubmitLogin_();
+            }
+          });
+        }
+        if (authPinInput) {
+          authPinInput.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Enter') {
+              ev.preventDefault();
+              authSubmitLogin_();
+            }
+          });
+        }
+
+        if (handoverSessionToken_) {
+          getScriptRunner_()
+            .withSuccessHandler(function (res) {
+              if (res && res.success) {
+                setSession_(handoverSessionToken_, res.displayName || handoverSessionDisplay_ || '');
+                hideAuthLogin_();
+              } else {
+                setSession_('', '');
+                showAuthLogin_();
+              }
+            })
+            .withFailureHandler(function () {
+              setSession_('', '');
+              showAuthLogin_('Não foi possível validar a sessão. Faça login novamente.');
+            })
+            .validateSessionHandover(handoverSessionToken_);
+          return;
+        }
+
+        setSession_('', '');
+        showAuthLogin_();
       }
 
-      function closeOperadorRequiredModal_() {
-        if (operadorRequiredOverlay) {
-          operadorRequiredOverlay.classList.add('hidden');
-          operadorRequiredOverlay.setAttribute('aria-hidden', 'true');
+      function authSubmitLogin_() {
+        var usuario = authUsuarioInput ? String(authUsuarioInput.value || '').trim() : '';
+        var pin = authPinInput ? String(authPinInput.value || '').trim() : '';
+        if (!usuario || !pin) {
+          showAuthLogin_('Informe usuário e PIN.');
+          return;
         }
+
+        if (authLoginError) {
+          authLoginError.textContent = 'Entrando...';
+          authLoginError.className = 'status';
+        }
+
+        getScriptRunner_()
+          .withSuccessHandler(function (res) {
+            if (!res || !res.success || !res.token) {
+              showAuthLogin_('Login inválido.');
+              return;
+            }
+            setSession_(res.token, res.displayName || '');
+            hideAuthLogin_();
+            var cb = pendingAuthCallback_;
+            pendingAuthCallback_ = null;
+            if (cb) {
+              cb(res.token, res.displayName || '');
+            }
+            refreshDashboardNow_();
+          })
+          .withFailureHandler(function (err) {
+            var msg = err && err.message ? String(err.message) : 'Login inválido.';
+            showAuthLogin_(msg);
+          })
+          .loginHandover(usuario, pin);
+      }
+
+      function logoutHandover_() {
+        var tok = String(handoverSessionToken_ || '').trim();
+        setSession_('', '');
+        showAuthLogin_('Sessão encerrada. Faça login para continuar.');
+        if (!tok) return;
+        getScriptRunner_()
+          .withSuccessHandler(function () {})
+          .withFailureHandler(function () {})
+          .logoutHandover(tok);
       }
 
       function cancelReopenHistoricoModal_() {
@@ -3032,7 +3166,7 @@
           return;
         }
         cancelReopenHistoricoModal_();
-        runWithOperador_(function (operador) {
+        runWithAuth_(function (sessionToken, displayName) {
           var started = Date.now();
           try {
             getScriptRunner_()
@@ -3049,7 +3183,7 @@
                 });
                 if (arc) {
                   arc.Estado_Arquivo = 'Reaberto';
-                  arc.Reaberto_Por = operador;
+                  arc.Reaberto_Por = displayName || '';
                   arc.Data_Reabertura = new Date().toISOString();
                   arc.Motivo_Reabertura = motivo;
                   arc.ID_Registro_Ativo = response.novoId;
@@ -3061,7 +3195,7 @@
                 perfLog_('reopenHistoricoItem_fail', started);
                 showToast_(getErrorMessage(error), true);
               })
-              .reopenHistoricoItem(hid, operador, motivo);
+              .reopenHistoricoItem(hid, sessionToken, motivo);
           } catch (error) {
             showToast_(error.message, true);
           }
@@ -3102,7 +3236,7 @@
         var auditOv = document.getElementById('audit-drawer-overlay');
         return (
           (formModalOverlay && !formModalOverlay.classList.contains('hidden')) ||
-          (operadorRequiredOverlay && !operadorRequiredOverlay.classList.contains('hidden')) ||
+          (authLoginOverlay && !authLoginOverlay.classList.contains('hidden')) ||
           (reopenConfirmOverlay && !reopenConfirmOverlay.classList.contains('hidden')) ||
           (cardDetailOverlay && !cardDetailOverlay.classList.contains('hidden')) ||
           (auditOv && !auditOv.classList.contains('hidden'))
@@ -3269,29 +3403,13 @@
         if (!operadorAtualInput) {
           return;
         }
-        try {
-          operadorAtualInput.value = localStorage.getItem(OPERADOR_STORAGE_KEY) || '';
-        } catch (e) {
-          operadorAtualInput.value = '';
-        }
+        operadorAtualInput.value = handoverSessionDisplay_ || '';
         syncOperadorAvatar_();
-        operadorAtualInput.addEventListener('change', function () {
-          try {
-            localStorage.setItem(OPERADOR_STORAGE_KEY, operadorAtualInput.value.trim());
-          } catch (err) {
-            console.warn('Handover: localStorage indisponível.', err);
-          }
-          syncOperadorAvatar_();
-          syncAutorFieldFromOperador_();
-        });
-        operadorAtualInput.addEventListener('input', function () {
-          syncOperadorAvatar_();
-          syncAutorFieldFromOperador_();
-        });
+        syncAutorFieldFromOperador_();
       }
 
       function getOperadorAtual_() {
-        return operadorAtualInput ? operadorAtualInput.value.trim() : '';
+        return String(handoverSessionDisplay_ || '').trim();
       }
 
       function showToast_(message, isError) {
@@ -6818,7 +6936,7 @@
       }
 
       function updateChecklistStatus(id, status) {
-        runWithOperador_(function (operador) {
+        runWithAuth_(function (sessionToken) {
           checklistPendingItemId = id;
           optimisticChecklistPatch_(id, status);
           if (!patchChecklistItemArticle_(id)) {
@@ -6847,7 +6965,7 @@
                 showToast_(getErrorMessage(error), true);
                 setStatus(checklistStatus, getErrorMessage(error), true);
               })
-              .updateChecklistItemStatus(id, status, operador);
+              .updateChecklistItemStatus(id, status, sessionToken);
           } catch (error) {
             checklistPendingItemId = null;
             resyncChecklistFromServer_();
@@ -6863,7 +6981,7 @@
           checklistObservationDrafts[checklistDraftKey_(id)] = input.value;
         }
 
-        runWithOperador_(function (operador) {
+        runWithAuth_(function (sessionToken) {
           var input2 = document.getElementById(inputId);
           var observacao = input2 ? input2.value : checklistObservationDrafts[checklistDraftKey_(id)] || '';
           checklistObservationDrafts[checklistDraftKey_(id)] = observacao;
@@ -6899,7 +7017,7 @@
                 setStatus(checklistStatus, getErrorMessage(error), true);
                 showToast_(getErrorMessage(error), true);
               })
-              .updateChecklistItemObservation(id, observacao, operador);
+              .updateChecklistItemObservation(id, observacao, sessionToken);
           } catch (error) {
             checklistPendingItemId = null;
             resyncChecklistFromServer_();
@@ -7114,34 +7232,36 @@
         row.__syncState = 'syncing';
         delete row.__syncError;
         renderAll();
-        var started = Date.now();
-        try {
-          getScriptRunner_()
-            .withSuccessHandler(function (response) {
-              removeOptimisticPlaceholder_(id, ps.tab);
-              if (ps.tab === 'Geral') {
-                upsertGeral_(response.record);
-              } else {
-                upsertMedicamento_(response.record);
-              }
-              perfLog_('saveData_retry', started);
-              renderAll();
-              showToast_('Salvo');
-            })
-            .withFailureHandler(function (error) {
-              row.__syncState = 'error';
-              row.__syncError = getErrorMessage(error);
-              perfLog_('saveData_retry_fail', started);
-              renderAll();
-              showToast_(getErrorMessage(error), true);
-            })
-            .saveData(ps.tab, ps.payload, ps.operador);
-        } catch (error) {
-          row.__syncState = 'error';
-          row.__syncError = error.message;
-          renderAll();
-          showToast_(error.message, true);
-        }
+        runWithAuth_(function (sessionToken) {
+          var started = Date.now();
+          try {
+            getScriptRunner_()
+              .withSuccessHandler(function (response) {
+                removeOptimisticPlaceholder_(id, ps.tab);
+                if (ps.tab === 'Geral') {
+                  upsertGeral_(response.record);
+                } else {
+                  upsertMedicamento_(response.record);
+                }
+                perfLog_('saveData_retry', started);
+                renderAll();
+                showToast_('Salvo');
+              })
+              .withFailureHandler(function (error) {
+                row.__syncState = 'error';
+                row.__syncError = getErrorMessage(error);
+                perfLog_('saveData_retry_fail', started);
+                renderAll();
+                showToast_(getErrorMessage(error), true);
+              })
+              .saveData(ps.tab, ps.payload, sessionToken);
+          } catch (error) {
+            row.__syncState = 'error';
+            row.__syncError = error.message;
+            renderAll();
+            showToast_(error.message, true);
+          }
+        });
       }
 
       function editPendingSave_(id) {
@@ -7198,7 +7318,7 @@
         event.preventDefault();
         clearStatus(formStatus);
 
-        runWithOperador_(function (operador) {
+        runWithAuth_(function (sessionToken, displayName) {
           syncAutorFieldFromOperador_();
 
           const tab = categorySelect.value;
@@ -7227,7 +7347,6 @@
 
           var pendingCtx = {
             tab: tab,
-            operador: operador,
             payload: JSON.parse(JSON.stringify(payload)),
           };
 
@@ -7245,7 +7364,7 @@
               Tem_Vencimento: !!payload.temVencimento,
               Data_Vencimento: payload.temVencimento ? payload.dataVencimento : '',
               Hora_Vencimento: payload.temVencimento ? payload.horaVencimento : '',
-              Ultima_Acao_Por: operador,
+              Ultima_Acao_Por: displayName || '',
               __syncState: 'syncing',
               __pendingSave: pendingCtx,
             });
@@ -7266,7 +7385,7 @@
               Status: 'Pendente',
               Status_Aviso_WhatsApp: '',
               Preco_Venda: isFalta ? '' : payload.precoVenda,
-              Ultima_Acao_Por: operador,
+              Ultima_Acao_Por: displayName || '',
               __syncState: 'syncing',
               __pendingSave: pendingCtx,
             });
@@ -7304,8 +7423,12 @@
                 perfLog_('saveData_fail', started);
                 renderAll();
                 showToast_('Erro ao salvar', true);
+                if (/Sessão inválida|sessão inválida|expirada/i.test(getErrorMessage(error))) {
+                  setSession_('', '');
+                  showAuthLogin_('Sessão expirada. Faça login novamente.');
+                }
               })
-              .saveData(tab, payload, operador);
+              .saveData(tab, payload, sessionToken);
           } catch (error) {
             var list2 = tab === 'Geral' ? dashboardData.geral : dashboardData.medicamentos;
             var row2 = (list2 || []).find(function (item) {
@@ -7352,7 +7475,7 @@
 
       function validatePayload(tab, payload) {
         if (tab === 'Geral') {
-          if (!payload.autor.trim()) return 'Informe o autor (use Operador atual no topo).';
+          if (!payload.autor.trim()) return 'Informe o autor (preenchido pelo usuário logado).';
           if (!payload.titulo.trim()) return 'Informe o título ou assunto.';
           if (!payload.descricao.trim()) return 'Informe a descrição.';
           if (payload.temVencimento) {
@@ -7378,7 +7501,7 @@
       }
 
       function markPurchased(id) {
-        runWithOperador_(function (operador) {
+        runWithAuth_(function (sessionToken) {
           var list = dashboardData.medicamentos || [];
           var item = list.find(function (m) {
             return m.ID === id;
@@ -7422,7 +7545,7 @@
                 setStatus(queueStatus, getErrorMessage(error), true);
                 showToast_(getErrorMessage(error), true);
               })
-              .markAsPurchased(id, operador);
+              .markAsPurchased(id, sessionToken);
           } catch (error) {
             item.Comprado = snapshot.Comprado;
             item.Entregue = snapshot.Entregue;
@@ -7443,7 +7566,7 @@
         ) {
           return;
         }
-        runWithOperador_(function (operador) {
+        runWithAuth_(function (sessionToken) {
           var list = dashboardData.medicamentos || [];
           var item = list.find(function (m) {
             return m.ID === id;
@@ -7496,7 +7619,7 @@
                 setStatus(queueStatus, getErrorMessage(error), true);
                 showToast_(getErrorMessage(error), true);
               })
-              .revertMedicationToPending(id, operador, '');
+              .revertMedicationToPending(id, sessionToken, '');
           } catch (error) {
             item.Comprado = snapshot.Comprado;
             item.Entregue = snapshot.Entregue;
@@ -7544,37 +7667,33 @@
           '?text=' +
           encodeURIComponent(buildWhatsAppMessageClient_(medication.Cliente, medication.Medicamento));
         window.open(url, '_blank');
-
-        var operador = getOperadorAtual_();
-        if (!operador) {
-          showToast_('WhatsApp aberto. Informe o operador atual no topo para registrar a tentativa.', false);
-        }
-
-        var started = Date.now();
-        try {
-          getScriptRunner_()
-            .withSuccessHandler(function (response) {
-              if (response.record) {
-                upsertMedicamento_(response.record);
-              }
-              perfLog_('registerWhatsAppAttempt', started);
-              renderQueue();
-              renderSummary();
-              clearStatus(queueStatus);
-              showToast_('Tentativa registrada');
-            })
-            .withFailureHandler(function (error) {
-              perfLog_('registerWhatsAppAttempt_fail', started);
-              showToast_('Aviso: ' + getErrorMessage(error), true);
-            })
-            .registerWhatsAppAttempt(id, operador);
-        } catch (error) {
-          showToast_('Aviso: ' + error.message, true);
-        }
+        runWithAuth_(function (sessionToken) {
+          var started = Date.now();
+          try {
+            getScriptRunner_()
+              .withSuccessHandler(function (response) {
+                if (response.record) {
+                  upsertMedicamento_(response.record);
+                }
+                perfLog_('registerWhatsAppAttempt', started);
+                renderQueue();
+                renderSummary();
+                clearStatus(queueStatus);
+                showToast_('Tentativa registrada');
+              })
+              .withFailureHandler(function (error) {
+                perfLog_('registerWhatsAppAttempt_fail', started);
+                showToast_('Aviso: ' + getErrorMessage(error), true);
+              })
+              .registerWhatsAppAttempt(id, sessionToken);
+          } catch (error) {
+            showToast_('Aviso: ' + error.message, true);
+          }
+        });
       }
 
       function runQueueAction_(message, functionName, id) {
-        runWithOperador_(function (operador) {
+        runWithAuth_(function (sessionToken) {
           var started = Date.now();
           clearStatus(queueStatus);
 
@@ -7626,7 +7745,7 @@
                 setStatus(queueStatus, getErrorMessage(error), true);
                 showToast_(getErrorMessage(error), true);
               })
-              [functionName](id, operador);
+              [functionName](id, sessionToken);
           } catch (error) {
             if (functionName === 'markAsResolved') {
               var g3 = (dashboardData.geral || []).find(function (g) {

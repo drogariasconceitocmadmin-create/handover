@@ -3,12 +3,29 @@ const SHEET_NAMES = {
   MEDICAMENTOS: 'Medicamentos',
   ARQUIVO: 'Arquivo_Resolvidos',
   CHECKLIST: 'Checklist_Turnos',
+  USUARIOS: 'Usuarios_Handover',
 };
 
 const EMAIL_ENCOMENDAS = 'drogariasconceitocm@gmail.com';
 const HANDOVER_SPREADSHEET_ID_KEY = 'HANDOVER_SPREADSHEET_ID';
 const HANDOVER_SPREADSHEET_TITLE = 'Handover Drogarias Conceito';
 const HANDOVER_TIMEZONE = 'America/Sao_Paulo';
+
+const HANDOVER_USERS_HEADERS = [
+  'ID',
+  'Nome',
+  'Usuario',
+  'Pin_Hash',
+  'Perfil',
+  'Ativo',
+  'Criado_Em',
+  'Criado_Por',
+  'Ultimo_Login_Em',
+];
+
+const HANDOVER_AUTH_SALT_KEY = 'HANDOVER_PIN_SALT_V1';
+const HANDOVER_SESSION_TTL_SECONDS = 21600; // CacheService max TTL (~6h)
+const HANDOVER_SESSION_CACHE_PREFIX = 'handover_sess_v1:';
 
 const CHECKLIST_TURNO_MANHA = 'Manhã';
 const CHECKLIST_TURNO_TARDE = 'Tarde';
@@ -118,6 +135,7 @@ const HEADERS = {
     'Data_Hora_Check',
     'Observacao',
   ],
+  Usuarios_Handover: HANDOVER_USERS_HEADERS,
 };
 
 function doGet() {
@@ -182,13 +200,264 @@ function setupSpreadsheet() {
     if (
       sheetName === SHEET_NAMES.GERAL ||
       sheetName === SHEET_NAMES.ARQUIVO ||
-      sheetName === SHEET_NAMES.MEDICAMENTOS
+      sheetName === SHEET_NAMES.MEDICAMENTOS ||
+      sheetName === SHEET_NAMES.USUARIOS
     ) {
       ensureHeadersLegacyAdditive_(sheet, HEADERS[sheetName]);
     } else {
       ensureHeaders_(sheet, HEADERS[sheetName]);
     }
   });
+}
+
+function ensureUsuariosHandoverSheet_() {
+  setupSpreadsheet();
+  const ss = getSpreadsheet_();
+  const sheet = ss.getSheetByName(SHEET_NAMES.USUARIOS) || ss.insertSheet(SHEET_NAMES.USUARIOS);
+  ensureHeadersLegacyAdditive_(sheet, HANDOVER_USERS_HEADERS);
+  return sheet;
+}
+
+function normalizeUsuarioHandover_(usuario) {
+  return String(usuario || '')
+    .trim()
+    .toLowerCase();
+}
+
+function getOrCreateAuthSalt_() {
+  var props = PropertiesService.getScriptProperties();
+  var existing = props.getProperty(HANDOVER_AUTH_SALT_KEY);
+  if (existing) {
+    return existing;
+  }
+  var salt =
+    Utilities.getUuid() +
+    ':' +
+    Utilities.base64Encode(
+      Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(new Date().getTime()))
+    );
+  props.setProperty(HANDOVER_AUTH_SALT_KEY, salt);
+  return salt;
+}
+
+function hashPin_(usuario, pin) {
+  var u = normalizeUsuarioHandover_(usuario);
+  var p = String(pin || '').trim();
+  if (!u || !p) {
+    return '';
+  }
+  var salt = getOrCreateAuthSalt_();
+  var payload = salt + '|' + u + '|' + p;
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, payload, Utilities.Charset.UTF_8);
+  return Utilities.base64EncodeWebSafe(digest);
+}
+
+function findUsuarioRowByUsername_(sheet, usuario) {
+  var uname = normalizeUsuarioHandover_(usuario);
+  if (!uname) {
+    return null;
+  }
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    return null;
+  }
+  var colUsuario = getColumnIndex_(sheet, 'Usuario');
+  var values = sheet.getRange(2, colUsuario, lastRow - 1, 1).getValues();
+  for (var i = 0; i < values.length; i++) {
+    var cell = normalizeUsuarioHandover_(values[i][0]);
+    if (cell === uname) {
+      return 2 + i;
+    }
+  }
+  return null;
+}
+
+function getUsuarioRecordByRow_(sheet, rowNumber) {
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
+  var headerCells = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var row = sheet.getRange(rowNumber, 1, 1, lastCol).getValues()[0];
+  var obj = rowCellsToObject_(headerCells, row);
+  return obj;
+}
+
+function validateUsuarioLogin_(usuario, pin) {
+  var sheet = ensureUsuariosHandoverSheet_();
+  var rowNumber = findUsuarioRowByUsername_(sheet, usuario);
+  if (!rowNumber) {
+    return { ok: false, message: 'Usuário ou PIN inválido.' };
+  }
+  var record = getUsuarioRecordByRow_(sheet, rowNumber);
+  var ativoVal = record.Ativo;
+  var ativo = ativoVal === true || String(ativoVal || '').toLowerCase() === 'true' || String(ativoVal || '') === '1';
+  if (!ativo) {
+    return { ok: false, message: 'Usuário inativo.' };
+  }
+  var expected = String(record.Pin_Hash || '').trim();
+  if (!expected) {
+    return { ok: false, message: 'Usuário sem PIN configurado. Procure um administrador.' };
+  }
+  var candidate = hashPin_(usuario, pin);
+  if (candidate && candidate === expected) {
+    return {
+      ok: true,
+      rowNumber: rowNumber,
+      id: sanitizeText_(record.ID || ''),
+      nome: sanitizeText_(record.Nome || record.Usuario || ''),
+      usuario: normalizeUsuarioHandover_(record.Usuario || usuario),
+      perfil: sanitizeText_(record.Perfil || 'operador'),
+    };
+  }
+  return { ok: false, message: 'Usuário ou PIN inválido.' };
+}
+
+function criarSessaoHandover_(usuario, nome, perfil) {
+  var u = normalizeUsuarioHandover_(usuario);
+  if (!u) {
+    throw new Error('Sessão inválida: usuário ausente.');
+  }
+  var token = Utilities.getUuid() + '-' + Utilities.getUuid();
+  var nowMs = new Date().getTime();
+  var expMs = nowMs + HANDOVER_SESSION_TTL_SECONDS * 1000;
+  var payload = {
+    usuario: u,
+    nome: sanitizeText_(nome || ''),
+    perfil: sanitizeText_(perfil || 'operador'),
+    createdAtMs: nowMs,
+    expAtMs: expMs,
+  };
+  CacheService.getScriptCache().put(
+    HANDOVER_SESSION_CACHE_PREFIX + token,
+    JSON.stringify(payload),
+    HANDOVER_SESSION_TTL_SECONDS
+  );
+  return { token: token, expAtMs: expMs };
+}
+
+function validarSessaoHandover_(sessionToken) {
+  var tok = String(sessionToken || '').trim();
+  if (!tok) {
+    return null;
+  }
+  var cached = CacheService.getScriptCache().get(HANDOVER_SESSION_CACHE_PREFIX + tok);
+  if (!cached) {
+    return null;
+  }
+  try {
+    var obj = JSON.parse(cached);
+    if (!obj || !obj.usuario) {
+      return null;
+    }
+    if (obj.expAtMs && new Date().getTime() > obj.expAtMs) {
+      return null;
+    }
+    return obj;
+  } catch (e) {
+    return null;
+  }
+}
+
+function encerrarSessaoHandover_(sessionToken) {
+  var tok = String(sessionToken || '').trim();
+  if (!tok) {
+    return { success: true };
+  }
+  CacheService.getScriptCache().remove(HANDOVER_SESSION_CACHE_PREFIX + tok);
+  return { success: true };
+}
+
+function resolveOperadorFromSessionOrThrow_(sessionToken) {
+  var sess = validarSessaoHandover_(sessionToken);
+  if (!sess) {
+    throw new Error('Sessão inválida ou expirada. Faça login novamente.');
+  }
+  var nome = sanitizeText_(sess.nome || sess.usuario || '');
+  var usuario = normalizeUsuarioHandover_(sess.usuario || '');
+  return nome ? nome + ' (' + usuario + ')' : usuario;
+}
+
+function loginHandover(usuario, pin) {
+  setupSpreadsheet();
+  var u = normalizeUsuarioHandover_(usuario);
+  if (!u) {
+    throw new Error('Informe o usuário.');
+  }
+  var result = validateUsuarioLogin_(u, pin);
+  if (!result.ok) {
+    throw new Error(result.message || 'Login inválido.');
+  }
+  var sess = criarSessaoHandover_(result.usuario, result.nome, result.perfil);
+
+  // best-effort update Ultimo_Login_Em
+  try {
+    var sheet = ensureUsuariosHandoverSheet_();
+    sheet.getRange(result.rowNumber, getColumnIndex_(sheet, 'Ultimo_Login_Em')).setValue(new Date());
+  } catch (e) {
+    Logger.log('loginHandover Ultimo_Login_Em: ' + e);
+  }
+
+  return {
+    success: true,
+    token: sess.token,
+    expAtMs: sess.expAtMs,
+    usuario: result.usuario,
+    nome: result.nome,
+    perfil: result.perfil,
+    displayName: result.nome ? result.nome + ' (' + result.usuario + ')' : result.usuario,
+  };
+}
+
+function validateSessionHandover(sessionToken) {
+  setupSpreadsheet();
+  var sess = validarSessaoHandover_(sessionToken);
+  if (!sess) {
+    return { success: false };
+  }
+  return {
+    success: true,
+    usuario: normalizeUsuarioHandover_(sess.usuario),
+    nome: sanitizeText_(sess.nome || ''),
+    perfil: sanitizeText_(sess.perfil || 'operador'),
+    displayName: sanitizeText_(sess.nome || '') ? sanitizeText_(sess.nome || '') + ' (' + sess.usuario + ')' : sess.usuario,
+    expAtMs: sess.expAtMs || '',
+  };
+}
+
+function logoutHandover(sessionToken) {
+  setupSpreadsheet();
+  return encerrarSessaoHandover_(sessionToken);
+}
+
+function setupUsuariosHandover_() {
+  var sheet = ensureUsuariosHandoverSheet_();
+  var lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    Logger.log('Usuarios_Handover já possui dados (linhas=' + lastRow + '). Nenhuma ação executada.');
+    return { success: true, created: 0, note: 'Já existe conteúdo na aba.' };
+  }
+
+  var created = 0;
+  var now = new Date();
+  var bootstrapUsers = ['carlos', 'marco', 'jelcinei', 'ainale', 'joao', 'priscila', 'marcelo'];
+
+  bootstrapUsers.forEach(function (u) {
+    var pin = String(Math.floor(100000 + Math.random() * 900000)); // 6 dígitos
+    var row = buildRowFromHeaders_(HANDOVER_USERS_HEADERS, {
+      ID: Utilities.getUuid(),
+      Nome: u,
+      Usuario: u,
+      Pin_Hash: hashPin_(u, pin),
+      Perfil: u === 'marco' ? 'admin' : 'operador',
+      Ativo: true,
+      Criado_Em: now,
+      Criado_Por: 'setupUsuariosHandover_',
+      Ultimo_Login_Em: '',
+    });
+    sheet.appendRow(row);
+    created++;
+    Logger.log('Handover bootstrap user=' + u + ' pin=' + pin);
+  });
+
+  return { success: true, created: created };
 }
 
 function getChecklistTemplate_() {
@@ -502,7 +771,7 @@ function getChecklistSummary_(items) {
   };
 }
 
-function updateChecklistItemStatus(id, status, responsavel) {
+function updateChecklistItemStatus(id, status, sessionToken) {
   const started = Date.now();
   setupSpreadsheet();
 
@@ -512,7 +781,7 @@ function updateChecklistItemStatus(id, status, responsavel) {
   }
 
   const normalizedStatus = parseChecklistStatusInput_(status);
-  const responsavelValue = sanitizeText_(responsavel);
+  const responsavelValue = resolveOperadorFromSessionOrThrow_(sessionToken);
   const statusColumn = getColumnIndex_(location.sheet, 'Status');
   const dataHoraCheckColumn = getColumnIndex_(location.sheet, 'Data_Hora_Check');
   const responsavelColumn = getColumnIndex_(location.sheet, 'Responsavel');
@@ -534,7 +803,7 @@ function updateChecklistItemStatus(id, status, responsavel) {
   };
 }
 
-function updateChecklistItemObservation(id, observacao, responsavel) {
+function updateChecklistItemObservation(id, observacao, sessionToken) {
   const started = Date.now();
   setupSpreadsheet();
 
@@ -549,7 +818,7 @@ function updateChecklistItemObservation(id, observacao, responsavel) {
   location.sheet.getRange(location.rowNumber, observacaoColumn).setValue(sanitizeText_(observacao));
   location.sheet
     .getRange(location.rowNumber, responsavelColumn)
-    .setValue(sanitizeText_(responsavel));
+    .setValue(resolveOperadorFromSessionOrThrow_(sessionToken));
 
   const updatedItem = fetchChecklistItemById_(id);
   Logger.log('updateChecklistItemObservation ms=' + (Date.now() - started));
@@ -604,7 +873,7 @@ function buildChecklistTurnoPayload_(turnoOpt) {
   };
 }
 
-function saveData(tab, data, operador) {
+function saveData(tab, data, sessionToken) {
   const started = Date.now();
   setupSpreadsheet();
 
@@ -616,7 +885,7 @@ function saveData(tab, data, operador) {
   const sheet = getSheetOrThrow_(ss, tab);
   const id = Utilities.getUuid();
   const timestamp = new Date();
-  const op = sanitizeText_(operador);
+  const op = resolveOperadorFromSessionOrThrow_(sessionToken);
   const nowAcao = new Date();
 
   if (tab === SHEET_NAMES.GERAL) {
@@ -810,7 +1079,7 @@ function fetchHistoricoResolvidos(limit) {
   };
 }
 
-function markAsPurchased(id, operador) {
+function markAsPurchased(id, sessionToken) {
   const started = Date.now();
   setupSpreadsheet();
 
@@ -819,10 +1088,11 @@ function markAsPurchased(id, operador) {
     throw new Error('Medicamento nao encontrado: ' + id);
   }
 
+  var op = resolveOperadorFromSessionOrThrow_(sessionToken);
   const compradoColumn = getColumnIndex_(location.sheet, 'Comprado');
   location.sheet.getRange(location.rowNumber, compradoColumn).setValue(true);
   syncMedicationStatus_(location.sheet, location.rowNumber);
-  writeMedicationUltimaAcao_(location.sheet, location.rowNumber, operador);
+  writeMedicationUltimaAcao_(location.sheet, location.rowNumber, op);
 
   Logger.log('markAsPurchased ms=' + (Date.now() - started));
   return {
@@ -831,7 +1101,7 @@ function markAsPurchased(id, operador) {
   };
 }
 
-function markAsDelivered(id, operador) {
+function markAsDelivered(id, sessionToken) {
   const started = Date.now();
   setupSpreadsheet();
 
@@ -840,12 +1110,13 @@ function markAsDelivered(id, operador) {
     throw new Error('Medicamento nao encontrado: ' + id);
   }
 
+  var op = resolveOperadorFromSessionOrThrow_(sessionToken);
   const compradoColumn = getColumnIndex_(location.sheet, 'Comprado');
   const entregueColumn = getColumnIndex_(location.sheet, 'Entregue');
   location.sheet.getRange(location.rowNumber, compradoColumn).setValue(true);
   location.sheet.getRange(location.rowNumber, entregueColumn).setValue(true);
   syncMedicationStatus_(location.sheet, location.rowNumber);
-  writeMedicationUltimaAcao_(location.sheet, location.rowNumber, operador);
+  writeMedicationUltimaAcao_(location.sheet, location.rowNumber, op);
 
   Logger.log('markAsDelivered ms=' + (Date.now() - started));
   return {
@@ -854,15 +1125,12 @@ function markAsDelivered(id, operador) {
   };
 }
 
-function revertMedicationToPending(id, operador, motivo) {
+function revertMedicationToPending(id, sessionToken, motivo) {
   const started = Date.now();
   setupSpreadsheet();
 
   var ctx = '[revertMedicationToPending] ID=' + sanitizeText_(id) + ' acao=reverter_medicamento ';
-  var op = sanitizeText_(operador);
-  if (!op) {
-    throw new Error(ctx + 'Operador obrigatorio.');
-  }
+  var op = resolveOperadorFromSessionOrThrow_(sessionToken);
 
   const location = findRowById_(SHEET_NAMES.MEDICAMENTOS, id);
   if (!location) {
@@ -922,7 +1190,7 @@ function revertMedicationToPending(id, operador, motivo) {
   };
 }
 
-function markAsResolved(id, operador) {
+function markAsResolved(id, sessionToken) {
   const started = Date.now();
   var ctx =
     '[markAsResolved] ID=' +
@@ -942,7 +1210,7 @@ function markAsResolved(id, operador) {
 
     const sheet = location.sheet;
     const rowNumber = location.rowNumber;
-    const op = sanitizeText_(operador);
+    const op = resolveOperadorFromSessionOrThrow_(sessionToken);
     const now = new Date();
 
     sheet.getRange(rowNumber, getColumnIndex_(sheet, 'Ultima_Acao_Por')).setValue(op);
@@ -974,17 +1242,14 @@ function writeArchiveReopenAudit_(archiveSheet, rowNumber, operador, motivo, nov
     .setValue(sanitizeText_(novoIdAtivo));
 }
 
-function reopenHistoricoItem(archivedRecordId, operador, motivo) {
+function reopenHistoricoItem(archivedRecordId, sessionToken, motivo) {
   const started = Date.now();
   var rid = sanitizeText_(archivedRecordId);
-  var op = sanitizeText_(operador);
+  var op = resolveOperadorFromSessionOrThrow_(sessionToken);
   var mot = sanitizeText_(motivo);
   var ctx = '[reopenHistoricoItem] ID=' + rid + ' aba=' + SHEET_NAMES.ARQUIVO + ' acao=reabrir ';
   if (!rid) {
     throw new Error(ctx + 'Registro sem ID.');
-  }
-  if (!op) {
-    throw new Error(ctx + 'Operador obrigatorio.');
   }
 
   try {
@@ -1772,7 +2037,7 @@ function sendOrderEmail_(order) {
   MailApp.sendEmail(EMAIL_ENCOMENDAS, subject, body);
 }
 
-function registerWhatsAppAttempt(id, operador) {
+function registerWhatsAppAttempt(id, sessionToken) {
   const started = Date.now();
   setupSpreadsheet();
 
@@ -1781,6 +2046,7 @@ function registerWhatsAppAttempt(id, operador) {
     throw new Error('Medicamento nao encontrado para aviso no WhatsApp: ' + id);
   }
 
+  var op = resolveOperadorFromSessionOrThrow_(sessionToken);
   const sheet = location.sheet;
   const item = rowToObjectFromSheetRow_(sheet, location.rowNumber);
   normalizeItemForClient_(item);
@@ -1804,7 +2070,7 @@ function registerWhatsAppAttempt(id, operador) {
 
   sheet.getRange(location.rowNumber, statusAvisoColumn).setValue('Tentativa registrada');
   sheet.getRange(location.rowNumber, dataAvisoColumn).setValue(new Date());
-  writeMedicationUltimaAcao_(sheet, location.rowNumber, operador);
+  writeMedicationUltimaAcao_(sheet, location.rowNumber, op);
 
   Logger.log('registerWhatsAppAttempt ms=' + (Date.now() - started));
   return {
