@@ -1,16 +1,12 @@
-# Validacao Handover - Fase 1.3 visual
+# Validacao Handover - Hotfix dropdown e busca Medicamentos
 
 Projeto: Handover - Drogarias Conceito
 
 Pasta: `C:\Users\Marco\Desktop\Sis Drogaria\Handover`
 
-Branch publicada: `release/handover-v29-visual-clean`
+Branch publicada: `fix/handover-v31-dropdown-search`
 
-Commit publicado: `465c85b` (`HEAD`), contendo:
-- `26ad132 - style(handover): acabamento premium fino desktop fase 1.3`
-- `465c85b - docs(handover): adiciona skill de guardrails visual-only`
-
-Base publicada anterior: v30 / v29 visual limpa
+Commit publicado: `9a50a06 - fix(handover): corrige dropdown Novo registro e amplia busca Medicamentos`
 
 ScriptId: `1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd`
 
@@ -22,7 +18,7 @@ URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklp
 
 Status geral: OK
 
-Versao publicada: 31.
+Versao publicada: 33.
 
 Rollback feito: NAO.
 
@@ -30,62 +26,54 @@ POP tocado: NAO.
 
 Registros criados: nenhum.
 
-## Skill aplicada
-
-- Skill lida/aplicada: `aios/skills/handover-visual-only-guardrails/SKILL.md`.
-- Motivo: bloquear contaminacao de release visual-only por backend, sync, polling, locks ou auto-refresh expandido.
-- Observacao: a skill foi adicionada no commit `465c85b` e registrada nesta rodada.
-
 ## Pre-deploy
 
-- Branch atual confirmada: `release/handover-v29-visual-clean`.
-- `HEAD`: `465c85b`.
-- Commit visual alvo presente: `26ad132`.
+- Branch atual confirmada: `fix/handover-v31-dropdown-search`.
+- Commit alvo confirmado: `9a50a06`.
 - `.clasp.json`: scriptId oficial do Handover.
-- Nao esta na `master`.
-- `Code.gs`: sem alteracao em relacao a `e5aa219`.
-- `appsscript.json`: sem alteracao em relacao a `e5aa219`.
-- `.clasp.json`: sem alteracao em relacao a `e5aa219`.
+- Diff do hotfix: somente `Index.html`.
+- `Code.gs`: sem alteracao.
+- `appsscript.json`: sem alteracao.
 - Commit `2f45b08`: NAO esta na branch publicada.
 - `LockService`, `getScriptLock`, `acquireHandoverWriteLock_`, `releaseHandoverWriteLock_`: ausentes.
 - `HANDOVER_AUTO_REFRESH*`, `dashboardLastFingerprint`, `dashboardRefreshInFlight`, `refreshDashboardNow_(true, 'auto')`: ausentes.
 - Pill/texto `Atualizacao automatica` e texto fixo `Atualizando...`: ausentes.
 - `sheet.clear`: ausente.
-- Referencias ao POP proibido no diff: ausentes.
-- `setInterval`/`dashboardAutoRefreshTimer`: presente no baseline aprovado `e5aa219`; nao foi tratado como entrada nova da Fase 1.3.
+- Referencias ao POP proibido: ausentes.
 
 ## Publicacao
 
 - `clasp status`: OK.
 - `clasp push`: OK.
-- `clasp version`: criada versao 31.
-- `clasp deploy`: deployment oficial atualizado para versao 31.
+- `clasp version`: criada versao 33.
+- `clasp deploy`: deployment oficial atualizado para versao 33.
 - DeploymentId e URL oficial preservados.
 
-## Smoke real desktop
+## Smoke real
 
-- Abertura: OK. Web App abriu, dashboard carregou e nao houve erro critico capturado no console.
-- Escopo: OK. Sem pill `Atualizacao automatica`, sem texto fixo `Atualizando...`, com botao manual `Atualizar agora`.
-- Visual desktop: OK. Header institucional compacto, KPIs com SVG, abas limpas, cards compactos, sidebar refinada.
-- 1366px: OK. Sem rolagem horizontal grosseira.
-- KPIs: OK. 5 KPIs visiveis.
-- SVGs: OK. 23 icones SVG encontrados.
-- Abas: OK. Pendencias, Medicamentos, Checklist e Historico abrem.
-- Novo Registro: OK. Dropdown abre; Pendencia abre Geral; Medicamento abre Medicamentos.
+- Abertura: OK. Web App abriu e dashboard carregou sem erro critico capturado no console.
+- Dropdown Novo registro: OK. Dropdown abriu inteiro, abaixo do botao e acima dos cards/KPIs; `z-index=10050`; area dentro do viewport.
+- Novo Registro > Pendencia da loja: OK. Abriu modal Geral.
+- Novo Registro > Medicamento solicitado: OK. Abriu modal Medicamentos.
 - Medicamento Falta: OK. Cliente, telefone, pre-pago e preco ficam ocultos.
 - Medicamento Encomenda: OK. Cliente, telefone, pre-pago e preco ficam visiveis.
-- Checklist: OK. Abre com 5 categorias; botoes Feito, N/A e Pendente aparecem; rascunho de observacao foi preservado ao alterar status.
+- Busca Medicamentos: OK.
+  - Medicamento/atendente: busca por `CODEX` e `CODEX_V` retornou cards.
+  - Telefone sem mascara: `21999999999` retornou card.
+  - Telefone com mascara: `(21) 99999-9999` retornou card.
+  - Preco: `50`, `50,00` e `R$ 50,00` retornaram cards.
+  - Status: `Pendente` retornou cards; `Comprado` e `Entregue` nao tinham cards visiveis no estado atual.
+  - Tipo: `Falta` e `Encomenda` retornaram cards.
+- Checklist: OK. Abriu com categorias.
 - Menu tres pontos: OK. Sem `Imprimir`; contem Ver detalhes, Ver trilha de auditoria e Copiar informacoes.
-- WhatsApp: botao nao estava visivel em estado seguro no smoke atual; nao foi acionado e nenhuma mensagem real foi enviada.
 
 ## Evidencias objetivas
 
-- Versao publicada: 31.
-- Header height: 73px.
-- KPIs: 5.
-- SVGs: 23.
-- Cards de pendencias: 4.
-- Checklist: 5 categorias; acoes `Feito`, `N/A`, `Pendente`.
+- Versao publicada: 33.
+- Dropdown rect: top 75, left 1009, width 320, height 166, bottom 241.
+- Dropdown `withinViewport=true`, `topElementInsideMenu=true`, `zIndex=10050`.
+- Busca Medicamentos antes dos filtros: 3 cards.
+- Busca por telefone/preco/tipo/status Pendente retornou resultados.
 - Registros criados: nenhum.
 
 ## Falhas
@@ -104,4 +92,4 @@ Registros criados: nenhum.
 
 ## Veredito
 
-Publicado e aprovado. Fase 1.3 visual publicada na versao 31 a partir da branch `release/handover-v29-visual-clean`, com guardrails visual-only aplicados, sem `Code.gs` novo, sem `2f45b08`, sem LockService e sem auto-refresh expandido novo.
+Hotfix publicado e aprovado. Dropdown Novo registro corrigido, busca de Medicamentos ampliada validada, sem `Code.gs`, sem POP, sem locks/sync/auto-refresh novo.
