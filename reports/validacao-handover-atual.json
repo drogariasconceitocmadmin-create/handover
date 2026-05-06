@@ -2,108 +2,62 @@
   "projeto": "Handover - Drogarias Conceito",
   "status_geral": "FALHA",
   "pasta": "C:\\Users\\Marco\\Desktop\\Sis Drogaria\\Handover",
-  "branch_validada": "feat/handover-auth-pin",
-  "commits_validados": [
+  "branch_publicada_temporariamente": "feat/handover-auth-pin",
+  "commits_publicados_temporariamente": [
     "95eaf37",
-    "211d3b6"
+    "211d3b6",
+    "e8e17a6"
   ],
-  "base_publicada_atual": "v33 estavel",
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
-  "publicado": false,
-  "versao_publicada": null,
-  "rollback_feito": false,
+  "versao_publicada_teste": 34,
+  "versao_rollback": 33,
+  "rollback_feito": true,
   "pop_tocado": false,
-  "preflight": {
+  "registros_criados": [],
+  "usuarios": {
+    "configurados": true,
+    "pins_obtidos": "Logger do Apps Script apos execucao manual de setupUsuariosHandover",
+    "pin_puro_planilha": false,
+    "pin_hash_planilha": true
+  },
+  "pre_deploy": {
     "resultado": "OK",
     "branch_correta": true,
     "scriptId_handover": true,
-    "pop_no_diff": true,
-    "alteracoes_esperadas": [
-      "Code.gs",
-      "Index.html",
-      "aios/skills/handover-auth-audit/SKILL.md",
-      "reports/cursor-atual.md"
-    ],
-    "sheet_clear": false
-  },
-  "seguranca_estatica": {
-    "pin_texto_puro_planilha": false,
-    "pin_hash": true,
-    "sha256": true,
-    "salt_script_properties": true,
-    "login_retorna_token": true,
-    "validate_session": true,
-    "logout_invalida": true,
-    "backend_nao_confia_perfil_front": true,
-    "autoria_derivada_sessao": true,
-    "usuario_inativo_bloqueado": true
-  },
-  "acoes_criticas_session_token": {
-    "saveData": true,
-    "markAsPurchased": true,
-    "markAsDelivered": true,
-    "markAsResolved": true,
-    "revertMedicationToPending": true,
-    "reopenHistoricoItem": true,
-    "updateChecklistItemStatus": true,
-    "updateChecklistItemObservation": true,
-    "registerWhatsAppAttempt": true,
-    "deleteItemHandover": true
-  },
-  "exclusao_logica": {
-    "deleteItemHandover_existe": true,
-    "valida_sessao": true,
-    "exige_admin_gerente": true,
-    "nao_deleta_linha": true,
-    "marca_excluido": true,
-    "marca_excluido_por": true,
-    "marca_data_exclusao": true,
-    "marca_motivo_exclusao": true,
-    "marca_perfil": true,
-    "fetchData_filtra_excluido": true,
-    "refreshDashboardBundle_filtra_excluido": true,
-    "menu_admin_gerente": true,
-    "operador_bloqueado_backend": true,
-    "observacao": "deleteRow legado existe em moveRowToResolved, nao em deleteItemHandover e nao foi introduzido por esta branch."
-  },
-  "usuarios_iniciais": {
-    "setupUsuariosHandover_validado_estatico": true,
-    "usuarios_esperados_presentes": [
-      "Ainale/ainale/operador",
-      "Marco/marco/admin",
-      "Carlos/carlos/admin",
-      "Jelcinei/jelcinei/gerente",
-      "Priscila/priscila/operador",
-      "Marcelo/marcelo/operador"
-    ],
-    "pin_temporario_logger": true,
-    "pin_puro_planilha": false,
-    "pin_hash_planilha": true,
-    "setup_executado_via_clasp": false,
-    "erro_clasp_run": "Script function not found. Please make sure script is deployed as API executable.",
-    "usuarios_configurados": false,
-    "pins_obtidos": "NAO obtidos; setup nao executou via clasp."
+    "pop_referenciado": false,
+    "sheet_clear": false,
+    "exclusao_logica_estatica": true
   },
   "publicacao": {
-    "clasp_push": true,
-    "clasp_deploy": false,
-    "nova_versao": false,
-    "deployment_oficial_preservado": true
+    "clasp_push": "OK",
+    "clasp_version": 34,
+    "clasp_deploy": "OK",
+    "deployment_oficial_mantido": true,
+    "url_oficial_mantida": true
   },
   "smoke_real": {
-    "executado": false,
-    "motivo": "Sem usuarios/PINs confirmados, publicar poderia bloquear o uso da loja."
+    "executado": true,
+    "login_tela_aparece": false,
+    "dashboard_sem_sessao": true,
+    "auth_overlay_class": "modal-overlay hidden",
+    "local_storage_token": null,
+    "header_usuario": "",
+    "logout_oculto": true,
+    "login_admin": "NAO TESTADO - bloqueado por falha P0 de login inicial",
+    "perfis": "NAO TESTADO",
+    "exclusao_logica": "NAO TESTADO",
+    "regressao": "NAO TESTADO"
   },
   "falhas": {
     "criticas": [
-      "Nao foi possivel executar setupUsuariosHandover_ via clasp run; usuarios/PINs iniciais nao foram confirmados."
+      "Sem sessao/token, tela de login fica oculta e dashboard fica acessivel."
     ],
     "medias": [],
     "leves": [
       "deleteRow legado permanece em moveRowToResolved; nao faz parte da nova exclusao logica."
     ]
   },
-  "proxima_acao": "Carlos deve rodar setupUsuariosHandover_ manualmente no Apps Script Editor do Handover, coletar PINs no Logger e confirmar login admin antes de nova tentativa de publicacao.",
-  "veredito": "Publicacao bloqueada. v33 estavel mantida."
+  "proxima_correcao": "Forcar tela de login quando nao houver sessao valida antes de renderizar/liberar dashboard.",
+  "veredito": "Publicado para teste, reprovado no smoke real e rollback executado para v33."
 }
