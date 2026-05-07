@@ -1,3 +1,42 @@
+## Parte 4 — Login rápido + PIN sem travar + gestão Usuarios_Handover (maio/2026)
+
+- **Branch:** `feat/handover-auth-pin-v41`
+- **Objetivo:** overlay de login aparece logo (sem `setupSpreadsheet` no `doGet` nem setup pesado antes da sessão); após login válido o dashboard carrega via `refreshDashboardBundle(sessionToken)`. Botão **Entrar** não fica preso em **Entrando…** (timeout ~13s, RPC monótono por sequência, loading limpo em sucesso/falha/erro/timeout).
+- **Contrato `loginHandover`:** sucesso `{ success: true, token, usuario, nome, perfil, displayName }`; falha comum `{ success: false, message }` (sem throw por credencial inválida).
+
+### Manual curto — criar / alterar usuário pela planilha
+
+**Campos que você pode editar à mão na aba `Usuarios_Handover`:** `Nome`, `Usuario`, `Perfil`, `Ativo`.
+
+**Não edite à mão (deixe o script gerenciar):** `Pin_Hash`, `Criado_Em`, `Criado_Por`, `Ultimo_Login_Em`.
+
+**Para criar usuário**
+
+1. Abrir a aba **`Usuarios_Handover`**.
+2. Adicionar uma linha com **Nome**, **Usuario**, **Perfil** (`admin`, `gerente` ou `operador`), **Ativo** = `TRUE` / `Sim` / `1`.
+3. No editor Apps Script do Handover, executar **`resetPinUsuarioHandover('usuario')`** (ou wrapper tipo **`resetPinCarlosHandover()`** / **`resetPinMarcoHandover()`**).
+4. Copiar o **PIN temporário** apenas do **Logger** (Registros). **Nunca** digitar PIN na planilha.
+5. O usuário entra no Handover; depois pode-se gerar novo PIN com o mesmo reset se necessário.
+
+**Para alterar perfil**
+
+- Editar a coluna **Perfil** na planilha (`admin`, `gerente`, `operador`).
+
+**Para desativar**
+
+- Coluna **Ativo** = `FALSE` / `Não` / `0`.
+
+**Para resetar PIN**
+
+- Executar **`resetPinUsuarioHandover(usuario)`** ou um wrapper específico (`resetPinCarlosHandover`, `resetPinMarcoHandover`, `resetPinJelcineiHandover`). O PIN novo aparece só no Logger; a planilha guarda apenas **Pin_Hash** (hash), nunca PIN em texto puro.
+
+**Cuidados**
+
+- **Nunca** apagar **Pin_Hash** manualmente sem saber o impacto (usuário fica sem login até novo reset).
+- Diagnóstico seguro (sem PIN): **`debugLoginCarlosHandover()`**. Smoke interno: **`selfTestAuthHandover()`**, **`debugAuthUsuariosHandover()`**.
+
+---
+
 ## Parte 3 — Backend endurecido + token nas APIs críticas (maio/2026)
 
 - **Branch:** `feat/handover-auth-pin-v41`

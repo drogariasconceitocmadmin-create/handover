@@ -2925,6 +2925,10 @@
 
       let handoverSession = null;
       let handoverAuthState = 'checking';
+      let handoverLoginRpcSeq_ = 0;
+      let handoverSessionRpcSeq_ = 0;
+      var HANDOVER_LOGIN_TIMEOUT_MS = 13000;
+      var HANDOVER_SESSION_CHECK_TIMEOUT_MS = 15000;
 
       const QUEUE_FILTERS_PENDENCIAS = ['pendentes', 'todos', 'urgentes', 'vencidos_hoje'];
       const QUEUE_FILTERS_MEDICAMENTOS = [
@@ -3332,7 +3336,11 @@
         initChecklistTurnoUi_();
         initDashboardSync_();
         initHandoverPhase1Layout_();
-        refreshDashboardNow_(true);
+        window.requestAnimationFrame(function () {
+          window.setTimeout(function () {
+            refreshDashboardNow_(true);
+          }, 0);
+        });
       }
 
       function submitHandoverLogin_() {
@@ -3354,23 +3362,70 @@
         if (!btn) {
           return;
         }
+        if (btn.dataset.handoverLoginBusy === '1') {
+          return;
+        }
+
+        handoverLoginRpcSeq_ += 1;
+        var rpcSeq = handoverLoginRpcSeq_;
         var prevLabel = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = 'Entrando...';
-        function finishBtn() {
+        var timeoutId = null;
+
+        function clearRpcTimer() {
+          if (timeoutId != null) {
+            window.clearTimeout(timeoutId);
+            timeoutId = null;
+          }
+        }
+
+        function finishLoginSubmitUi_() {
+          clearRpcTimer();
+          btn.dataset.handoverLoginBusy = '0';
+          if (usuarioEl) {
+            usuarioEl.disabled = false;
+          }
+          if (pinEl) {
+            pinEl.disabled = false;
+          }
           btn.disabled = false;
           btn.textContent = prevLabel;
         }
+
+        btn.dataset.handoverLoginBusy = '1';
+        if (usuarioEl) {
+          usuarioEl.disabled = true;
+        }
+        if (pinEl) {
+          pinEl.disabled = true;
+        }
+        btn.disabled = true;
+        btn.textContent = 'Entrando...';
+
+        timeoutId = window.setTimeout(function () {
+          if (rpcSeq !== handoverLoginRpcSeq_) {
+            return;
+          }
+          if (errEl) {
+            errEl.textContent = 'Tempo esgotado. Tente novamente.';
+          }
+          finishLoginSubmitUi_();
+          handoverLoginRpcSeq_ += 1;
+        }, HANDOVER_LOGIN_TIMEOUT_MS);
+
         try {
           getScriptRunner_()
             .withSuccessHandler(function (res) {
+              if (rpcSeq !== handoverLoginRpcSeq_) {
+                return;
+              }
+              clearRpcTimer();
               try {
                 if (!res || !res.success) {
                   if (errEl) {
                     errEl.textContent =
-                      (res && res.message) || 'Usuário ou PIN inválido';
+                      (res && res.message) || 'Usuário ou PIN inválido.';
                   }
-                  finishBtn();
+                  finishLoginSubmitUi_();
                   return;
                 }
                 handoverSession = {
@@ -3382,35 +3437,42 @@
                 };
                 handoverAuthState = 'logged_in';
                 saveSessionToStorage_(handoverSession);
-                finishBtn();
+                finishLoginSubmitUi_();
                 bootstrapDashboardAfterAuth_();
               } catch (e) {
                 if (errEl) {
                   errEl.textContent = 'Erro ao processar login.';
                 }
-                finishBtn();
+                finishLoginSubmitUi_();
               }
             })
             .withFailureHandler(function (err) {
+              if (rpcSeq !== handoverLoginRpcSeq_) {
+                return;
+              }
+              clearRpcTimer();
               if (errEl) {
                 errEl.textContent =
                   getErrorMessage(err) || 'Erro de conexão/servidor';
               }
-              finishBtn();
+              finishLoginSubmitUi_();
             })
             .loginHandover(u, p);
         } catch (e2) {
+          if (rpcSeq !== handoverLoginRpcSeq_) {
+            return;
+          }
+          clearRpcTimer();
           if (errEl) {
             errEl.textContent = e2.message || 'Erro de conexão/servidor';
           }
-          finishBtn();
+          finishLoginSubmitUi_();
         }
       }
 
       function startHandoverAuthBootstrap_() {
         applyOfficialLogoIfConfigured_();
         hideAppShell_();
-        handoverAuthState = 'checking';
         var ov = document.getElementById('handover-login-overlay');
         if (ov) {
           ov.classList.remove('hidden');
@@ -3420,7 +3482,6 @@
         if (errEl) {
           errEl.textContent = '';
         }
-        setLoginOverlayBusy_(true, 'Verificando sessão…');
 
         var stored = loadSessionFromStorage_();
         if (!stored || !stored.token) {
@@ -3428,10 +3489,35 @@
           showLoginForm_();
           return;
         }
+
+        handoverAuthState = 'checking';
+        handoverSessionRpcSeq_ += 1;
+        var rpcSeq = handoverSessionRpcSeq_;
+        setLoginOverlayBusy_(true, 'Verificando sessão…');
+
+        var timeoutId = window.setTimeout(function () {
+          if (rpcSeq !== handoverSessionRpcSeq_) {
+            return;
+          }
+          clearSessionStorage_();
+          handoverSession = null;
+          handoverAuthState = 'logged_out';
+          showLoginForm_();
+          if (errEl) {
+            errEl.textContent =
+              'Não foi possível validar a sessão a tempo. Faça login novamente.';
+          }
+          handoverSessionRpcSeq_ += 1;
+        }, HANDOVER_SESSION_CHECK_TIMEOUT_MS);
+
         handoverSession = stored;
         try {
           getScriptRunner_()
             .withSuccessHandler(function (res) {
+              if (rpcSeq !== handoverSessionRpcSeq_) {
+                return;
+              }
+              window.clearTimeout(timeoutId);
               try {
                 if (!res || !res.success) {
                   clearSessionStorage_();
@@ -3469,6 +3555,10 @@
               }
             })
             .withFailureHandler(function (err) {
+              if (rpcSeq !== handoverSessionRpcSeq_) {
+                return;
+              }
+              window.clearTimeout(timeoutId);
               handoverAuthState = 'logged_out';
               showLoginForm_();
               if (errEl) {
@@ -3478,6 +3568,7 @@
             })
             .validateSessionHandover(stored.token);
         } catch (e2) {
+          window.clearTimeout(timeoutId);
           handoverAuthState = 'logged_out';
           showLoginForm_();
           if (errEl) {
@@ -3489,6 +3580,8 @@
       function handoverLogout_() {
         var tok = handoverSession && handoverSession.token;
         function finishLocal() {
+          handoverSessionRpcSeq_ += 1;
+          handoverLoginRpcSeq_ += 1;
           if (dashboardAutoRefreshTimer) {
             window.clearInterval(dashboardAutoRefreshTimer);
             dashboardAutoRefreshTimer = null;
