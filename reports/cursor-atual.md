@@ -1,10 +1,23 @@
+## Parte 3 — Backend endurecido + token nas APIs críticas (maio/2026)
+
+- **Branch:** `feat/handover-auth-pin-v41`
+- **Helpers:** `requireSessionHandover_(sessionToken)`, `getSessionDisplayName_(sess)`, `getSessionPerfil_(sess)`, `isAdminOrGerenteHandover_(sess)` — autoria/nome/perfil **sempre** da sessão validada no servidor; não confiar em strings vindas do cliente para auditoria.
+- **APIs que exigem `sessionToken`:** `saveData`, `refreshDashboardBundle`, `generateChecklistForTurno`, `fetchHistoricoResolvidos`, `markAsPurchased`, `markAsDelivered`, `revertMedicationToPending`, `cancelMedicationRequest`, `markAsResolved`, `reopenHistoricoItem`, `updateChecklistItemStatus`, `updateChecklistItemObservation`, `registerWhatsAppAttempt`.
+- **Autoria:** `saveData` grava **Autor** e **Ultima_Acao_Por** com nome da sessão; medicamentos mantêm **Atendente** do formulário; checklist usa sessão em **Responsavel**; reabertura de histórico: novo **Autor** na pendência = sessão; **Comprado_Por** em **Compras_Medicamentos** preenchido quando o Handover marca comprado e ainda não havia comprador na linha (espelho).
+- **Interno sem sessão:** `appendHandoverRecord_(tab, data, authorLabel)` para `populateTestData` manual; `generateChecklistForTurno_` para `generateTodayMorningChecklist` manual — não são expostos ao Web App como substitutos de login.
+- **Compras_Medicamentos:** `handleComprasMedicamentosEdit` / `processarStatusCompraPorIdHandover_` / `onEdit` continuam **sem** token (fluxo planilha/gatilho); `cancelMedicationRequest` via Web App exige sessão.
+- **Wrappers públicos (editor):** `resetPinCarlosHandover()`, `debugAuthUsuariosHandover()`, `selfTestAuthHandover()` (delegam às versões `_*`).
+- **Front:** `getCurrentSessionToken_()`, `ensureSessionTokenForAction_()`; logos oficiais: `HANDOVER_LOGO_HEADER_URL` (horizontal) e `HANDOVER_LOGO_LOGIN_URL` (símbolo + tarja azul no cartão de login).
+- **Parte 4 (adiado):** exclusão lógica com colunas `Excluido_*`, menu restrito admin/gerente e filtros em fetch — não implementado nesta entrega para reduzir risco na v41.
+
+---
+
 ## Parte 2 — Front login/PIN + sessão (maio/2026)
 
 - **Branch:** `feat/handover-auth-pin-v41`
 - **Escopo:** overlay de login (usuário + PIN), estados `checking` / `logged_out` / `logged_in`, `localStorage` (`handover_auth_session_v41`), validação via `validateSessionHandover`, logout via `logoutHandover`, header **Nome · perfil**, operador derivado da sessão (readonly), botão **Sair**. ESC não fecha o overlay sem sessão válida.
 - **Backend mínimo:** `doGet` passa `initialDataB64` vazio (`geral`/`medicamentos` vazios, `checklistTurno` null) para não entregar dados na carga HTML antes do login; dados vêm de `refreshDashboardBundle` após `logged_in`.
-- **Logo oficial:** constante `HANDOVER_OFFICIAL_LOGO_URL` em `Index.html` (vazia). Pasta Drive informada não foi acessível de forma autenticada neste ambiente → mantido fallback textual **Drogarias Conceito**. Para ativar imagem, colar URL pública estável no mesmo arquivo.
-- **Parte 3 (fora deste escopo):** exigir `sessionToken` nas ações críticas no backend; permissões por perfil na UI; endurecimento adicional.
+- **Logos (atualizado na Parte 3):** URLs Drive fixas em `Index.html` (`HANDOVER_LOGO_HEADER_URL`, `HANDOVER_LOGO_LOGIN_URL`); fallback textual se `onerror` na imagem.
 
 ---
 
@@ -14,8 +27,21 @@
 
 - Projeto: **Handover - Drogarias Conceito**, Apps Script isolado em `Handover/`.
 - Pasta atual: `C:\Users\Marco\Desktop\Sis Drogaria\Handover`.
-- Branch atual: `feat/handover-auth-pin-v41` (Parte 2 — front auth PIN).
-- Worktree / HEAD: ver `git log -1` na máquina local após o commit da Parte 2.
+- Branch atual: `feat/handover-auth-pin-v41` (Parte 3 — sessão nas APIs críticas).
+- Worktree / HEAD: ver `git log -1` na máquina local após o commit da Parte 3.
+
+### Teste manual sugerido (Parte 3)
+
+1. Login com usuário válido; confirmar que **Atualizar agora**, checklist, histórico e ações na fila funcionam.
+2. Em outra aba, **Sair** ou invalidar token no servidor; nova ação deve falhar com mensagem de sessão ou pedir login.
+3. Na planilha, editar **Compras_Medicamentos** / `Status_Compra` e confirmar que o gatilho ainda atualiza **Medicamentos** sem Web App.
+4. Cancelar pedido pelo Handover (menu) — deve gravar **Cancelado_Por** com nome da sessão.
+
+### PIN Carlos (reset manual)
+
+- No editor Apps Script do Handover, executar **`resetPinCarlosHandover()`** (wrapper público). O PIN temporário aparece só no **Logger** (Visualização → Registros).
+
+---
 
 ## Estado publicado / validado
 

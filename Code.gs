@@ -655,6 +655,43 @@ function validateSessionHandover(sessionToken) {
   };
 }
 
+/** @returns {{usuario:string,nome:string,perfil:string,displayName:string}} */
+function requireSessionHandover_(sessionToken) {
+  setupSpreadsheet();
+  var raw = validarSessaoHandover_(sessionToken);
+  if (!raw) {
+    throw new Error('Sessão inválida ou expirada. Faça login novamente.');
+  }
+  var u = normalizeUsuarioHandover_(raw.usuario);
+  var nome = sanitizeText_(raw.nome || raw.usuario || '');
+  var perfil = normalizePerfilHandover_(raw.perfil || 'operador');
+  return {
+    usuario: u,
+    nome: nome,
+    perfil: perfil,
+    displayName: nome || u,
+  };
+}
+
+function getSessionDisplayName_(sess) {
+  if (!sess) {
+    return '';
+  }
+  return sanitizeText_(sess.displayName || sess.nome || sess.usuario || '');
+}
+
+function getSessionPerfil_(sess) {
+  if (!sess) {
+    return 'operador';
+  }
+  return normalizePerfilHandover_(sess.perfil || 'operador');
+}
+
+function isAdminOrGerenteHandover_(sess) {
+  var p = getSessionPerfil_(sess);
+  return p === 'admin' || p === 'gerente';
+}
+
 function logoutHandover(sessionToken) {
   setupSpreadsheet();
   return encerrarSessaoHandover_(sessionToken);
@@ -808,6 +845,18 @@ function debugAuthUsuariosHandover_() {
   }
 }
 
+function resetPinCarlosHandover() {
+  return resetPinCarlosHandover_();
+}
+
+function debugAuthUsuariosHandover() {
+  return debugAuthUsuariosHandover_();
+}
+
+function selfTestAuthHandover() {
+  return selfTestAuthHandover_();
+}
+
 function findComprasRowByHandoverId_(sheet, handoverId) {
   var hid = sanitizeText_(handoverId);
   if (!hid) {
@@ -917,7 +966,7 @@ function buildComprasRowNamedValuesFromMedicamento_(medItem, existingStatusCompr
 /**
  * Espelha Medicamentos → Compras_Medicamentos por ID_Handover.
  * @param {string} handoverId
- * @param {{fromRevertToPending?: boolean}=} opt fromRevertToPending: após revertMedicationToPending no Handover (força Pendente de compra e limpa data/comprador).
+ * @param {{fromRevertToPending?: boolean, compradoPorHandover?: string}=} opt fromRevertToPending: após revertMedicationToPending no Handover (força Pendente de compra e limpa data/comprador).
  */
 function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId, opt) {
   opt = opt || {};
@@ -979,6 +1028,13 @@ function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId, opt) {
         named.Comprado_Por = sanitizeText_(prevObj.Comprado_Por || '');
       }
     }
+    if (
+      named.Status_Compra === COMPRAS_STATUS_COMPRA.COMPRADO &&
+      !sanitizeText_(named.Comprado_Por) &&
+      opt.compradoPorHandover
+    ) {
+      named.Comprado_Por = sanitizeText_(opt.compradoPorHandover);
+    }
     var rowVals = buildAppendRowValuesFromNamedMap_(cSheet, named);
     for (var i = 0; i < rowVals.length; i++) {
       cSheet.getRange(existingRow, i + 1).setValue(rowVals[i]);
@@ -991,6 +1047,9 @@ function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId, opt) {
       named.Comprado_Por = '';
     } else if (named.Status_Compra === COMPRAS_STATUS_COMPRA.COMPRADO) {
       named.Data_Compra = new Date();
+      if (opt.compradoPorHandover) {
+        named.Comprado_Por = sanitizeText_(opt.compradoPorHandover);
+      }
     }
     cSheet.appendRow(buildAppendRowValuesFromNamedMap_(cSheet, named));
   }
@@ -1671,9 +1730,12 @@ function getChecklistSummary_(items) {
   };
 }
 
-function updateChecklistItemStatus(id, status, responsavel) {
+function updateChecklistItemStatus(id, status, sessionToken) {
   const started = Date.now();
   setupSpreadsheet();
+
+  const sess = requireSessionHandover_(sessionToken);
+  const responsavelValue = getSessionDisplayName_(sess);
 
   const location = findRowById_(SHEET_NAMES.CHECKLIST, id);
   if (!location) {
@@ -1681,7 +1743,6 @@ function updateChecklistItemStatus(id, status, responsavel) {
   }
 
   const normalizedStatus = parseChecklistStatusInput_(status);
-  const responsavelValue = sanitizeText_(responsavel);
   const statusColumn = getColumnIndex_(location.sheet, 'Status');
   const dataHoraCheckColumn = getColumnIndex_(location.sheet, 'Data_Hora_Check');
   const responsavelColumn = getColumnIndex_(location.sheet, 'Responsavel');
@@ -1703,9 +1764,12 @@ function updateChecklistItemStatus(id, status, responsavel) {
   };
 }
 
-function updateChecklistItemObservation(id, observacao, responsavel) {
+function updateChecklistItemObservation(id, observacao, sessionToken) {
   const started = Date.now();
   setupSpreadsheet();
+
+  const sess = requireSessionHandover_(sessionToken);
+  const responsavelValue = getSessionDisplayName_(sess);
 
   const location = findRowById_(SHEET_NAMES.CHECKLIST, id);
   if (!location) {
@@ -1718,7 +1782,7 @@ function updateChecklistItemObservation(id, observacao, responsavel) {
   location.sheet.getRange(location.rowNumber, observacaoColumn).setValue(sanitizeText_(observacao));
   location.sheet
     .getRange(location.rowNumber, responsavelColumn)
-    .setValue(sanitizeText_(responsavel));
+    .setValue(sanitizeText_(responsavelValue));
 
   const updatedItem = fetchChecklistItemById_(id);
   Logger.log('updateChecklistItemObservation ms=' + (Date.now() - started));
@@ -1730,11 +1794,11 @@ function updateChecklistItemObservation(id, observacao, responsavel) {
 }
 
 function generateTodayMorningChecklist() {
-  return generateChecklistForTurno(CHECKLIST_TURNO_MANHA);
+  setupSpreadsheet();
+  return generateChecklistForTurno_(CHECKLIST_TURNO_MANHA);
 }
 
-function generateChecklistForTurno(turno) {
-  setupSpreadsheet();
+function generateChecklistForTurno_(turno) {
   ensureTodayChecklistForTurno_(turno);
   return {
     success: true,
@@ -1742,8 +1806,15 @@ function generateChecklistForTurno(turno) {
   };
 }
 
-function refreshDashboardBundle(checklistTurnoOpt) {
+function generateChecklistForTurno(turno, sessionToken) {
   setupSpreadsheet();
+  requireSessionHandover_(sessionToken);
+  return generateChecklistForTurno_(turno);
+}
+
+function refreshDashboardBundle(checklistTurnoOpt, sessionToken) {
+  setupSpreadsheet();
+  requireSessionHandover_(sessionToken);
   var turno = sanitizeChecklistTurno_(checklistTurnoOpt || inferDefaultChecklistTurno_());
   return {
     geral: fetchSheetItems_(SHEET_NAMES.GERAL).filter(function (item) {
@@ -1773,7 +1844,17 @@ function buildChecklistTurnoPayload_(turnoOpt) {
   };
 }
 
-function saveData(tab, data, operador) {
+function saveData(tab, data, sessionToken) {
+  setupSpreadsheet();
+  const sess = requireSessionHandover_(sessionToken);
+  const authorLabel = getSessionDisplayName_(sess);
+  return appendHandoverRecord_(tab, data, authorLabel);
+}
+
+/**
+ * Insere registro em Geral ou Medicamentos com autoria explícita (usado por saveData após sessão e por populateTestData manual).
+ */
+function appendHandoverRecord_(tab, data, authorLabel) {
   const started = Date.now();
   setupSpreadsheet();
 
@@ -1785,7 +1866,7 @@ function saveData(tab, data, operador) {
   const sheet = getSheetOrThrow_(ss, tab);
   const id = Utilities.getUuid();
   const timestamp = new Date();
-  const op = sanitizeText_(operador);
+  const op = authorLabel;
   const nowAcao = new Date();
 
   if (tab === SHEET_NAMES.GERAL) {
@@ -1803,7 +1884,7 @@ function saveData(tab, data, operador) {
     const namedRow = {
       ID: id,
       Timestamp: timestamp,
-      Autor: sanitizeText_(data.autor),
+      Autor: authorLabel,
       Titulo: sanitizeText_(data.titulo),
       Urgencia: normalizeUrgenciaGeral_(data.urgencia),
       Descricao: sanitizeText_(data.descricao),
@@ -1946,9 +2027,10 @@ function fetchData() {
   };
 }
 
-function fetchHistoricoResolvidos(limit) {
+function fetchHistoricoResolvidos(limit, sessionToken) {
   const started = Date.now();
   setupSpreadsheet();
+  requireSessionHandover_(sessionToken);
 
   const sheet = getSheetOrThrow_(getSpreadsheet_(), SHEET_NAMES.ARQUIVO);
   const lastRow = sheet.getLastRow();
@@ -1989,9 +2071,12 @@ function fetchHistoricoResolvidos(limit) {
   };
 }
 
-function markAsPurchased(id, operador) {
+function markAsPurchased(id, sessionToken) {
   const started = Date.now();
   setupSpreadsheet();
+
+  const sess = requireSessionHandover_(sessionToken);
+  var author = getSessionDisplayName_(sess);
 
   const location = findRowById_(SHEET_NAMES.MEDICAMENTOS, id);
   if (!location) {
@@ -2006,9 +2091,9 @@ function markAsPurchased(id, operador) {
   const compradoColumn = getColumnIndex_(location.sheet, 'Comprado');
   location.sheet.getRange(location.rowNumber, compradoColumn).setValue(true);
   syncMedicationStatus_(location.sheet, location.rowNumber);
-  writeMedicationUltimaAcao_(location.sheet, location.rowNumber, operador);
+  writeMedicationUltimaAcao_(location.sheet, location.rowNumber, author);
   try {
-    mirrorComprasMedicamentosRowForMedicamentoId_(id);
+    mirrorComprasMedicamentosRowForMedicamentoId_(id, { compradoPorHandover: author });
   } catch (ce) {
     Logger.log('markAsPurchased mirror compras: ' + ce);
   }
@@ -2020,9 +2105,12 @@ function markAsPurchased(id, operador) {
   };
 }
 
-function markAsDelivered(id, operador) {
+function markAsDelivered(id, sessionToken) {
   const started = Date.now();
   setupSpreadsheet();
+
+  const sess = requireSessionHandover_(sessionToken);
+  var author = getSessionDisplayName_(sess);
 
   const location = findRowById_(SHEET_NAMES.MEDICAMENTOS, id);
   if (!location) {
@@ -2039,7 +2127,7 @@ function markAsDelivered(id, operador) {
   location.sheet.getRange(location.rowNumber, compradoColumn).setValue(true);
   location.sheet.getRange(location.rowNumber, entregueColumn).setValue(true);
   syncMedicationStatus_(location.sheet, location.rowNumber);
-  writeMedicationUltimaAcao_(location.sheet, location.rowNumber, operador);
+  writeMedicationUltimaAcao_(location.sheet, location.rowNumber, author);
   try {
     mirrorComprasMedicamentosRowForMedicamentoId_(id);
   } catch (ce2) {
@@ -2053,14 +2141,15 @@ function markAsDelivered(id, operador) {
   };
 }
 
-function revertMedicationToPending(id, operador, motivo) {
+function revertMedicationToPending(id, sessionToken, motivo) {
   const started = Date.now();
   setupSpreadsheet();
 
   var ctx = '[revertMedicationToPending] ID=' + sanitizeText_(id) + ' acao=reverter_medicamento ';
-  var op = sanitizeText_(operador);
+  var sess = requireSessionHandover_(sessionToken);
+  var op = getSessionDisplayName_(sess);
   if (!op) {
-    throw new Error(ctx + 'Operador obrigatorio.');
+    throw new Error(ctx + 'Sessão sem nome de usuário.');
   }
 
   const location = findRowById_(SHEET_NAMES.MEDICAMENTOS, id);
@@ -2134,14 +2223,15 @@ function revertMedicationToPending(id, operador, motivo) {
  * Cancela solicitação de medicamento diretamente pelo Handover (qualquer operador).
  * Atualiza Medicamentos por ID e espelha para Compras_Medicamentos por ID_Handover.
  */
-function cancelMedicationRequest(id, operador, motivo) {
+function cancelMedicationRequest(id, sessionToken, motivo) {
   const started = Date.now();
   setupSpreadsheet();
 
   var ctx = '[cancelMedicationRequest] ID=' + sanitizeText_(id) + ' acao=cancelar_medicamento ';
-  var op = sanitizeText_(operador);
+  var sess = requireSessionHandover_(sessionToken);
+  var op = getSessionDisplayName_(sess);
   if (!op) {
-    throw new Error(ctx + 'Operador obrigatorio.');
+    throw new Error(ctx + 'Sessão sem nome de usuário.');
   }
 
   const location = findRowById_(SHEET_NAMES.MEDICAMENTOS, id);
@@ -2191,7 +2281,7 @@ function cancelMedicationRequest(id, operador, motivo) {
   };
 }
 
-function markAsResolved(id, operador) {
+function markAsResolved(id, sessionToken) {
   const started = Date.now();
   var ctx =
     '[markAsResolved] ID=' +
@@ -2201,6 +2291,9 @@ function markAsResolved(id, operador) {
     ' acao=arquivar status=';
   try {
     setupSpreadsheet();
+
+    const sess = requireSessionHandover_(sessionToken);
+    var operador = getSessionDisplayName_(sess);
 
     const location = findRowById_(SHEET_NAMES.GERAL, id);
     if (!location) {
@@ -2243,17 +2336,18 @@ function writeArchiveReopenAudit_(archiveSheet, rowNumber, operador, motivo, nov
     .setValue(sanitizeText_(novoIdAtivo));
 }
 
-function reopenHistoricoItem(archivedRecordId, operador, motivo) {
+function reopenHistoricoItem(archivedRecordId, sessionToken, motivo) {
   const started = Date.now();
   var rid = sanitizeText_(archivedRecordId);
-  var op = sanitizeText_(operador);
+  var sess = requireSessionHandover_(sessionToken);
+  var op = getSessionDisplayName_(sess);
   var mot = sanitizeText_(motivo);
   var ctx = '[reopenHistoricoItem] ID=' + rid + ' aba=' + SHEET_NAMES.ARQUIVO + ' acao=reabrir ';
   if (!rid) {
     throw new Error(ctx + 'Registro sem ID.');
   }
   if (!op) {
-    throw new Error(ctx + 'Operador obrigatorio.');
+    throw new Error(ctx + 'Sessão sem nome de usuário.');
   }
 
   try {
@@ -2282,7 +2376,7 @@ function reopenHistoricoItem(archivedRecordId, operador, motivo) {
       var namedRow = {
         ID: newId,
         Timestamp: now,
-        Autor: sanitizeText_(archived.Autor),
+        Autor: op,
         Titulo: sanitizeText_(archived.Titulo || archived.Assunto || ''),
         Urgencia: normalizeUrgenciaGeral_(archived.Urgencia || ''),
         Descricao: sanitizeText_(
@@ -2472,14 +2566,14 @@ function onEdit(e) {
 function populateTestData() {
   setupSpreadsheet();
 
-  saveData(SHEET_NAMES.GERAL, {
+  appendHandoverRecord_(SHEET_NAMES.GERAL, {
     autor: 'Maria',
     titulo: 'Conferencia de caixa',
     urgencia: 'Normal',
     descricao: 'Conferir divergencia no caixa do turno da tarde.',
-  });
+  }, 'Maria');
 
-  saveData(SHEET_NAMES.MEDICAMENTOS, {
+  appendHandoverRecord_(SHEET_NAMES.MEDICAMENTOS, {
     tipo: 'Encomenda',
     medicamento: 'Losartana 50mg',
     prePago: true,
@@ -2487,12 +2581,12 @@ function populateTestData() {
     telefone: '(11) 91234-5678',
     atendente: 'Ana',
     previsaoEntrega: formatDateForInput_(new Date()),
-  });
+  }, 'Ana');
 
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  saveData(SHEET_NAMES.MEDICAMENTOS, {
+  appendHandoverRecord_(SHEET_NAMES.MEDICAMENTOS, {
     tipo: 'Falta',
     medicamento: 'Dipirona gotas',
     prePago: false,
@@ -2500,7 +2594,7 @@ function populateTestData() {
     telefone: '(11) 3333-4444',
     atendente: 'Carlos',
     previsaoEntrega: formatDateForInput_(tomorrow),
-  });
+  }, 'Carlos');
 }
 
 function include(filename) {
@@ -3063,9 +3157,12 @@ function sendOrderEmail_(order) {
   MailApp.sendEmail(EMAIL_ENCOMENDAS, subject, body);
 }
 
-function registerWhatsAppAttempt(id, operador) {
+function registerWhatsAppAttempt(id, sessionToken) {
   const started = Date.now();
   setupSpreadsheet();
+
+  const sess = requireSessionHandover_(sessionToken);
+  var operador = getSessionDisplayName_(sess);
 
   const location = findRowById_(SHEET_NAMES.MEDICAMENTOS, id);
   if (!location) {

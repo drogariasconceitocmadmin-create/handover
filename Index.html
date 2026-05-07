@@ -106,6 +106,20 @@
         display: block;
       }
 
+      .handover-login-symbol-ring {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 10px;
+        border-radius: 14px;
+        background: linear-gradient(145deg, var(--brand-blue), var(--brand-blue-2));
+        align-self: flex-start;
+      }
+
+      .handover-login-symbol-ring .brand-logo-img {
+        max-height: 48px;
+      }
+
       #operador-atual[readonly] {
         background: rgba(248, 250, 252, 0.95);
         cursor: default;
@@ -2501,7 +2515,9 @@
     <div id="handover-login-overlay" class="handover-login-overlay" role="dialog" aria-modal="true" aria-labelledby="handover-login-title">
       <div class="handover-login-card ho-card ho-card-pad">
         <div class="handover-login-brand">
-          <img id="handover-login-logo" class="brand-logo-img hidden" alt="Drogarias Conceito">
+          <div class="handover-login-symbol-ring">
+            <img id="handover-login-logo" class="brand-logo-img hidden" alt="Drogarias Conceito">
+          </div>
           <span id="handover-login-brand-text" class="brand-mark">Drogarias Conceito</span>
           <span class="ho-muted" style="font-size:13px;line-height:1.35;">Handover — acesso com PIN</span>
         </div>
@@ -2902,8 +2918,10 @@
     <script>
       const OPERADOR_STORAGE_KEY = 'handover_operador_atual_v14';
       const HANDOVER_SESSION_STORAGE_KEY = 'handover_auth_session_v41';
-      /** URL pública estável do logo oficial (ex. Drive export=view&id=FILE_ID). Vazio = texto “Drogarias Conceito”. */
-      const HANDOVER_OFFICIAL_LOGO_URL = '';
+      const HANDOVER_LOGO_HEADER_URL =
+        'https://drive.google.com/uc?export=view&id=1TIlxCaHjVAapbkxFbP1gNeVjyADTW2jT';
+      const HANDOVER_LOGO_LOGIN_URL =
+        'https://drive.google.com/uc?export=view&id=17s2utJRJj1MLaeJn59APJD9EQKCs5ehq';
 
       let handoverSession = null;
       let handoverAuthState = 'checking';
@@ -3175,6 +3193,31 @@
         }
       }
 
+      function getCurrentSessionToken_() {
+        if (handoverSession && handoverSession.token) {
+          return String(handoverSession.token);
+        }
+        try {
+          var raw = localStorage.getItem(HANDOVER_SESSION_STORAGE_KEY);
+          if (!raw) {
+            return '';
+          }
+          var o = JSON.parse(raw);
+          return o && o.token ? String(o.token) : '';
+        } catch (e) {
+          return '';
+        }
+      }
+
+      function ensureSessionTokenForAction_() {
+        var tok = getCurrentSessionToken_();
+        if (!tok || handoverAuthState !== 'logged_in') {
+          showToast_('Sessão expirada. Faça login novamente.', true);
+          return '';
+        }
+        return tok;
+      }
+
       function setLoginOverlayBusy_(busy, message) {
         var st = document.getElementById('handover-login-status');
         var usr = document.getElementById('handover-login-usuario');
@@ -3225,8 +3268,8 @@
       }
 
       function applyOfficialLogoIfConfigured_() {
-        var url = String(HANDOVER_OFFICIAL_LOGO_URL || '').trim();
-        function wire(imgId, textId) {
+        function wire(imgId, textId, urlRaw) {
+          var url = String(urlRaw || '').trim();
           var img = document.getElementById(imgId);
           var txt = document.getElementById(textId);
           if (!img) {
@@ -3254,8 +3297,8 @@
           };
           img.src = url;
         }
-        wire('handover-brand-logo', 'handover-brand-text');
-        wire('handover-login-logo', 'handover-login-brand-text');
+        wire('handover-brand-logo', 'handover-brand-text', HANDOVER_LOGO_HEADER_URL);
+        wire('handover-login-logo', 'handover-login-brand-text', HANDOVER_LOGO_LOGIN_URL);
       }
 
       function applySessionToHeader_() {
@@ -3563,40 +3606,45 @@
           return;
         }
         cancelReopenHistoricoModal_();
-        runWithOperador_(function (operador) {
-          var started = Date.now();
-          try {
-            getScriptRunner_()
-              .withSuccessHandler(function (response) {
-                perfLog_('reopenHistoricoItem', started);
-                touchLastSyncTime_();
-                if (response.tipo === 'Geral' && response.record) {
-                  dashboardData.geral.unshift(response.record);
-                } else if (response.tipo === 'Medicamentos' && response.record) {
-                  dashboardData.medicamentos.unshift(response.record);
-                }
-                var arc = (historicoResolvidos || []).find(function (h) {
-                  return h.ID === hid;
-                });
-                if (arc) {
-                  arc.Estado_Arquivo = 'Reaberto';
-                  arc.Reaberto_Por = operador;
-                  arc.Data_Reabertura = new Date().toISOString();
-                  arc.Motivo_Reabertura = motivo;
-                  arc.ID_Registro_Ativo = response.novoId;
-                }
-                showToast_('Reaberto como pendência');
-                renderAll();
-              })
-              .withFailureHandler(function (error) {
-                perfLog_('reopenHistoricoItem_fail', started);
-                showToast_(getErrorMessage(error), true);
-              })
-              .reopenHistoricoItem(hid, operador, motivo);
-          } catch (error) {
-            showToast_(error.message, true);
-          }
-        });
+        var tok = ensureSessionTokenForAction_();
+        if (!tok) {
+          return;
+        }
+        var started = Date.now();
+        try {
+          getScriptRunner_()
+            .withSuccessHandler(function (response) {
+              perfLog_('reopenHistoricoItem', started);
+              touchLastSyncTime_();
+              if (response.tipo === 'Geral' && response.record) {
+                dashboardData.geral.unshift(response.record);
+              } else if (response.tipo === 'Medicamentos' && response.record) {
+                dashboardData.medicamentos.unshift(response.record);
+              }
+              var arc = (historicoResolvidos || []).find(function (h) {
+                return h.ID === hid;
+              });
+              var nomeSessao =
+                handoverSession &&
+                (handoverSession.displayName || handoverSession.nome || handoverSession.usuario);
+              if (arc) {
+                arc.Estado_Arquivo = 'Reaberto';
+                arc.Reaberto_Por = nomeSessao || '';
+                arc.Data_Reabertura = new Date().toISOString();
+                arc.Motivo_Reabertura = motivo;
+                arc.ID_Registro_Ativo = response.novoId;
+              }
+              showToast_('Reaberto como pendência');
+              renderAll();
+            })
+            .withFailureHandler(function (error) {
+              perfLog_('reopenHistoricoItem_fail', started);
+              showToast_(getErrorMessage(error), true);
+            })
+            .reopenHistoricoItem(hid, tok, motivo);
+        } catch (error) {
+          showToast_(error.message, true);
+        }
       }
 
       function openReopenHistoricoModal_(id) {
@@ -3703,6 +3751,10 @@
           return;
         }
         captureObservationDraftsFromDom_();
+        var tok = ensureSessionTokenForAction_();
+        if (!tok) {
+          return;
+        }
         var started = Date.now();
         try {
           getScriptRunner_()
@@ -3722,7 +3774,7 @@
                 showToast_(getErrorMessage(error), true);
               }
             })
-            .refreshDashboardBundle(activeChecklistTurno);
+            .refreshDashboardBundle(activeChecklistTurno, tok);
         } catch (error) {
           if (!silent) {
             showToast_(error.message, true);
@@ -3751,6 +3803,13 @@
 
       function refreshChecklistForTurno_(silent) {
         var started = Date.now();
+        var tok = ensureSessionTokenForAction_();
+        if (!tok) {
+          if (!silent) {
+            showToast_('Sessão expirada. Faça login novamente.', true);
+          }
+          return;
+        }
         try {
           getScriptRunner_()
             .withSuccessHandler(function (response) {
@@ -3773,7 +3832,7 @@
                 showToast_(getErrorMessage(error), true);
               }
             })
-            .generateChecklistForTurno(activeChecklistTurno);
+            .generateChecklistForTurno(activeChecklistTurno, tok);
         } catch (error) {
           if (!silent) {
             showToast_(error.message, true);
@@ -4025,6 +4084,13 @@
         historicoLoadState = 'loading';
         historicoLoadError = '';
         var started = Date.now();
+        var tok = ensureSessionTokenForAction_();
+        if (!tok) {
+          historicoLoadState = 'idle';
+          historicoResolvidos = [];
+          callback();
+          return;
+        }
         try {
           getScriptRunner_()
             .withSuccessHandler(function (resp) {
@@ -4042,7 +4108,7 @@
               showToast_(historicoLoadError, true);
               callback();
             })
-            .fetchHistoricoResolvidos(280);
+            .fetchHistoricoResolvidos(280, tok);
         } catch (err) {
           historicoLoadState = 'idle';
           historicoLoadError = getErrorMessage(err);
@@ -7193,6 +7259,10 @@
 
       function resyncChecklistFromServer_() {
         var started = Date.now();
+        var tok = ensureSessionTokenForAction_();
+        if (!tok) {
+          return;
+        }
         try {
           getScriptRunner_()
             .withSuccessHandler(function (response) {
@@ -7204,7 +7274,7 @@
             .withFailureHandler(function (error) {
               setStatus(checklistStatus, getErrorMessage(error), true);
             })
-            .generateChecklistForTurno(activeChecklistTurno);
+            .generateChecklistForTurno(activeChecklistTurno, tok);
         } catch (error) {
           setStatus(checklistStatus, error.message, true);
         }
@@ -7376,6 +7446,10 @@
 
       function updateChecklistStatus(id, status) {
         runWithOperador_(function (operador) {
+          var tok = ensureSessionTokenForAction_();
+          if (!tok) {
+            return;
+          }
           checklistPendingItemId = id;
           optimisticChecklistPatch_(id, status);
           if (!patchChecklistItemArticle_(id)) {
@@ -7404,7 +7478,7 @@
                 showToast_(getErrorMessage(error), true);
                 setStatus(checklistStatus, getErrorMessage(error), true);
               })
-              .updateChecklistItemStatus(id, status, operador);
+              .updateChecklistItemStatus(id, status, tok);
           } catch (error) {
             checklistPendingItemId = null;
             resyncChecklistFromServer_();
@@ -7421,6 +7495,10 @@
         }
 
         runWithOperador_(function (operador) {
+          var tok = ensureSessionTokenForAction_();
+          if (!tok) {
+            return;
+          }
           var input2 = document.getElementById(inputId);
           var observacao = input2 ? input2.value : checklistObservationDrafts[checklistDraftKey_(id)] || '';
           checklistObservationDrafts[checklistDraftKey_(id)] = observacao;
@@ -7456,7 +7534,7 @@
                 setStatus(checklistStatus, getErrorMessage(error), true);
                 showToast_(getErrorMessage(error), true);
               })
-              .updateChecklistItemObservation(id, observacao, operador);
+              .updateChecklistItemObservation(id, observacao, tok);
           } catch (error) {
             checklistPendingItemId = null;
             resyncChecklistFromServer_();
@@ -7471,6 +7549,11 @@
         setChecklistButtonsDisabled(true);
 
         var started = Date.now();
+        var tok = ensureSessionTokenForAction_();
+        if (!tok) {
+          setChecklistButtonsDisabled(false);
+          return;
+        }
         try {
           getScriptRunner_()
             .withSuccessHandler(function (response) {
@@ -7486,7 +7569,7 @@
               setChecklistButtonsDisabled(false);
               showToast_(getErrorMessage(error), true);
             })
-            .generateChecklistForTurno(activeChecklistTurno);
+            .generateChecklistForTurno(activeChecklistTurno, tok);
         } catch (error) {
           setStatus(checklistStatus, error.message, true);
           setChecklistButtonsDisabled(false);
@@ -7675,6 +7758,13 @@
         delete row.__syncError;
         renderAll();
         var started = Date.now();
+        var tok = ensureSessionTokenForAction_();
+        if (!tok) {
+          row.__syncState = 'error';
+          row.__syncError = 'Sessão expirada.';
+          renderAll();
+          return;
+        }
         try {
           getScriptRunner_()
             .withSuccessHandler(function (response) {
@@ -7695,7 +7785,7 @@
               renderAll();
               showToast_(getErrorMessage(error), true);
             })
-            .saveData(ps.tab, ps.payload, ps.operador);
+            .saveData(ps.tab, ps.payload, tok);
         } catch (error) {
           row.__syncState = 'error';
           row.__syncError = error.message;
@@ -7785,6 +7875,11 @@
             return;
           }
 
+          var tok = ensureSessionTokenForAction_();
+          if (!tok) {
+            return;
+          }
+
           var pendingCtx = {
             tab: tab,
             operador: operador,
@@ -7865,7 +7960,7 @@
                 renderAll();
                 showToast_('Erro ao salvar', true);
               })
-              .saveData(tab, payload, operador);
+              .saveData(tab, payload, tok);
           } catch (error) {
             var list2 = tab === 'Geral' ? dashboardData.geral : dashboardData.medicamentos;
             var row2 = (list2 || []).find(function (item) {
@@ -7939,6 +8034,10 @@
 
       function markPurchased(id) {
         runWithOperador_(function (operador) {
+          var tok = ensureSessionTokenForAction_();
+          if (!tok) {
+            return;
+          }
           var list = dashboardData.medicamentos || [];
           var item = list.find(function (m) {
             return m.ID === id;
@@ -7982,7 +8081,7 @@
                 setStatus(queueStatus, getErrorMessage(error), true);
                 showToast_(getErrorMessage(error), true);
               })
-              .markAsPurchased(id, operador);
+              .markAsPurchased(id, tok);
           } catch (error) {
             item.Comprado = snapshot.Comprado;
             item.Entregue = snapshot.Entregue;
@@ -8004,6 +8103,10 @@
           return;
         }
         runWithOperador_(function (operador) {
+          var tok = ensureSessionTokenForAction_();
+          if (!tok) {
+            return;
+          }
           var list = dashboardData.medicamentos || [];
           var item = list.find(function (m) {
             return m.ID === id;
@@ -8056,7 +8159,7 @@
                 setStatus(queueStatus, getErrorMessage(error), true);
                 showToast_(getErrorMessage(error), true);
               })
-              .revertMedicationToPending(id, operador, '');
+              .revertMedicationToPending(id, tok, '');
           } catch (error) {
             item.Comprado = snapshot.Comprado;
             item.Entregue = snapshot.Entregue;
@@ -8084,6 +8187,10 @@
         } catch (ePrompt) {}
 
         runWithOperador_(function (operador) {
+          var tok = ensureSessionTokenForAction_();
+          if (!tok) {
+            return;
+          }
           var list = dashboardData.medicamentos || [];
           var item = list.find(function (m) {
             return m.ID === id;
@@ -8142,7 +8249,7 @@
                 setStatus(queueStatus, getErrorMessage(error), true);
                 showToast_(getErrorMessage(error), true);
               })
-              .cancelMedicationRequest(id, operador, motivo);
+              .cancelMedicationRequest(id, tok, motivo);
           } catch (error) {
             item.Comprado = snapshot.Comprado;
             item.Entregue = snapshot.Entregue;
@@ -8190,9 +8297,9 @@
           encodeURIComponent(buildWhatsAppMessageClient_(medication.Cliente, medication.Medicamento));
         window.open(url, '_blank');
 
-        var operador = getOperadorAtual_();
-        if (!operador) {
-          showToast_('WhatsApp aberto. Informe o operador atual no topo para registrar a tentativa.', false);
+        var tok = ensureSessionTokenForAction_();
+        if (!tok) {
+          return;
         }
 
         var started = Date.now();
@@ -8212,14 +8319,18 @@
               perfLog_('registerWhatsAppAttempt_fail', started);
               showToast_('Aviso: ' + getErrorMessage(error), true);
             })
-            .registerWhatsAppAttempt(id, operador);
+            .registerWhatsAppAttempt(id, tok);
         } catch (error) {
           showToast_('Aviso: ' + error.message, true);
         }
       }
 
       function runQueueAction_(message, functionName, id) {
-        runWithOperador_(function (operador) {
+        runWithOperador_(function () {
+          var tok = ensureSessionTokenForAction_();
+          if (!tok) {
+            return;
+          }
           var started = Date.now();
           clearStatus(queueStatus);
 
@@ -8271,7 +8382,7 @@
                 setStatus(queueStatus, getErrorMessage(error), true);
                 showToast_(getErrorMessage(error), true);
               })
-              [functionName](id, operador);
+              [functionName](id, tok);
           } catch (error) {
             if (functionName === 'markAsResolved') {
               var g3 = (dashboardData.geral || []).find(function (g) {
