@@ -2830,6 +2830,25 @@
               <input id="atendente" name="atendente">
             </div>
 
+            <div class="field" id="med-fornecedor-compra-field">
+              <label for="fornecedorCompra">Fornecedor de compra</label>
+              <select id="fornecedorCompra" name="fornecedorCompra">
+                <option value="Não informado">Não informado</option>
+                <option value="Panpharma">Panpharma</option>
+                <option value="Santa Cruz">Santa Cruz</option>
+              </select>
+            </div>
+            <div class="field hidden" id="med-codigo-compra-field">
+              <label for="codigoCompraFornecedor">Código de compra do produto</label>
+              <input
+                id="codigoCompraFornecedor"
+                name="codigoCompraFornecedor"
+                type="text"
+                autocomplete="off"
+                placeholder="Código no site do fornecedor"
+              />
+            </div>
+
             <div class="field" id="preco-venda-field">
               <label for="precoVenda">Preço de venda</label>
               <input id="precoVenda" name="precoVenda" type="text" inputmode="decimal" placeholder="R$ 0,00">
@@ -3037,6 +3056,10 @@
       }
       if (tipoSelect) {
         tipoSelect.addEventListener('change', updateMedicinePriceVisibility_);
+      }
+      var fornecedorCompraSel = document.getElementById('fornecedorCompra');
+      if (fornecedorCompraSel) {
+        fornecedorCompraSel.addEventListener('change', updateFornecedorCompraCodigoVisibility_);
       }
       requestForm.addEventListener('submit', handleSubmit);
       requestForm.addEventListener('keydown', function (ev) {
@@ -4054,6 +4077,21 @@
         }
       }
 
+      function updateFornecedorCompraCodigoVisibility_() {
+        var sel = document.getElementById('fornecedorCompra');
+        var wrap = document.getElementById('med-codigo-compra-field');
+        var inp = document.getElementById('codigoCompraFornecedor');
+        if (!sel || !wrap) {
+          return;
+        }
+        var v = String(sel.value || '').trim();
+        var show = v === 'Panpharma' || v === 'Santa Cruz';
+        wrap.classList.toggle('hidden', !show);
+        if (!show && inp) {
+          inp.value = '';
+        }
+      }
+
       function updateMedicinePriceVisibility_() {
         if (!tipoSelect) {
           return;
@@ -4088,6 +4126,7 @@
         if (encOnly) {
           encOnly.classList.toggle('hidden', isFalta);
         }
+        updateFornecedorCompraCodigoVisibility_();
       }
 
       function medicationTipoFromRecord_(item) {
@@ -6478,6 +6517,8 @@
           }
           chunks.push(row('Atendente', item.metaAtendente));
           chunks.push(row('Previsão', item.forecast));
+          chunks.push(row('Fornecedor', item.metaFornecedorCompra));
+          chunks.push(row('Código compra', item.metaCodigoCompra));
           if (item.medTipo === 'encomenda') {
             chunks.push(row('Preço', item.price));
             chunks.push(row('Pré-pago', item.metaPrePago));
@@ -6801,6 +6842,11 @@
               (item.Data_Cancelamento ? ' · ' + formatDateTime(item.Data_Cancelamento) : '') +
               (item.Motivo_Cancelamento ? ' · ' + String(item.Motivo_Cancelamento) : '');
           }
+          var fornecedorCard = String(item.Fornecedor_Compra || '').trim();
+          if (!fornecedorCard || /^n[aã]o\s+informado$/i.test(fornecedorCard)) {
+            fornecedorCard = '';
+          }
+          var codigoCard = String(item.Codigo_Compra_Fornecedor || '').trim();
           var descPlainMed =
             'Tipo: ' +
             (item.Tipo || '-') +
@@ -6812,6 +6858,8 @@
             item.Atendente,
             item.Telefone,
             item.Status,
+            fornecedorCard,
+            codigoCard,
             waShort,
             auditMed,
             revLine,
@@ -6845,6 +6893,8 @@
             forecast: item.Previsao_Entrega ? formatDate(item.Previsao_Entrega) : '',
             deadlineLabel: '',
             price: tipoLow === 'falta' ? '' : formatCurrencyBr_(item.Preco_Venda),
+            metaFornecedorCompra: fornecedorCard,
+            metaCodigoCompra: codigoCard,
             isOverdue: venTierM !== '',
             vencidosTier: venTierM,
             extraMeta:
@@ -7931,6 +7981,14 @@
           document.getElementById('telefone').value = pl.telefone || '';
           document.getElementById('atendente').value = pl.atendente || '';
           document.getElementById('previsaoEntrega').value = pl.previsaoEntrega || '';
+          var fcR = document.getElementById('fornecedorCompra');
+          var codR = document.getElementById('codigoCompraFornecedor');
+          if (fcR) {
+            fcR.value = pl.fornecedorCompra || 'Não informado';
+          }
+          if (codR) {
+            codR.value = pl.codigoCompraFornecedor || '';
+          }
           updateMedicinePriceVisibility_();
         }
         syncAutorFieldFromOperador_();
@@ -8009,6 +8067,11 @@
               Atendente: payload.atendente,
               Previsao_Entrega: payload.previsaoEntrega,
               Telefone: payload.telefone,
+              Fornecedor_Compra: payload.fornecedorCompra || 'Não informado',
+              Codigo_Compra_Fornecedor:
+                payload.fornecedorCompra === 'Panpharma' || payload.fornecedorCompra === 'Santa Cruz'
+                  ? String(payload.codigoCompraFornecedor || '').trim()
+                  : '',
               Comprado: false,
               Entregue: false,
               Status: 'Pendente',
@@ -8086,6 +8149,16 @@
       }
 
       function getMedicinePayload() {
+        var fcEl = document.getElementById('fornecedorCompra');
+        var codEl = document.getElementById('codigoCompraFornecedor');
+        var fc = fcEl ? String(fcEl.value || '').trim() : 'Não informado';
+        if (!fc) {
+          fc = 'Não informado';
+        }
+        var cod = '';
+        if (fc === 'Panpharma' || fc === 'Santa Cruz') {
+          cod = codEl ? String(codEl.value || '').trim() : '';
+        }
         return {
           tipo: document.getElementById('tipo').value,
           medicamento: document.getElementById('medicamento').value,
@@ -8095,6 +8168,8 @@
           telefone: document.getElementById('telefone').value,
           atendente: document.getElementById('atendente').value,
           previsaoEntrega: document.getElementById('previsaoEntrega').value,
+          fornecedorCompra: fc,
+          codigoCompraFornecedor: cod,
         };
       }
 

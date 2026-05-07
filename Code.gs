@@ -117,6 +117,8 @@ const HEADERS = {
     'Cancelado_Por',
     'Data_Cancelamento',
     'Motivo_Cancelamento',
+    'Fornecedor_Compra',
+    'Codigo_Compra_Fornecedor',
   ],
   Compras_Medicamentos: [
     'ID_Handover',
@@ -139,6 +141,8 @@ const HEADERS = {
     'Cancelado_Por',
     'Data_Cancelamento',
     'Motivo_Cancelamento',
+    'Fornecedor_Compra',
+    'Codigo_Compra_Fornecedor',
   ],
   Usuarios_Handover: HANDOVER_USERS_HEADERS,
   Arquivo_Resolvidos: [
@@ -195,6 +199,32 @@ const HEADERS = {
     'Observacao',
   ],
 };
+
+function normalizeFornecedorCompraInput_(raw) {
+  var s = sanitizeText_(raw).trim();
+  if (!s || /^n[aã]o\s+informado$/i.test(s)) {
+    return 'Não informado';
+  }
+  if (s === 'Panpharma') {
+    return 'Panpharma';
+  }
+  if (s === 'Santa Cruz') {
+    return 'Santa Cruz';
+  }
+  return 'Não informado';
+}
+
+function normalizeCodigoCompraFornecedorInput_(raw, fornecedorNorm) {
+  var f = fornecedorNorm || normalizeFornecedorCompraInput_('');
+  if (f !== 'Panpharma' && f !== 'Santa Cruz') {
+    return '';
+  }
+  var c = sanitizeText_(raw).trim();
+  if (!c) {
+    return '';
+  }
+  return c.length > 160 ? c.slice(0, 160) : c;
+}
 
 function doGet() {
   // Não chamar setupSpreadsheet aqui: evita layout pesado em Compras_Medicamentos e todas as abas
@@ -312,7 +342,7 @@ function applyComprasMedicamentosLayout_(sheet) {
   sheet.setFrozenRows(1);
 
   // UX: larguras e colunas operacionais (sem reordenar/destruir dados)
-  var widths = [140, 120, 90, 240, 120, 170, 120, 130, 90, 90, 140, 120, 140, 360, 380, 140, 160];
+  var widths = [140, 120, 90, 240, 120, 170, 120, 130, 90, 90, 140, 120, 140, 360, 380, 140, 160, 120, 110, 220, 130, 150];
   for (var c = 0; c < Math.min(widths.length, lastCol); c++) {
     sheet.setColumnWidth(c + 1, widths[c]);
   }
@@ -1316,6 +1346,11 @@ function buildComprasRowNamedValuesFromMedicamento_(medItem, existingStatusCompr
     Cancelado_Por: sanitizeText_(medItem.Cancelado_Por || ''),
     Data_Cancelamento: medItem.Data_Cancelamento || '',
     Motivo_Cancelamento: sanitizeText_(medItem.Motivo_Cancelamento || ''),
+    Fornecedor_Compra: normalizeFornecedorCompraInput_(medItem.Fornecedor_Compra),
+    Codigo_Compra_Fornecedor: normalizeCodigoCompraFornecedorInput_(
+      medItem.Codigo_Compra_Fornecedor,
+      normalizeFornecedorCompraInput_(medItem.Fornecedor_Compra)
+    ),
   };
 }
 
@@ -2268,6 +2303,8 @@ function appendHandoverRecord_(tab, data, authorLabel) {
   if (tab === SHEET_NAMES.MEDICAMENTOS) {
     const tipo = sanitizeText_(data.tipo);
     const isFalta = tipo.toLowerCase() === 'falta';
+    var fnCompra = normalizeFornecedorCompraInput_(data.fornecedorCompra);
+    var codCompra = normalizeCodigoCompraFornecedorInput_(data.codigoCompraFornecedor, fnCompra);
 
     if (isFalta) {
       if (!sanitizeText_(data.medicamento)) {
@@ -2299,6 +2336,11 @@ function appendHandoverRecord_(tab, data, authorLabel) {
         Data_Reversao: '',
         Status_Anterior: '',
         Motivo_Reversao: '',
+        Cancelado_Por: '',
+        Data_Cancelamento: '',
+        Motivo_Cancelamento: '',
+        Fornecedor_Compra: fnCompra,
+        Codigo_Compra_Fornecedor: codCompra,
       });
       sheet.appendRow(rowValuesFalta);
       try {
@@ -2342,6 +2384,11 @@ function appendHandoverRecord_(tab, data, authorLabel) {
       Data_Reversao: '',
       Status_Anterior: '',
       Motivo_Reversao: '',
+      Cancelado_Por: '',
+      Data_Cancelamento: '',
+      Motivo_Cancelamento: '',
+      Fornecedor_Compra: fnCompra,
+      Codigo_Compra_Fornecedor: codCompra,
     });
     sheet.appendRow(rowValues);
     try {
@@ -2788,6 +2835,8 @@ function reopenHistoricoItem(archivedRecordId, sessionToken, motivo) {
           precoMed = '';
         }
       }
+      var fnAr = normalizeFornecedorCompraInput_(archived.Fornecedor_Compra);
+      var codAr = normalizeCodigoCompraFornecedorInput_(archived.Codigo_Compra_Fornecedor, fnAr);
       var namedMed = {
         ID: newMedId,
         Timestamp: new Date(),
@@ -2810,6 +2859,11 @@ function reopenHistoricoItem(archivedRecordId, sessionToken, motivo) {
         Data_Reversao: '',
         Status_Anterior: '',
         Motivo_Reversao: '',
+        Cancelado_Por: '',
+        Data_Cancelamento: '',
+        Motivo_Cancelamento: '',
+        Fornecedor_Compra: fnAr,
+        Codigo_Compra_Fornecedor: codAr,
       };
       msheet.appendRow(buildAppendRowValuesFromNamedMap_(msheet, namedMed));
       try {
@@ -3271,6 +3325,15 @@ function normalizeItemForClient_(item) {
 
   if (sanitizeText_(item.Tipo).toLowerCase() === 'falta') {
     item.Preco_Venda = '';
+  }
+
+  var tipoMedNorm = sanitizeText_(item.Tipo).toLowerCase();
+  if (tipoMedNorm === 'falta' || tipoMedNorm === 'encomenda') {
+    item.Fornecedor_Compra = normalizeFornecedorCompraInput_(item.Fornecedor_Compra);
+    item.Codigo_Compra_Fornecedor = normalizeCodigoCompraFornecedorInput_(
+      item.Codigo_Compra_Fornecedor,
+      item.Fornecedor_Compra
+    );
   }
 }
 
