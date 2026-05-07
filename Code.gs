@@ -708,6 +708,26 @@ function handleComprasMedicamentosEdit_(e) {
   }
 }
 
+/** Wrapper público para execução manual no Apps Script Editor (funções com "_" não aparecem bem no seletor). */
+function instalarTriggerComprasMedicamentos() {
+  return instalarTriggerComprasMedicamentos_();
+}
+
+/** Wrapper público para execução manual no Apps Script Editor. */
+function listarTriggersHandover() {
+  return listarTriggersHandover_();
+}
+
+/** Wrapper público para execução manual no Apps Script Editor. */
+function removerTriggerComprasMedicamentos() {
+  return removerTriggerComprasMedicamentos_();
+}
+
+/** Opcional: lembrete no Logger; processamento real em processarStatusCompraPorIdHandover_(id). */
+function testarProcessarStatusCompraPorIdHandover() {
+  Logger.log('Informe um ID_Handover manualmente chamando processarStatusCompraPorIdHandover_(id).');
+}
+
 /**
  * MANUAL: instalar gatilho onEdit instalável apontando para handleComprasMedicamentosEdit_.
  * Remove gatilhos duplicados do mesmo handler antes de criar.

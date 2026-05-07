@@ -75,12 +75,14 @@ Regra: se o dado aparece no card de Medicamentos, ele deve ser encontrável pela
 
 ## Compras_Medicamentos — instruções pós-deploy (Codex / operação)
 
+**Wrappers públicos (sem `_`)** em `Code.gs` para o Carlos e demais operadores encontrarem no seletor do Apps Script Editor: `instalarTriggerComprasMedicamentos`, `listarTriggersHandover`, `removerTriggerComprasMedicamentos` (e opcional `testarProcessarStatusCompraPorIdHandover`). Eles apenas delegam às funções internas `*_()`; a lógica permanece nas versões com underscore.
+
 Depois que o Codex publicar a versão com aba **Compras_Medicamentos** e triggers:
 
 1. Abrir o **Apps Script** do projeto Handover (mesmo script do Web App).
-2. Executar **`instalarTriggerComprasMedicamentos_()`** no editor.
+2. Após **clasp push**, executar **`instalarTriggerComprasMedicamentos`** no editor (menu de funções).
 3. **Autorizar** permissões se o Google solicitar.
-4. Executar **`listarTriggersHandover_()`** e conferir no **Registro (Logger)** que existe gatilho com handler **`handleComprasMedicamentosEdit_`**.
+4. Executar **`listarTriggersHandover`** e conferir no **Registro (Logger)** que existe gatilho com handler **`handleComprasMedicamentosEdit_`**.
 5. Abrir a planilha:  
    https://docs.google.com/spreadsheets/d/1tHDX3I5yVx2UioNki695UIoNxHjXxpxCuKZwv2l7Dv8/edit  
 6. Na aba **Compras_Medicamentos**, editar **Status_Compra** e validar que **Medicamentos** atualiza conforme a regra (e que **Pendente de compra** na planilha não reverte comprado/entregue/cancelado no Handover).
