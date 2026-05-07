@@ -15,8 +15,26 @@ const COMPRAS_STATUS_COMPRA = {
   CANCELADO: 'Cancelado',
 };
 
-const COMPRAS_MENSAGEM_CLIENTE_NAO_ENCONTRADO =
-  'Olá! Sobre o medicamento solicitado, verificamos com a compra e no momento não encontramos esse item disponível. Você aceita que a gente procure uma alternativa equivalente ou outra opção para te atender?';
+/**
+ * Mensagem sugerida para Status_Compra = Não encontrado (só Mensagem_Cliente; sem WhatsApp automático).
+ * Sem nome na coluna Cliente: primeira frase começa em "Olá!".
+ * Sem Medicamento: usa "medicamento solicitado".
+ */
+function buildMensagemClienteNaoEncontrado_(cliente, medicamento) {
+  var nome = sanitizeText_(cliente);
+  var medRaw = sanitizeText_(medicamento);
+  var sobreMedicamento = medRaw
+    ? 'Sobre o medicamento ' + medRaw + ', '
+    : 'Sobre o medicamento solicitado, ';
+  var primeiro =
+    (nome ? 'Olá, ' + nome + '! ' : 'Olá! ') +
+    sobreMedicamento +
+    'verificamos com nosso fornecedor e, no momento, ele não está disponível para compra imediata.';
+  var segundo =
+    'Para não te deixar sem atendimento, podemos procurar uma alternativa equivalente ou uma opção com o mesmo objetivo terapêutico, sempre com orientação responsável.';
+  var terceiro = 'Você gostaria que a nossa equipe verificasse uma alternativa para te atender?';
+  return primeiro + '\n\n' + segundo + '\n\n' + terceiro;
+}
 
 const EMAIL_ENCOMENDAS = 'drogariasconceitocm@gmail.com';
 const HANDOVER_SPREADSHEET_ID_KEY = 'HANDOVER_SPREADSHEET_ID';
@@ -1344,7 +1362,7 @@ function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId, opt) {
       if (normalizeComprasStatusCompraInput_(existingStatus) === COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO) {
         named.Status_Compra = COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO;
         if (!named.Mensagem_Cliente) {
-          named.Mensagem_Cliente = COMPRAS_MENSAGEM_CLIENTE_NAO_ENCONTRADO;
+          named.Mensagem_Cliente = buildMensagemClienteNaoEncontrado_(named.Cliente, named.Medicamento);
         }
       }
       if (named.Status_Compra === COMPRAS_STATUS_COMPRA.COMPRADO) {
@@ -1560,7 +1578,9 @@ function processarStatusCompraPorIdHandover_(idHandover) {
     var medN = rowToObjectFromSheetRow_(sh, rn);
     normalizeItemForClient_(medN);
     var finalN = sanitizeText_(medN.Status);
-    cSheet.getRange(rCompras, colMsg).setValue(COMPRAS_MENSAGEM_CLIENTE_NAO_ENCONTRADO);
+    cSheet
+      .getRange(rCompras, colMsg)
+      .setValue(buildMensagemClienteNaoEncontrado_(oCompras.Cliente, oCompras.Medicamento));
     cSheet.getRange(rCompras, colStatusH).setValue(finalN);
     cSheet.getRange(rCompras, colUltima).setValue(now);
     Logger.log(
