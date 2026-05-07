@@ -646,6 +646,13 @@ function processarStatusCompraPorIdHandover_(idHandover) {
 }
 
 /**
+ * Wrapper público para o gatilho criado na UI (Triggers) do Apps Script, sem usar ScriptApp.getProjectTriggers.
+ */
+function handleComprasMedicamentosEdit(e) {
+  return handleComprasMedicamentosEdit_(e);
+}
+
+/**
  * Gatilho instalável e onEdit simples: entrada única para edições na aba Compras_Medicamentos.
  * Valida contexto, registra log mínimo e delega a processarStatusCompraPorIdHandover_ (regra única).
  */

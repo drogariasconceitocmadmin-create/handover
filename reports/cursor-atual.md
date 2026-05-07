@@ -75,20 +75,29 @@ Regra: se o dado aparece no card de Medicamentos, ele deve ser encontrável pela
 
 ## Compras_Medicamentos — instruções pós-deploy (Codex / operação)
 
-**Wrappers públicos (sem `_`)** em `Code.gs` para o Carlos e demais operadores encontrarem no seletor do Apps Script Editor: `instalarTriggerComprasMedicamentos`, `listarTriggersHandover`, `removerTriggerComprasMedicamentos` (e opcional `testarProcessarStatusCompraPorIdHandover`). Eles apenas delegam às funções internas `*_()`; a lógica permanece nas versões com underscore.
+**Wrappers públicos (sem `_`)** em `Code.gs` para o Carlos e demais operadores encontrarem no seletor do Apps Script Editor: `instalarTriggerComprasMedicamentos`, `listarTriggersHandover`, `removerTriggerComprasMedicamentos`, **`handleComprasMedicamentosEdit`** (evento on edit; delega a `handleComprasMedicamentosEdit_`), e opcional `testarProcessarStatusCompraPorIdHandover`. Os de menu apenas delegam às funções internas `*_()`; a lógica permanece nas versões com underscore.
 
-**OAuth (`appsscript.json`):** foi declarado o escopo `https://www.googleapis.com/auth/script.scriptapp` junto aos existentes, porque `ScriptApp.getProjectTriggers`, `newTrigger`, `deleteTrigger` etc. exigem essa permissão; sem ela o editor retorna *Specified permissions are not sufficient to call ScriptApp.getProjectTriggers*. Após o próximo `clasp push`, o usuário pode precisar **reautorizar** o projeto no prompt do Google.
+**OAuth (`appsscript.json`):** foi declarado o escopo `https://www.googleapis.com/auth/script.scriptapp` junto aos existentes para `ScriptApp.getProjectTriggers` / `newTrigger` / `deleteTrigger`. Se mesmo assim o editor continuar com *Specified permissions are not sufficient to call ScriptApp.getProjectTriggers*, **não dependa** dessas funções para o primeiro setup: use o gatilho manual na UI apontando para **`handleComprasMedicamentosEdit`** (abaixo). Após `clasp push`, pode ser necessário **reautorizar** o projeto.
 
-Depois que o Codex publicar a versão com aba **Compras_Medicamentos** e triggers:
+### Instalação manual do gatilho Compras_Medicamentos (recomendado se `getProjectTriggers` falhar)
+
+1. Abrir o **Apps Script Editor** do Handover.
+2. Ir ao ícone **Triggers** (relógio) na barra lateral.
+3. Clicar em **Add Trigger**.
+4. Escolher função: **`handleComprasMedicamentosEdit`**.
+5. **Event source:** From spreadsheet.
+6. **Event type:** On edit.
+7. Salvar e **autorizar** quando o Google pedir.
+8. Na planilha, aba **Compras_Medicamentos**, testar edição de **Status_Compra**.
+
+Depois que o Codex publicar a versão com aba **Compras_Medicamentos**:
 
 1. Abrir o **Apps Script** do projeto Handover (mesmo script do Web App).
-2. Após **clasp push**, executar **`instalarTriggerComprasMedicamentos`** no editor (menu de funções).
-3. **Autorizar** permissões se o Google solicitar.
-4. Executar **`listarTriggersHandover`** e conferir no **Registro (Logger)** que existe gatilho com handler **`handleComprasMedicamentosEdit_`**.
-5. Abrir a planilha:  
+2. (Opcional) Após **clasp push**, tentar **`instalarTriggerComprasMedicamentos`** / **`listarTriggersHandover`** se as permissões permitirem; caso contrário usar os passos de instalação manual acima.
+3. Abrir a planilha:  
    https://docs.google.com/spreadsheets/d/1tHDX3I5yVx2UioNki695UIoNxHjXxpxCuKZwv2l7Dv8/edit  
-6. Na aba **Compras_Medicamentos**, editar **Status_Compra** e validar que **Medicamentos** atualiza conforme a regra (e que **Pendente de compra** na planilha não reverte comprado/entregue/cancelado no Handover).
-7. No Web App, clicar **Atualizar agora** para ver o painel:  
+4. Na aba **Compras_Medicamentos**, editar **Status_Compra** e validar que **Medicamentos** atualiza conforme a regra (e que **Pendente de compra** na planilha não reverte comprado/entregue/cancelado no Handover).
+5. No Web App, clicar **Atualizar agora** para ver o painel:  
    https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec  
 
 **Nota:** Se houver **onEdit** simples do projeto **e** trigger instalável no mesmo handler, uma edição pode disparar duas vezes; a lógica foi mantida idempotente onde possível.
