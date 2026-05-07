@@ -3,83 +3,95 @@
   "status_geral": "OK",
   "pasta": "C:\\Users\\Marco\\Desktop\\Sis Drogaria\\Handover",
   "branch_publicada": "feat/handover-compras-medicamentos",
-  "commit_publicado": "17a0e42",
-  "commits_obrigatorios": [
-    {
-      "hash": "712fb69",
-      "mensagem": "feat(handover): aba Compras_Medicamentos espelha Medicamentos e sincroniza por ID"
-    },
-    {
-      "hash": "97b22f9",
-      "mensagem": "feat(handover): handler Compras + trigger instalavel e diagnostico por ID"
-    },
-    {
-      "hash": "9876bfc",
-      "mensagem": "feat(handover): regra Status_Compra Compras para Medicamentos por ID"
-    },
-    {
-      "hash": "17a0e42",
-      "mensagem": "fix(handover): sync Compras reversa, Pendente seguro e instrucoes pos-deploy"
-    }
-  ],
-  "base": "v33 estavel / sem auth/PIN / sem POP",
+  "commit_publicado": "07d8806",
   "scriptId": "1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd",
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
-  "versao_publicada": 39,
+  "versao_publicada": 41,
   "rollback_feito": false,
   "pop_tocado": false,
-  "registros_criados": [],
   "pre_deploy": {
     "resultado": "OK",
     "branch": "feat/handover-compras-medicamentos",
-    "head": "17a0e42",
-    "commits_obrigatorios_presentes": true,
+    "head": "07d8806",
     "scriptId_handover": true,
     "auth_pin_entrou": false,
     "pop_referenciado": false,
     "sheet_clear": false,
-    "getRange_semantica_perigosa": false,
-    "clasp_status": "OK"
-  },
-  "compras_medicamentos_preflight": {
-    "instalarTriggerComprasMedicamentos_": true,
-    "listarTriggersHandover_": true,
-    "removerTriggerComprasMedicamentos_": true,
-    "handleComprasMedicamentosEdit_": true,
-    "processarStatusCompraPorIdHandover_": true,
-    "pendente_manual_nao_forca_medicamentos_status": true,
-    "reversao_handover_forca_compras_pendente": true
+    "deleteRow_novo": false,
+    "cancelMedicationRequest": true,
+    "schema_aditivo_cancelamento": [
+      "Cancelado_Por",
+      "Data_Cancelamento",
+      "Motivo_Cancelamento"
+    ],
+    "espelho_compras_por_id_handover": true
   },
   "publicacao": {
+    "clasp_status": "OK",
     "clasp_push": "OK",
-    "clasp_version": 39,
+    "clasp_version": 41,
     "clasp_deploy": "OK",
     "deployment_oficial_mantido": true,
     "url_oficial_mantida": true
   },
-  "smoke_web_app": {
+  "smoke_real": {
     "abertura": "OK",
     "dashboard": "OK",
-    "console_sem_erro_critico": true,
-    "novo_registro": "OK",
     "medicamentos": "OK",
-    "busca_medicamentos": "OK",
-    "cancelado_nao_quebra_medicamentos": true,
-    "checklist": "OK",
-    "historico": "OK"
+    "registro_criado": {
+      "medicamento": "CODEX_CANCELAR_HANDOVER",
+      "id": "76a008e6-13d7-43b8-930f-bf98d79884bd"
+    },
+    "cancelamento_pelo_handover": "OK",
+    "dialogs": [
+      "Cancelar esta solicitação de medicamento?",
+      "Motivo do cancelamento (opcional):"
+    ],
+    "card_cancelado": true,
+    "cancelado_por": "CODEX",
+    "motivo": "Smoke Codex cancelamento",
+    "acoes_indevidas_ocultas": true,
+    "console_sem_erro_critico": true
   },
-  "teste_manual_pendente": [
-    "Instalar/confirmar gatilho handleComprasMedicamentosEdit_ com instalarTriggerComprasMedicamentos_ e listarTriggersHandover_.",
-    "Alterar Status_Compra na planilha autenticada para Comprado, Nao encontrado e Cancelado.",
-    "Confirmar propagacao por ID_Handover nas abas Medicamentos e Compras_Medicamentos."
+  "espelho_planilha": {
+    "medicamentos": {
+      "status": "Cancelado",
+      "comprado": false,
+      "entregue": false,
+      "cancelado_por": "CODEX",
+      "data_cancelamento_preenchida": true,
+      "motivo_cancelamento": "Smoke Codex cancelamento"
+    },
+    "compras_medicamentos": {
+      "id_handover": "76a008e6-13d7-43b8-930f-bf98d79884bd",
+      "status_compra": "Cancelado",
+      "status_handover": "Cancelado",
+      "cancelado_por": "CODEX",
+      "data_cancelamento_preenchida": true,
+      "motivo_cancelamento": "Smoke Codex cancelamento"
+    }
+  },
+  "regressao_minima": {
+    "novo_registro": "OK",
+    "falta_sem_campos_indevidos": "OK",
+    "encomenda_completa": "OK",
+    "checklist": "OK",
+    "historico": "OK",
+    "menu_sem_imprimir": "OK",
+    "comprado_pela_planilha": "Nao revalidado nesta rodada"
+  },
+  "registros_criados": [
+    {
+      "medicamento": "CODEX_CANCELAR_HANDOVER",
+      "id": "76a008e6-13d7-43b8-930f-bf98d79884bd",
+      "status_final": "Cancelado"
+    }
   ],
   "falhas": {
     "criticas": [],
     "medias": [],
-    "leves": [
-      "Smoke de planilha Compras -> Handover permanece manual por restricao operacional da rodada."
-    ]
+    "leves": []
   },
-  "veredito": "Publicado e aprovado para smoke Web App. Versao 39 mantida no deployment oficial; validacao reversa Compras -> Handover pendente de teste manual autenticado apos instalacao do gatilho."
+  "veredito": "Publicado e aprovado. A versao 41 permite cancelar medicamento pelo Handover, registra autoria/motivo/data e espelha o cancelamento em Compras_Medicamentos por ID_Handover."
 }

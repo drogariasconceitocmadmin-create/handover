@@ -1,4 +1,4 @@
-# Validacao Handover - Compras_Medicamentos trigger sync fix
+# Validacao Handover - Cancelar medicamento e espelhar Compras
 
 Projeto: Handover - Drogarias Conceito
 
@@ -6,13 +6,7 @@ Pasta: `C:\Users\Marco\Desktop\Sis Drogaria\Handover`
 
 Branch publicada: `feat/handover-compras-medicamentos`
 
-Commit publicado: `17a0e42` (`HEAD`), contendo:
-- `712fb69 - feat(handover): aba Compras_Medicamentos espelha Medicamentos e sincroniza por ID`
-- `97b22f9 - feat(handover): handler Compras + trigger instalavel e diagnostico por ID`
-- `9876bfc - feat(handover): regra Status_Compra Compras para Medicamentos por ID`
-- `17a0e42 - fix(handover): sync Compras reversa, Pendente seguro e instrucoes pos-deploy`
-
-Base: v33 estavel / sem auth/PIN / sem POP.
+Commit publicado: `07d8806 - feat(handover): cancelar medicamento no painel e espelhar em Compras`
 
 ScriptId: `1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd`
 
@@ -24,64 +18,82 @@ URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklp
 
 Status geral: OK
 
-Versao publicada: 39.
+Versao publicada: 41.
 
 Rollback feito: NAO.
 
 POP tocado: NAO.
 
-Registros criados nesta rodada: nenhum.
-
 ## Pre-deploy
 
 - Branch atual confirmada: `feat/handover-compras-medicamentos`.
-- `HEAD`: `17a0e42`.
-- Commits obrigatorios presentes: `712fb69`, `97b22f9`, `9876bfc`, `17a0e42`.
+- `HEAD`: `07d8806`.
 - `.clasp.json`: scriptId oficial do Handover.
-- Auth/PIN: ausente (`loginHandover`, `validateSessionHandover`, `Pin_Hash`, `Usuarios_Handover` nao encontrados).
+- Auth/PIN: ausente.
 - POP proibido: ausente.
 - `sheet.clear()` / `.clear()`: ausente.
-- Padroes perigosos de `getRange` usando linha/coluna final: ausentes.
-- `clasp status`: OK; Apps Script rastreia apenas `appsscript.json`, `Code.gs`, `Index.html`.
-
-## Compras_Medicamentos preflight
-
-- `instalarTriggerComprasMedicamentos_`: presente.
-- `listarTriggersHandover_`: presente.
-- `removerTriggerComprasMedicamentos_`: presente.
-- `handleComprasMedicamentosEdit_`: presente.
-- `processarStatusCompraPorIdHandover_`: presente.
-- `Status_Compra = Pendente de compra`: regra segura; atualiza colunas de apoio em Compras, mas nao forca `Medicamentos.Status` para Pendente.
-- Reversao explicita no Handover: `mirrorComprasMedicamentosRowForMedicamentoId_` aceita `fromRevertToPending` e forca Compras para `Pendente de compra`.
+- `deleteRow` novo no diff do commit: ausente. O `deleteRow` existente permanece apenas no arquivamento legado `moveRowToResolved`.
+- Funcao `cancelMedicationRequest`: presente.
+- Schema aditivo confirmado: `Cancelado_Por`, `Data_Cancelamento`, `Motivo_Cancelamento`.
+- Espelho por `ID_Handover` em `Compras_Medicamentos`: confirmado no codigo.
 
 ## Publicacao
 
 - `clasp.cmd status`: OK.
 - `clasp.cmd push`: OK.
-- `clasp.cmd version`: criada versao 39.
-- `clasp.cmd deploy`: deployment oficial atualizado para versao 39.
+- `clasp.cmd version`: criada versao 41.
+- `clasp.cmd deploy`: deployment oficial atualizado para versao 41.
 - DeploymentId e URL oficial preservados.
 
-## Smoke real Web App
+## Smoke real
 
-- Abertura: OK. Web App abriu na URL oficial.
-- Dashboard: OK. KPIs, fila e checklist carregaram.
-- Console: OK. Sem erro critico capturado; apenas warnings do iframe/sandbox do Apps Script.
-- Novo Registro: OK. Dropdown abre.
-- Medicamentos: OK. Aba abre, filtros aparecem e item Cancelado existente nao quebra a listagem.
-- Busca Medicamentos: OK. Campo de busca aceitou busca por `CODEX` e manteve a tela funcional.
-- Checklist: OK. Aba abre e mostra turno, filtros e categorias.
-- Historico: OK. Aba abre e carrega sob demanda (`fetchHistoricoResolvidos` executou).
+- Web App oficial abriu.
+- Dashboard carregou.
+- Aba Medicamentos abriu.
+- Criada Encomenda de teste `CODEX_CANCELAR_HANDOVER`.
+- Menu do card contem `Cancelar pedido`.
+- Cancelamento pelo Handover confirmado via dialogs nativos:
+  - confirmacao: `Cancelar esta solicitação de medicamento?`
+  - prompt de motivo preenchido com `Smoke Codex cancelamento`
+- Apos atualizar, card aparece no filtro `Cancelados`.
+- Card mostra `CANCELADO`.
+- Card mostra `CODEX · 07/05/2026, 17:51:06 · Smoke Codex cancelamento`.
+- Acoes indevidas de WhatsApp/Comprado/Entregue nao aparecem no item cancelado.
 
-## Teste manual pendente
+## Espelho em planilha
 
-Nao foi executado Compras -> Handover via Playwright, por regra expressa da rodada.
+### Medicamentos
 
-Pendente para Carlos apos instalar/confirmar o gatilho:
-1. Executar `instalarTriggerComprasMedicamentos_()` no Apps Script Editor, se ainda nao instalado.
-2. Rodar `listarTriggersHandover_()` e confirmar `handleComprasMedicamentosEdit_`.
-3. Na planilha autenticada, alterar `Status_Compra` de item seguro para `Comprado`, `Nao encontrado` e `Cancelado`.
-4. Confirmar propagacao por `ID_Handover` nas abas `Medicamentos` e `Compras_Medicamentos`.
+- Registro `CODEX_CANCELAR_HANDOVER`, ID `76a008e6-13d7-43b8-930f-bf98d79884bd`.
+- `Status`: `Cancelado`.
+- `Comprado`: `FALSE`.
+- `Entregue`: `FALSE`.
+- `Cancelado_Por`: `CODEX`.
+- `Data_Cancelamento`: preenchida.
+- `Motivo_Cancelamento`: `Smoke Codex cancelamento`.
+
+### Compras_Medicamentos
+
+- Mesmo `ID_Handover`: `76a008e6-13d7-43b8-930f-bf98d79884bd`.
+- `Status_Compra`: `Cancelado`.
+- `Status_Handover`: `Cancelado`.
+- `Cancelado_Por`: `CODEX`.
+- `Data_Cancelamento`: preenchida.
+- `Motivo_Cancelamento`: `Smoke Codex cancelamento`.
+
+## Regressao minima
+
+- Novo Registro abre: OK.
+- Falta sem cliente/telefone/pre-pago/preco: OK.
+- Encomenda completa: OK.
+- Checklist abre: OK.
+- Historico abre: OK.
+- Menu sem Imprimir: OK.
+- Comprado pela planilha: nao revalidado nesta rodada; ja coberto pelo fluxo de trigger/Compras.
+
+## Registros criados
+
+- `CODEX_CANCELAR_HANDOVER` / ID `76a008e6-13d7-43b8-930f-bf98d79884bd`.
 
 ## Falhas
 
@@ -95,8 +107,8 @@ Pendente para Carlos apos instalar/confirmar o gatilho:
 
 ### Leves
 
-- O smoke de planilha Compras -> Handover continua manual por restricao operacional desta rodada.
+- Nenhuma.
 
 ## Veredito
 
-Publicado e aprovado para smoke Web App. Versao 39 mantida no deployment oficial. Validacao da regra reversa Compras -> Handover fica como teste manual autenticado apos instalacao do gatilho.
+Publicado e aprovado. A versao 41 permite cancelar medicamento pelo Handover, registra autoria/motivo/data e espelha o cancelamento em `Compras_Medicamentos` por `ID_Handover`.
