@@ -76,6 +76,9 @@ const HEADERS = {
     'Data_Reversao',
     'Status_Anterior',
     'Motivo_Reversao',
+    'Cancelado_Por',
+    'Data_Cancelamento',
+    'Motivo_Cancelamento',
   ],
   Compras_Medicamentos: [
     'ID_Handover',
@@ -95,6 +98,9 @@ const HEADERS = {
     'Mensagem_Cliente',
     'Status_Handover',
     'Ultima_Atualizacao',
+    'Cancelado_Por',
+    'Data_Cancelamento',
+    'Motivo_Cancelamento',
   ],
   Arquivo_Resolvidos: [
     'Origem',
@@ -483,6 +489,9 @@ function buildComprasRowNamedValuesFromMedicamento_(medItem, existingStatusCompr
     Mensagem_Cliente: '',
     Status_Handover: sanitizeText_(medItem.Status || deriveMedicationStatus_(medItem)),
     Ultima_Atualizacao: new Date(),
+    Cancelado_Por: sanitizeText_(medItem.Cancelado_Por || ''),
+    Data_Cancelamento: medItem.Data_Cancelamento || '',
+    Motivo_Cancelamento: sanitizeText_(medItem.Motivo_Cancelamento || ''),
   };
 }
 
@@ -1696,6 +1705,67 @@ function revertMedicationToPending(id, operador, motivo) {
   }
 
   Logger.log('revertMedicationToPending ms=' + (Date.now() - started));
+  return {
+    success: true,
+    record: fetchMedicationRecordById_(id),
+  };
+}
+
+/**
+ * Cancela solicitação de medicamento diretamente pelo Handover (qualquer operador).
+ * Atualiza Medicamentos por ID e espelha para Compras_Medicamentos por ID_Handover.
+ */
+function cancelMedicationRequest(id, operador, motivo) {
+  const started = Date.now();
+  setupSpreadsheet();
+
+  var ctx = '[cancelMedicationRequest] ID=' + sanitizeText_(id) + ' acao=cancelar_medicamento ';
+  var op = sanitizeText_(operador);
+  if (!op) {
+    throw new Error(ctx + 'Operador obrigatorio.');
+  }
+
+  const location = findRowById_(SHEET_NAMES.MEDICAMENTOS, id);
+  if (!location) {
+    throw new Error(ctx + 'Medicamento nao encontrado.');
+  }
+
+  var sheet = location.sheet;
+  var rn = location.rowNumber;
+  var now = new Date();
+
+  // Zerar flags de compra/entrega (defensivo).
+  try {
+    sheet.getRange(rn, getColumnIndex_(sheet, 'Comprado')).setValue(false);
+  } catch (eC0) {}
+  try {
+    sheet.getRange(rn, getColumnIndex_(sheet, 'Entregue')).setValue(false);
+  } catch (eE0) {}
+
+  // Status explícito: Cancelado.
+  sheet.getRange(rn, getColumnIndex_(sheet, 'Status')).setValue('Cancelado');
+
+  // Auditoria/colunas defensivas (só se existirem no schema).
+  try {
+    sheet.getRange(rn, getColumnIndex_(sheet, 'Cancelado_Por')).setValue(op);
+  } catch (eA0) {}
+  try {
+    sheet.getRange(rn, getColumnIndex_(sheet, 'Data_Cancelamento')).setValue(now);
+  } catch (eA1) {}
+  try {
+    sheet.getRange(rn, getColumnIndex_(sheet, 'Motivo_Cancelamento')).setValue(sanitizeText_(motivo));
+  } catch (eA2) {}
+
+  writeMedicationUltimaAcao_(sheet, rn, op);
+
+  // Espelhar em Compras_Medicamentos preservando Observacao_Compra/Mensagem_Cliente.
+  try {
+    mirrorComprasMedicamentosRowForMedicamentoId_(id);
+  } catch (ce) {
+    Logger.log('cancelMedicationRequest mirror compras: ' + ce);
+  }
+
+  Logger.log('cancelMedicationRequest ms=' + (Date.now() - started));
   return {
     success: true,
     record: fetchMedicationRecordById_(id),

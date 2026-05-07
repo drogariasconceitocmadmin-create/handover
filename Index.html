@@ -5838,6 +5838,9 @@
             chunks.push(row('Preço', item.price));
             chunks.push(row('Pré-pago', item.metaPrePago));
           }
+          if (item.statusKey === 'cancelado') {
+            chunks.push(row('Cancelado', item.metaCancelado));
+          }
           chunks.push(row('WhatsApp', item.metaWhatsapp));
           chunks.push(row('Última ação', item.metaUltimaAcao));
         } else if (item.type === 'historico') {
@@ -5970,6 +5973,13 @@
           '\')"><span class="card-menu-ico" aria-hidden="true">' +
           iconSvg_('copy', 15) +
           '</span>Copiar informações</button>' +
+          (item.type === 'medicamento' && item.statusKey !== 'cancelado'
+            ? '<button type="button" onclick="cancelMedicationRequest_(\'' +
+              escapeJsSingleQuoted_(item.id) +
+              '\')"><span class="card-menu-ico" aria-hidden="true">' +
+              iconSvg_('minus', 15) +
+              '</span>Cancelar pedido</button>'
+            : '') +
           '</div>' +
           '</div>' +
           '</div>' +
@@ -6140,6 +6150,13 @@
               item.Ultima_Acao_Por +
               (item.Ultima_Acao_Em ? ' · ' + formatDateTime(item.Ultima_Acao_Em) : '');
           }
+          var metaCancelado = '';
+          if (String(item.Status || '').trim().toLowerCase() === 'cancelado' && item.Cancelado_Por) {
+            metaCancelado =
+              item.Cancelado_Por +
+              (item.Data_Cancelamento ? ' · ' + formatDateTime(item.Data_Cancelamento) : '') +
+              (item.Motivo_Cancelamento ? ' · ' + String(item.Motivo_Cancelamento) : '');
+          }
           var descPlainMed =
             'Tipo: ' +
             (item.Tipo || '-') +
@@ -6173,6 +6190,7 @@
             metaAtendente: item.Atendente || '',
             metaWhatsapp: waShort,
             metaUltimaAcao: metaUltimaMed,
+            metaCancelado: metaCancelado,
             metaPrePago: tipoLow === 'falta' ? '' : item.Pre_Pago ? 'Sim' : 'Não',
             person:
               tipoLow === 'falta'
@@ -7562,6 +7580,91 @@
             item.Data_Reversao = snapshot.Data_Reversao;
             item.Status_Anterior = snapshot.Status_Anterior;
             item.Motivo_Reversao = snapshot.Motivo_Reversao;
+            delete item.__syncState;
+            renderAll();
+            setStatus(queueStatus, error.message, true);
+            showToast_(error.message, true);
+          }
+        });
+      }
+
+      function cancelMedicationRequest_(id) {
+        if (!window.confirm('Cancelar esta solicitação de medicamento?')) {
+          return;
+        }
+        var motivo = '';
+        try {
+          var m = window.prompt('Motivo do cancelamento (opcional):', '');
+          motivo = m == null ? '' : String(m || '');
+        } catch (ePrompt) {}
+
+        runWithOperador_(function (operador) {
+          var list = dashboardData.medicamentos || [];
+          var item = list.find(function (m) {
+            return m.ID === id;
+          });
+          if (!item || item.__syncState === 'syncing') {
+            return;
+          }
+          if (String(item.Status || '').trim().toLowerCase() === 'cancelado') {
+            showToast_('Este item já está cancelado.', false);
+            return;
+          }
+
+          var now = new Date();
+          var snapshot = {
+            Comprado: item.Comprado,
+            Entregue: item.Entregue,
+            Status: item.Status,
+            Cancelado_Por: item.Cancelado_Por,
+            Data_Cancelamento: item.Data_Cancelamento,
+            Motivo_Cancelamento: item.Motivo_Cancelamento,
+          };
+
+          item.Comprado = false;
+          item.Entregue = false;
+          item.Status = 'Cancelado';
+          item.Cancelado_Por = operador;
+          item.Data_Cancelamento = now;
+          item.Motivo_Cancelamento = motivo;
+          item.__syncState = 'syncing';
+
+          renderAll();
+          clearStatus(queueStatus);
+
+          var started = Date.now();
+          try {
+            getScriptRunner_()
+              .withSuccessHandler(function (response) {
+                delete item.__syncState;
+                if (response.record) {
+                  upsertMedicamento_(response.record);
+                }
+                perfLog_('cancelMedicationRequest', started);
+                renderAll();
+                showToast_('Cancelado');
+                setStatus(queueStatus, 'Pedido cancelado.');
+              })
+              .withFailureHandler(function (error) {
+                item.Comprado = snapshot.Comprado;
+                item.Entregue = snapshot.Entregue;
+                item.Status = snapshot.Status;
+                item.Cancelado_Por = snapshot.Cancelado_Por;
+                item.Data_Cancelamento = snapshot.Data_Cancelamento;
+                item.Motivo_Cancelamento = snapshot.Motivo_Cancelamento;
+                delete item.__syncState;
+                renderAll();
+                setStatus(queueStatus, getErrorMessage(error), true);
+                showToast_(getErrorMessage(error), true);
+              })
+              .cancelMedicationRequest(id, operador, motivo);
+          } catch (error) {
+            item.Comprado = snapshot.Comprado;
+            item.Entregue = snapshot.Entregue;
+            item.Status = snapshot.Status;
+            item.Cancelado_Por = snapshot.Cancelado_Por;
+            item.Data_Cancelamento = snapshot.Data_Cancelamento;
+            item.Motivo_Cancelamento = snapshot.Motivo_Cancelamento;
             delete item.__syncState;
             renderAll();
             setStatus(queueStatus, error.message, true);

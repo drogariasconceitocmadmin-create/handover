@@ -77,6 +77,12 @@ Regra: se o dado aparece no card de Medicamentos, ele deve ser encontrável pela
 
 - Ajustado `Index.html` para deixar **CANCELADO** muito mais evidente em cards/badges (sem mexer em backend/regras): chip com contraste maior e selo discreto no card quando `statusKey === "cancelado"`.
 
+## Cancelamento de Medicamentos pelo Handover (→ Compras_Medicamentos)
+
+- Qualquer operador pode cancelar um item na aba **Medicamentos** pelo menu **⋯ → Cancelar pedido**.
+- Backend: `cancelMedicationRequest(id, operador, motivo)` atualiza a linha em **Medicamentos** por **ID**, registra `Cancelado_Por`, `Data_Cancelamento`, `Motivo_Cancelamento`, zera `Comprado/Entregue` e espelha para **Compras_Medicamentos** por **ID_Handover** preservando `Observacao_Compra` e `Mensagem_Cliente`.
+- Front: quando status é **Cancelado**, o card exibe **Cancelado: NOME · data/hora · motivo (se houver)** e mantém o destaque visual (badge/stripe/selo).
+
 ## Compras_Medicamentos — instruções pós-deploy (Codex / operação)
 
 **Wrappers públicos (sem `_`)** em `Code.gs` para o Carlos e demais operadores encontrarem no seletor do Apps Script Editor: `instalarTriggerComprasMedicamentos`, `listarTriggersHandover`, `removerTriggerComprasMedicamentos`, **`handleComprasMedicamentosEdit`** (evento on edit; delega a `handleComprasMedicamentosEdit_`), e opcional `testarProcessarStatusCompraPorIdHandover`. Os de menu apenas delegam às funções internas `*_()`; a lógica permanece nas versões com underscore.
