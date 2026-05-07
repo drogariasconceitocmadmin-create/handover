@@ -1379,6 +1379,85 @@ function buildComprasRowNamedValuesFromMedicamento_(medItem, existingStatusCompr
  * @param {string} handoverId
  * @param {{fromRevertToPending?: boolean, compradoPorHandover?: string}=} opt fromRevertToPending: após revertMedicationToPending no Handover (força Pendente de compra e limpa data/comprador).
  */
+function selfTestEspelhoComprasRecebimento_() {
+  var pan = buildComprasRowNamedValuesFromMedicamento_(
+    {
+      ID: 'SELFTEST_PANPHARMA',
+      Tipo: 'Encomenda',
+      Medicamento: 'SELFTEST_MEDICAMENTO',
+      Atendente: 'SELFTEST',
+      Cliente: 'SELFTEST',
+      Telefone: '21999999999',
+      Status: 'Pendente',
+      Fornecedor_Compra: 'Panpharma',
+      Codigo_Compra_Fornecedor: 12345,
+      Forma_Recebimento: FORMAS_RECEBIMENTO.A_COMBINAR,
+    },
+    ''
+  );
+  var santa = buildComprasRowNamedValuesFromMedicamento_(
+    {
+      ID: 'SELFTEST_SANTA_CRUZ',
+      Tipo: 'Encomenda',
+      Medicamento: 'SELFTEST_MEDICAMENTO',
+      Atendente: 'SELFTEST',
+      Cliente: 'SELFTEST',
+      Telefone: '21999999999',
+      Status: 'Pendente',
+      Fornecedor_Compra: 'Santa Cruz',
+      Codigo_Compra_Fornecedor: ' SC-987 ',
+      Forma_Recebimento: FORMAS_RECEBIMENTO.RETIRA_LOJA,
+    },
+    ''
+  );
+  var entrega = buildComprasRowNamedValuesFromMedicamento_(
+    {
+      ID: 'SELFTEST_ENTREGA',
+      Tipo: 'Encomenda',
+      Medicamento: 'SELFTEST_MEDICAMENTO',
+      Atendente: 'SELFTEST',
+      Cliente: 'SELFTEST',
+      Telefone: '21999999999',
+      Status: 'Pendente',
+      Fornecedor_Compra: '',
+      Codigo_Compra_Fornecedor: 'NAO_DEVE_PERSISTIR',
+      Forma_Recebimento: FORMAS_RECEBIMENTO.ENTREGA_ENDERECO,
+    },
+    ''
+  );
+
+  var failures = [];
+  if (pan.Fornecedor_Compra !== 'Panpharma' || pan.Codigo_Compra_Fornecedor !== '12345') {
+    failures.push('Panpharma/codigo nao preservado');
+  }
+  if (pan.Forma_Recebimento !== FORMAS_RECEBIMENTO.A_COMBINAR) {
+    failures.push('Forma A combinar nao preservada');
+  }
+  if (santa.Fornecedor_Compra !== 'Santa Cruz' || santa.Codigo_Compra_Fornecedor !== 'SC-987') {
+    failures.push('Santa Cruz/codigo nao preservado');
+  }
+  if (santa.Forma_Recebimento !== FORMAS_RECEBIMENTO.RETIRA_LOJA) {
+    failures.push('Forma Retira na loja nao preservada');
+  }
+  if (entrega.Fornecedor_Compra !== 'NÃ£o informado' || entrega.Codigo_Compra_Fornecedor !== '') {
+    failures.push('Codigo nao foi limpo para fornecedor Nao informado');
+  }
+  if (entrega.Forma_Recebimento !== FORMAS_RECEBIMENTO.ENTREGA_ENDERECO) {
+    failures.push('Forma Entregar no endereco cadastrado nao preservada');
+  }
+
+  if (failures.length) {
+    throw new Error('selfTestEspelhoComprasRecebimento_: ' + failures.join('; '));
+  }
+  Logger.log('selfTestEspelhoComprasRecebimento_: OK');
+  return {
+    success: true,
+    panpharma: pan,
+    santaCruz: santa,
+    entregaEndereco: entrega,
+  };
+}
+
 function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId, opt) {
   opt = opt || {};
   var id = sanitizeText_(handoverId);
@@ -2334,7 +2413,7 @@ function appendHandoverRecord_(tab, data, authorLabel) {
         throw new Error('Informe o atendente.');
       }
       var previsaoFalta = parseDate_(data.previsaoEntrega);
-      const rowValuesFalta = buildRowFromHeaders_(HEADERS.Medicamentos, {
+      const rowValuesFalta = buildAppendRowValuesFromNamedMap_(sheet, {
         ID: id,
         Timestamp: timestamp,
         Tipo: tipo,
@@ -2384,7 +2463,7 @@ function appendHandoverRecord_(tab, data, authorLabel) {
     const precoVenda = parseSalePrice_(data.precoVenda);
     const formaRecebimento = normalizeFormaRecebimento_(data.formaRecebimento);
 
-    const rowValues = buildRowFromHeaders_(HEADERS.Medicamentos, {
+    const rowValues = buildAppendRowValuesFromNamedMap_(sheet, {
       ID: id,
       Timestamp: timestamp,
       Tipo: tipo,
