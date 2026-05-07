@@ -73,6 +73,10 @@ Regra: se o dado aparece no card de Medicamentos, ele deve ser encontrável pela
 
 ---
 
+## UI — destaque de status Cancelado
+
+- Ajustado `Index.html` para deixar **CANCELADO** muito mais evidente em cards/badges (sem mexer em backend/regras): chip com contraste maior e selo discreto no card quando `statusKey === "cancelado"`.
+
 ## Compras_Medicamentos — instruções pós-deploy (Codex / operação)
 
 **Wrappers públicos (sem `_`)** em `Code.gs` para o Carlos e demais operadores encontrarem no seletor do Apps Script Editor: `instalarTriggerComprasMedicamentos`, `listarTriggersHandover`, `removerTriggerComprasMedicamentos`, **`handleComprasMedicamentosEdit`** (evento on edit; delega a `handleComprasMedicamentosEdit_`), e opcional `testarProcessarStatusCompraPorIdHandover`. Os de menu apenas delegam às funções internas `*_()`; a lógica permanece nas versões com underscore.
