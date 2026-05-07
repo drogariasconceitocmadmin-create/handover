@@ -4,6 +4,7 @@ const SHEET_NAMES = {
   COMPRAS_MEDICAMENTOS: 'Compras_Medicamentos',
   ARQUIVO: 'Arquivo_Resolvidos',
   CHECKLIST: 'Checklist_Turnos',
+  USUARIOS: 'Usuarios_Handover',
 };
 
 /** Valores exatos da coluna Status_Compra (dropdown na aba operacional). */
@@ -21,6 +22,23 @@ const EMAIL_ENCOMENDAS = 'drogariasconceitocm@gmail.com';
 const HANDOVER_SPREADSHEET_ID_KEY = 'HANDOVER_SPREADSHEET_ID';
 const HANDOVER_SPREADSHEET_TITLE = 'Handover Drogarias Conceito';
 const HANDOVER_TIMEZONE = 'America/Sao_Paulo';
+
+// Auth/PIN (backend-only nesta Parte 1)
+const HANDOVER_USERS_HEADERS = [
+  'ID',
+  'Nome',
+  'Usuario',
+  'Pin_Hash',
+  'Perfil',
+  'Ativo',
+  'Criado_Em',
+  'Criado_Por',
+  'Ultimo_Login_Em',
+];
+
+const HANDOVER_AUTH_SALT_KEY = 'HANDOVER_PIN_SALT_V1';
+const HANDOVER_SESSION_TTL_SECONDS = 21600; // CacheService max TTL (~6h)
+const HANDOVER_SESSION_CACHE_PREFIX = 'handover_sess_v1:';
 
 const CHECKLIST_TURNO_MANHA = 'Manhã';
 const CHECKLIST_TURNO_TARDE = 'Tarde';
@@ -102,6 +120,7 @@ const HEADERS = {
     'Data_Cancelamento',
     'Motivo_Cancelamento',
   ],
+  Usuarios_Handover: HANDOVER_USERS_HEADERS,
   Arquivo_Resolvidos: [
     'Origem',
     'ID',
@@ -387,6 +406,401 @@ function applyComprasMedicamentosLayout_(sheet) {
     );
     sheet.setConditionalFormatRules(rules);
   } catch (eCf) {}
+}
+
+// =============================================================================
+// Auth/PIN — backend only (Parte 1)
+// =============================================================================
+
+function ensureUsuariosHandoverSheet_() {
+  setupSpreadsheet();
+  return getSheetOrThrow_(getSpreadsheet_(), SHEET_NAMES.USUARIOS);
+}
+
+function normalizeUsuarioHandover_(usuario) {
+  return String(usuario || '').trim().toLowerCase();
+}
+
+function normalizePerfilHandover_(perfil) {
+  var p = String(perfil || '').trim().toLowerCase();
+  if (p === 'admin' || p === 'gerente' || p === 'operador') {
+    return p;
+  }
+  return 'operador';
+}
+
+function isUsuarioAtivo_(value) {
+  // Regra: vazio ou TRUE é ativo.
+  if (value === '' || value === null || value === undefined) {
+    return true;
+  }
+  return toBoolean_(value);
+}
+
+function usuariosHandoverHasAnyPinHash_() {
+  try {
+    var sheet = ensureUsuariosHandoverSheet_();
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return false;
+    var col = getColumnIndex_(sheet, 'Pin_Hash');
+    var vals = sheet.getRange(2, col, lastRow - 1, 1).getValues();
+    for (var i = 0; i < vals.length; i++) {
+      if (String(vals[i][0] || '').trim()) {
+        return true;
+      }
+    }
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Cria salt apenas se ainda não existir e se não houver Pin_Hash na planilha
+ * (evita invalidar hashes após limpeza de propriedades).
+ */
+function getHandoverPinSalt_() {
+  var props = PropertiesService.getScriptProperties();
+  var existing = props.getProperty(HANDOVER_AUTH_SALT_KEY);
+  if (existing) {
+    return existing;
+  }
+  if (usuariosHandoverHasAnyPinHash_()) {
+    Logger.log(
+      'getHandoverPinSalt_: salt_existe=NAO; ha Pin_Hash na aba Usuarios_Handover — nao sera criado salt novo. Restaure ' +
+        HANDOVER_AUTH_SALT_KEY +
+        ' nas propriedades do script ou use resetPinUsuarioHandover_.'
+    );
+    return '';
+  }
+  var salt =
+    Utilities.getUuid() +
+    ':' +
+    Utilities.base64Encode(
+      Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(new Date().getTime()))
+    );
+  props.setProperty(HANDOVER_AUTH_SALT_KEY, salt);
+  Logger.log('getHandoverPinSalt_: salt criado e persistido (planilha sem Pin_Hash preexistente). salt_existe=SIM');
+  return salt;
+}
+
+function hashPin_(usuario, pin) {
+  var u = normalizeUsuarioHandover_(usuario);
+  var p = String(pin || '').trim();
+  if (!u || !p) {
+    return '';
+  }
+  var salt = getHandoverPinSalt_();
+  if (!salt) {
+    return '';
+  }
+  var payload = salt + '|' + u + '|' + p;
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, payload, Utilities.Charset.UTF_8);
+  return Utilities.base64EncodeWebSafe(digest);
+}
+
+function findUsuarioRowByUsername_(sheet, usuario) {
+  var u = normalizeUsuarioHandover_(usuario);
+  if (!u) return null;
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return null;
+  var col = getColumnIndex_(sheet, 'Usuario');
+  var vals = sheet.getRange(2, col, lastRow - 1, 1).getValues();
+  for (var i = 0; i < vals.length; i++) {
+    if (normalizeUsuarioHandover_(vals[i][0]) === u) {
+      return i + 2;
+    }
+  }
+  return null;
+}
+
+function getUsuarioRecordByRow_(sheet, rowNumber) {
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var row = sheet.getRange(rowNumber, 1, 1, lastCol).getValues()[0];
+  return rowCellsToObject_(headers, row);
+}
+
+function validateUsuarioLogin_(usuario, pin) {
+  var sheet = ensureUsuariosHandoverSheet_();
+  var rowNumber = findUsuarioRowByUsername_(sheet, usuario);
+  if (!rowNumber) {
+    return { ok: false, message: 'Usuário ou PIN inválido.' };
+  }
+  var rec = getUsuarioRecordByRow_(sheet, rowNumber);
+  if (!isUsuarioAtivo_(rec.Ativo)) {
+    return { ok: false, message: 'Usuário inativo.' };
+  }
+  var expected = String(rec.Pin_Hash || '').trim();
+  if (!expected) {
+    return { ok: false, message: 'Usuário sem PIN configurado. Procure um administrador.' };
+  }
+  var candidate = hashPin_(usuario, pin);
+  if (!candidate) {
+    Logger.log('validateUsuarioLogin_: hash candidato vazio (salt ausente?) u=' + normalizeUsuarioHandover_(usuario));
+    return { ok: false, message: 'Falha de configuração de autenticação. Contate o administrador.' };
+  }
+  if (candidate === expected) {
+    return {
+      ok: true,
+      rowNumber: rowNumber,
+      usuario: normalizeUsuarioHandover_(rec.Usuario || usuario),
+      nome: sanitizeText_(rec.Nome || rec.Usuario || ''),
+      perfil: normalizePerfilHandover_(rec.Perfil || 'operador'),
+    };
+  }
+  return { ok: false, message: 'Usuário ou PIN inválido.' };
+}
+
+function criarSessaoHandover_(usuario, nome, perfil) {
+  var u = normalizeUsuarioHandover_(usuario);
+  if (!u) {
+    throw new Error('Sessão inválida: usuário ausente.');
+  }
+  var token = Utilities.getUuid() + '-' + Utilities.getUuid();
+  var nowMs = new Date().getTime();
+  var expMs = nowMs + HANDOVER_SESSION_TTL_SECONDS * 1000;
+  var payload = {
+    usuario: u,
+    nome: sanitizeText_(nome || ''),
+    perfil: normalizePerfilHandover_(perfil || 'operador'),
+    createdAtMs: nowMs,
+    expAtMs: expMs,
+  };
+  CacheService.getScriptCache().put(
+    HANDOVER_SESSION_CACHE_PREFIX + token,
+    JSON.stringify(payload),
+    HANDOVER_SESSION_TTL_SECONDS
+  );
+  return { token: token, expAtMs: expMs };
+}
+
+function validarSessaoHandover_(sessionToken) {
+  var tok = String(sessionToken || '').trim();
+  if (!tok) return null;
+  var cached = CacheService.getScriptCache().get(HANDOVER_SESSION_CACHE_PREFIX + tok);
+  if (!cached) return null;
+  try {
+    var obj = JSON.parse(cached);
+    if (!obj || !obj.usuario) return null;
+    return obj;
+  } catch (e) {
+    return null;
+  }
+}
+
+function encerrarSessaoHandover_(sessionToken) {
+  var tok = String(sessionToken || '').trim();
+  if (!tok) return { success: true };
+  CacheService.getScriptCache().remove(HANDOVER_SESSION_CACHE_PREFIX + tok);
+  return { success: true };
+}
+
+function loginHandover(usuario, pin) {
+  try {
+    setupSpreadsheet();
+    var u = normalizeUsuarioHandover_(usuario);
+    if (!u) {
+      return { success: false, message: 'Informe o usuário.' };
+    }
+    var result = validateUsuarioLogin_(u, pin);
+    if (!result.ok) {
+      return { success: false, message: result.message };
+    }
+    var sess = criarSessaoHandover_(result.usuario, result.nome, result.perfil);
+    try {
+      var sheet = ensureUsuariosHandoverSheet_();
+      sheet.getRange(result.rowNumber, getColumnIndex_(sheet, 'Ultimo_Login_Em')).setValue(new Date());
+    } catch (e) {
+      Logger.log('loginHandover Ultimo_Login_Em: ' + e);
+    }
+    Logger.log(
+      'loginHandover ok u=' +
+        result.usuario +
+        ' perfil=' +
+        result.perfil +
+        ' token_len=' +
+        String(sess.token || '').length
+    );
+    return {
+      success: true,
+      token: String(sess.token),
+      usuario: result.usuario,
+      nome: result.nome,
+      perfil: result.perfil,
+      displayName: result.nome,
+    };
+  } catch (e) {
+    Logger.log('loginHandover excecao: ' + e);
+    return { success: false, message: 'Não foi possível entrar. Tente novamente.' };
+  }
+}
+
+function validateSessionHandover(sessionToken) {
+  setupSpreadsheet();
+  var sess = validarSessaoHandover_(sessionToken);
+  if (!sess) {
+    return { success: false };
+  }
+  return {
+    success: true,
+    usuario: normalizeUsuarioHandover_(sess.usuario),
+    nome: sanitizeText_(sess.nome || sess.usuario || ''),
+    perfil: normalizePerfilHandover_(sess.perfil || 'operador'),
+  };
+}
+
+function logoutHandover(sessionToken) {
+  setupSpreadsheet();
+  return encerrarSessaoHandover_(sessionToken);
+}
+
+function setupUsuariosHandover() {
+  return setupUsuariosHandover_();
+}
+
+function setupUsuariosHandover_() {
+  setupSpreadsheet();
+  var sheet = ensureUsuariosHandoverSheet_();
+
+  // Garantir cabeçalhos esperados (aditivo, sem apagar dados).
+  ensureHeaders_(sheet, HANDOVER_USERS_HEADERS);
+
+  var now = new Date();
+  var seed = [
+    { nome: 'Ainale', usuario: 'ainale', perfil: 'operador' },
+    { nome: 'Marco', usuario: 'marco', perfil: 'admin' },
+    { nome: 'Carlos', usuario: 'carlos', perfil: 'admin' },
+    { nome: 'Jelcinei', usuario: 'jelcinei', perfil: 'gerente' },
+    { nome: 'Priscila', usuario: 'priscila', perfil: 'operador' },
+    { nome: 'Marcelo', usuario: 'marcelo', perfil: 'operador' },
+  ];
+
+  var created = 0;
+  for (var i = 0; i < seed.length; i++) {
+    var u = normalizeUsuarioHandover_(seed[i].usuario);
+    if (!u) continue;
+    var row = findUsuarioRowByUsername_(sheet, u);
+    if (row) continue;
+    sheet.appendRow([
+      Utilities.getUuid(),
+      seed[i].nome,
+      u,
+      '', // Pin_Hash (nunca PIN em texto puro)
+      normalizePerfilHandover_(seed[i].perfil),
+      true,
+      now,
+      'setupUsuariosHandover_',
+      '',
+    ]);
+    created++;
+  }
+  Logger.log('setupUsuariosHandover_: created=' + created);
+  return { ok: true, created: created };
+}
+
+/**
+ * MANUAL / bootstrap administrativo — executar somente no editor Apps Script.
+ * Atualiza apenas Pin_Hash; PIN temporário só no Logger.
+ */
+function resetPinUsuarioHandover_(usuario) {
+  setupSpreadsheet();
+  var u = normalizeUsuarioHandover_(usuario);
+  if (!u) {
+    Logger.log('resetPinUsuarioHandover_: usuario vazio');
+    return;
+  }
+  if (!getHandoverPinSalt_()) {
+    Logger.log(
+      'resetPinUsuarioHandover_: impossivel — salt ausente e nao sera recriado automaticamente com Pin_Hash existente.'
+    );
+    return;
+  }
+  var sheet = ensureUsuariosHandoverSheet_();
+  var row = findUsuarioRowByUsername_(sheet, u);
+  if (!row) {
+    Logger.log('resetPinUsuarioHandover_: usuario nao encontrado u=' + u);
+    return;
+  }
+  var pin = String(Math.floor(100000 + Math.random() * 900000));
+  var h = hashPin_(u, pin);
+  if (!h) {
+    Logger.log('resetPinUsuarioHandover_: hash vazio u=' + u);
+    return;
+  }
+  sheet.getRange(row, getColumnIndex_(sheet, 'Pin_Hash')).setValue(h);
+  var rec = getUsuarioRecordByRow_(sheet, row);
+  Logger.log(
+    'resetPinUsuarioHandover_: usuario=' +
+      u +
+      ' nome=' +
+      sanitizeText_(rec.Nome || '') +
+      ' perfil=' +
+      normalizePerfilHandover_(rec.Perfil || '') +
+      ' pin_temp=' +
+      pin +
+      ' hash_prefix=' +
+      String(h).slice(0, 6) +
+      '...'
+  );
+  return { ok: true, usuario: u };
+}
+
+function resetPinCarlosHandover_() {
+  return resetPinUsuarioHandover_('carlos');
+}
+
+function selfTestAuthHandover_() {
+  try {
+    setupSpreadsheet();
+    var props = PropertiesService.getScriptProperties();
+    var salt = props.getProperty(HANDOVER_AUTH_SALT_KEY);
+    Logger.log('selfTestAuthHandover_: salt_present=' + !!salt);
+
+    var sheet = ensureUsuariosHandoverSheet_();
+    var lastCol = Math.max(sheet.getLastColumn(), 1);
+    var headers = sheet
+      .getRange(1, 1, 1, lastCol)
+      .getValues()[0]
+      .map(function (h) {
+        return String(h || '').trim();
+      });
+    var missing = HANDOVER_USERS_HEADERS.filter(function (h) {
+      return headers.indexOf(h) < 0;
+    });
+    Logger.log('selfTestAuthHandover_: headers_missing=' + (missing.length ? missing.join(',') : 'none'));
+    return { ok: true, saltPresent: !!salt, headersMissing: missing };
+  } catch (e) {
+    Logger.log('selfTestAuthHandover_: ' + e);
+    return { ok: false };
+  }
+}
+
+function debugAuthUsuariosHandover_() {
+  try {
+    setupSpreadsheet();
+    var sheet = ensureUsuariosHandoverSheet_();
+    var lastRow = sheet.getLastRow();
+    Logger.log('debugAuthUsuariosHandover_: lastRow=' + lastRow);
+    if (lastRow <= 1) {
+      return { ok: true, rows: 0 };
+    }
+    var lastCol = Math.max(sheet.getLastColumn(), 1);
+    var headerCells = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    for (var r = 2; r <= lastRow; r++) {
+      var row = sheet.getRange(r, 1, 1, lastCol).getValues()[0];
+      var obj = rowCellsToObject_(headerCells, row);
+      var u = normalizeUsuarioHandover_(obj.Usuario || '');
+      var ativo = isUsuarioAtivo_(obj.Ativo);
+      var perf = normalizePerfilHandover_(obj.Perfil || '');
+      var hasHash = !!String(obj.Pin_Hash || '').trim();
+      Logger.log('  usuario=' + u + ' perfil=' + perf + ' ativo=' + ativo + ' pin_hash=' + (hasHash ? 'SIM' : 'NAO'));
+    }
+    return { ok: true, rows: lastRow - 1 };
+  } catch (e) {
+    Logger.log('debugAuthUsuariosHandover_: ' + e);
+    return { ok: false };
+  }
 }
 
 function findComprasRowByHandoverId_(sheet, handoverId) {

@@ -70,8 +70,17 @@ Regra: se o dado aparece no card de Medicamentos, ele deve ser encontrável pela
 
 - Criada: `aios/skills/handover-visual-only-guardrails/SKILL.md`
   - Motivo: evitar repetir o problema de **release visual-only contaminada** por lógica funcional (auto-refresh/polling/sync UI) herdada de commits mistos.
+- Criada: `aios/skills/handover-auth-audit/SKILL.md`
+  - Motivo: registrar guardrails de **login/PIN/sessão/perfis** e preservar a base v41 com `Compras_Medicamentos`.
 
 ---
+
+## Auth/PIN — nova branch v41 (Parte 1)
+
+- **Branch base:** `feat/handover-compras-medicamentos` (v41 preservada como base, commit base `dffb167`)
+- **Nova branch:** `feat/handover-auth-pin-v41`
+- **Objetivo desta Parte 1:** portar **somente backend** de usuários/PIN/sessão (sem alterar `Index.html` ainda) e **sem quebrar** Compras_Medicamentos.
+- **Referência:** branch antiga `feat/handover-auth-pin` usada apenas para copiar trechos com revisão (sem sobrescrever arquivos inteiros).
 
 ## UI — destaque de status Cancelado
 
