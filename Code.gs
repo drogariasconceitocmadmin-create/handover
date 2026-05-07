@@ -34,6 +34,8 @@ const HANDOVER_USERS_HEADERS = [
   'Criado_Em',
   'Criado_Por',
   'Ultimo_Login_Em',
+  /** PIN em texto só até rodar aplicarPinsTemporariosHandover(); depois a célula é limpa. */
+  'PIN_Novo_Temporario',
 ];
 
 const HANDOVER_AUTH_SALT_KEY = 'HANDOVER_PIN_SALT_V1';
@@ -738,6 +740,7 @@ function setupUsuariosHandover_() {
       now,
       'setupUsuariosHandover_',
       '',
+      '',
     ]);
     created++;
   }
@@ -828,6 +831,7 @@ function criarUsuarioHandover_(nome, usuario, perfilOpt) {
     now,
     criador || 'criarUsuarioHandover_',
     '',
+    '',
   ]);
   Logger.log(
     'criarUsuarioHandover_: criado u=' +
@@ -867,6 +871,147 @@ function setUsuarioAtivoHandover_(usuario, ativo) {
 
 function resetPinUsuarioHandover(usuario) {
   return resetPinUsuarioHandover_(usuario);
+}
+
+/**
+ * Converte valor de célula para PIN temporário (trim; inteiro sem decimais).
+ * Não registrar o retorno em Logger.
+ */
+function pinNovoTemporarioCellToString_(cellValue) {
+  if (cellValue === '' || cellValue === null || cellValue === undefined) {
+    return '';
+  }
+  if (typeof cellValue === 'number' && !isNaN(cellValue)) {
+    if (cellValue !== Math.floor(cellValue)) {
+      return '';
+    }
+    return String(Math.floor(cellValue));
+  }
+  return String(cellValue).trim();
+}
+
+/**
+ * PIN vazio => ignorar linha. Caso contrário exige 4–8 dígitos numéricos.
+ */
+function validarPinTemporarioParaAplicacao_(pinStr) {
+  var s = String(pinStr || '').trim();
+  if (!s) {
+    return { ignore: true };
+  }
+  if (!/^\d{4,8}$/.test(s)) {
+    return { ignore: false, ok: false };
+  }
+  return { ignore: false, ok: true, pin: s };
+}
+
+/**
+ * MANUAL (editor): lê PIN_Novo_Temporario na aba Usuarios_Handover, grava Pin_Hash e apaga a célula temporária.
+ * Não registra PIN no Logger; não mantém PIN em texto após sucesso.
+ */
+function aplicarPinsTemporariosHandover() {
+  var aplicados = 0;
+  var ignoradosInativos = 0;
+  var errosValidacao = 0;
+  var errosHash = 0;
+  try {
+    var sheet = ensureUsuariosHandoverSheet_();
+    var pinTempCol = getColumnIndex_(sheet, 'PIN_Novo_Temporario');
+    var pinHashCol = getColumnIndex_(sheet, 'Pin_Hash');
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) {
+      Logger.log('aplicarPinsTemporariosHandover_: sem linhas de dados.');
+      return {
+        ok: true,
+        aplicados: 0,
+        ignoradosInativos: 0,
+        errosValidacao: 0,
+        errosHash: 0,
+      };
+    }
+    if (!getHandoverPinSalt_()) {
+      Logger.log(
+        'aplicarPinsTemporariosHandover_: salt ausente — defina propriedade do script ou use cenário sem Pin_Hash preexistente.'
+      );
+      return { ok: false, message: 'Salt de PIN ausente; nao foi possivel aplicar hashes.' };
+    }
+
+    for (var r = 2; r <= lastRow; r++) {
+      var pinRaw = sheet.getRange(r, pinTempCol).getValue();
+      var pinStr = pinNovoTemporarioCellToString_(pinRaw);
+      var v = validarPinTemporarioParaAplicacao_(pinStr);
+      if (v.ignore) {
+        continue;
+      }
+
+      var rec = getUsuarioRecordByRow_(sheet, r);
+      var u = normalizeUsuarioHandover_(rec.Usuario || '');
+      if (!u) {
+        Logger.log(
+          'aplicarPinsTemporariosHandover_: Usuario vazio na linha ' +
+            r +
+            ' com PIN_Novo_Temporario preenchido.'
+        );
+        errosValidacao++;
+        continue;
+      }
+
+      if (!isUsuarioAtivo_(rec.Ativo)) {
+        Logger.log('aplicarPinsTemporariosHandover_: usuario inativo ignorado u=' + u);
+        ignoradosInativos++;
+        continue;
+      }
+
+      if (!v.ok) {
+        Logger.log(
+          'aplicarPinsTemporariosHandover_: PIN invalido (exija 4 a 8 digitos numericos) usuario=' +
+            u
+        );
+        errosValidacao++;
+        continue;
+      }
+
+      var h = hashPin_(u, v.pin);
+      if (!h) {
+        Logger.log('aplicarPinsTemporariosHandover_: falha ao gerar hash usuario=' + u);
+        errosHash++;
+        continue;
+      }
+
+      sheet.getRange(r, pinHashCol).setValue(h);
+      sheet.getRange(r, pinTempCol).setValue('');
+      aplicados++;
+      Logger.log('aplicarPinsTemporariosHandover_: pin aplicado usuario=' + u);
+    }
+
+    Logger.log(
+      'aplicarPinsTemporariosHandover_: resumo aplicados=' +
+        aplicados +
+        ' ignorados_inativo=' +
+        ignoradosInativos +
+        ' erros_validacao=' +
+        errosValidacao +
+        ' erros_hash=' +
+        errosHash
+    );
+
+    return {
+      ok: true,
+      aplicados: aplicados,
+      ignoradosInativos: ignoradosInativos,
+      errosValidacao: errosValidacao,
+      errosHash: errosHash,
+    };
+  } catch (e) {
+    Logger.log('aplicarPinsTemporariosHandover_: excecao ' + e);
+    return {
+      ok: false,
+      message: String(e && e.message ? e.message : e),
+      aplicados: aplicados,
+      ignoradosInativos: ignoradosInativos,
+      errosValidacao: errosValidacao,
+      errosHash: errosHash,
+    };
+  }
 }
 
 function resetPinMarcoHandover() {
@@ -994,7 +1139,7 @@ function selfTestAuthHandover_() {
     );
 
     var pub =
-      'setupUsuariosHandover, criarUsuarioHandover, resetPinUsuarioHandover, resetPinCarlosHandover, resetPinMarcoHandover, resetPinJelcineiHandover, ativarUsuarioHandover, inativarUsuarioHandover, debugLoginCarlosHandover, debugAuthUsuariosHandover, selfTestAuthHandover';
+      'setupUsuariosHandover, criarUsuarioHandover, aplicarPinsTemporariosHandover, resetPinUsuarioHandover, resetPinCarlosHandover, resetPinMarcoHandover, resetPinJelcineiHandover, ativarUsuarioHandover, inativarUsuarioHandover, debugLoginCarlosHandover, debugAuthUsuariosHandover, selfTestAuthHandover';
 
     return {
       ok: true,

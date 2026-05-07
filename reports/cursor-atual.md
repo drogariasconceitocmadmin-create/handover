@@ -8,6 +8,8 @@
 
 **Campos que você pode editar à mão na aba `Usuarios_Handover`:** `Nome`, `Usuario`, `Perfil`, `Ativo`.
 
+**Coluna temporária (staging — não deixe valor lá após aplicar):** `PIN_Novo_Temporario` — use apenas para informar um PIN personalizado **antes** de rodar **`aplicarPinsTemporariosHandover()`** no editor; após sucesso o script **limpa** a célula e persiste só **`Pin_Hash`**.
+
 **Não edite à mão (deixe o script gerenciar):** `Pin_Hash`, `Criado_Em`, `Criado_Por`, `Ultimo_Login_Em`.
 
 **Para criar usuário**
@@ -28,7 +30,19 @@
 
 **Para resetar PIN**
 
-- Executar **`resetPinUsuarioHandover(usuario)`** ou um wrapper específico (`resetPinCarlosHandover`, `resetPinMarcoHandover`, `resetPinJelcineiHandover`). O PIN novo aparece só no Logger; a planilha guarda apenas **Pin_Hash** (hash), nunca PIN em texto puro.
+- Executar **`resetPinUsuarioHandover(usuario)`** ou um wrapper específico (`resetPinCarlosHandover`, `resetPinMarcoHandover`, `resetPinJelcineiHandover`). O PIN novo aparece só no Logger; a planilha guarda apenas **Pin_Hash** (hash), nunca PIN em texto puro permanente.
+
+**Para definir PIN personalizado (4 a 8 dígitos numéricos)**
+
+1. Abrir **`Usuarios_Handover`**.
+2. Na linha do usuário **ativo**, preencher **`PIN_Novo_Temporario`** com o PIN desejado (somente números; sem manter na planilha depois do script).
+3. No editor Apps Script do Handover, executar **`aplicarPinsTemporariosHandover()`**.
+4. Conferir na planilha que **`PIN_Novo_Temporario`** ficou **vazio** e que houve log **`pin aplicado usuario=...`** no Logger.
+5. O usuário passa a entrar com esse PIN. **`Ultimo_Login_Em`** não é alterado por esta função (não é login).
+
+Se o valor for inválido ou o usuário estiver **inativo**, **`Pin_Hash`** não é alterado e **`PIN_Novo_Temporario`** permanece para correção (exceto em sucesso, quando a célula é limpa).
+
+**Alternativa emergencial:** **`resetPinUsuarioHandover`** / wrappers continuam gerando PIN aleatório (somente no Logger).
 
 **Cuidados**
 
