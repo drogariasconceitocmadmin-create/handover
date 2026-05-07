@@ -77,6 +77,8 @@ Regra: se o dado aparece no card de Medicamentos, ele deve ser encontrável pela
 
 **Wrappers públicos (sem `_`)** em `Code.gs` para o Carlos e demais operadores encontrarem no seletor do Apps Script Editor: `instalarTriggerComprasMedicamentos`, `listarTriggersHandover`, `removerTriggerComprasMedicamentos` (e opcional `testarProcessarStatusCompraPorIdHandover`). Eles apenas delegam às funções internas `*_()`; a lógica permanece nas versões com underscore.
 
+**OAuth (`appsscript.json`):** foi declarado o escopo `https://www.googleapis.com/auth/script.scriptapp` junto aos existentes, porque `ScriptApp.getProjectTriggers`, `newTrigger`, `deleteTrigger` etc. exigem essa permissão; sem ela o editor retorna *Specified permissions are not sufficient to call ScriptApp.getProjectTriggers*. Após o próximo `clasp push`, o usuário pode precisar **reautorizar** o projeto no prompt do Google.
+
 Depois que o Codex publicar a versão com aba **Compras_Medicamentos** e triggers:
 
 1. Abrir o **Apps Script** do projeto Handover (mesmo script do Web App).
