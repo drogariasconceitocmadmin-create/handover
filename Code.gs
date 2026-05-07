@@ -235,6 +235,22 @@ function getComprasMedicamentosSheet_() {
   return getSheetOrThrow_(getSpreadsheet_(), SHEET_NAMES.COMPRAS_MEDICAMENTOS);
 }
 
+/**
+ * MANUAL (público): reaplica layout/formatos da aba Compras_Medicamentos sem mexer em dados.
+ * Útil quando a aba foi copiada/importada e perdeu formatação.
+ */
+function aplicarLayoutComprasMedicamentos() {
+  return aplicarLayoutComprasMedicamentos_();
+}
+
+/** MANUAL (interno): reaplica layout/formatos da aba Compras_Medicamentos. */
+function aplicarLayoutComprasMedicamentos_() {
+  var sheet = getComprasMedicamentosSheet_();
+  applyComprasMedicamentosLayout_(sheet);
+  Logger.log('aplicarLayoutComprasMedicamentos_: OK');
+  return { ok: true };
+}
+
 function applyComprasMedicamentosLayout_(sheet) {
   var lastCol = Math.max(sheet.getLastColumn(), HEADERS.Compras_Medicamentos.length, 1);
   var headerRange = sheet.getRange(1, 1, 1, lastCol);
@@ -243,7 +259,8 @@ function applyComprasMedicamentosLayout_(sheet) {
   headerRange.setFontWeight('bold');
   sheet.setFrozenRows(1);
 
-  var widths = [180, 130, 90, 220, 120, 160, 120, 110, 90, 80, 150, 110, 140, 260, 320, 120, 130];
+  // UX: larguras e colunas operacionais (sem reordenar/destruir dados)
+  var widths = [140, 120, 90, 240, 120, 170, 120, 130, 90, 90, 140, 120, 140, 360, 380, 140, 160];
   for (var c = 0; c < Math.min(widths.length, lastCol); c++) {
     sheet.setColumnWidth(c + 1, widths[c]);
   }
@@ -258,6 +275,112 @@ function applyComprasMedicamentosLayout_(sheet) {
   ];
   var rule = SpreadsheetApp.newDataValidation().requireValueInList(list, true).setAllowInvalid(false).build();
   sheet.getRange(2, colStatus, numRowsValidation, 1).setDataValidation(rule);
+
+  // Filtro na linha de cabeçalho (não afeta dados).
+  try {
+    if (!sheet.getFilter()) {
+      headerRange.createFilter();
+    }
+  } catch (eFilter) {}
+
+  // Notas operacionais no cabeçalho (ajuda para o usuário final).
+  try {
+    sheet.getRange(1, colStatus).setNote('Altere aqui para atualizar o Handover.');
+  } catch (eNote0) {}
+  try {
+    var colMsg = getColumnIndex_(sheet, 'Mensagem_Cliente');
+    sheet.getRange(1, colMsg).setNote('Mensagem sugerida para WhatsApp quando item não for encontrado.');
+  } catch (eNote1) {}
+
+  // Alinhamento / wrap para leitura operacional.
+  try {
+    sheet.getRange(1, 1, numRowsValidation + 1, lastCol).setVerticalAlignment('middle');
+  } catch (eVa) {}
+  try {
+    var colObs = getColumnIndex_(sheet, 'Observacao_Compra');
+    sheet.getRange(2, colObs, numRowsValidation, 1).setWrap(true).setVerticalAlignment('top');
+  } catch (eWrap0) {}
+  try {
+    sheet.getRange(2, colMsg, numRowsValidation, 1).setWrap(true).setVerticalAlignment('top');
+  } catch (eWrap1) {}
+  try {
+    sheet.getRange(2, colStatus, numRowsValidation, 1).setFontWeight('bold').setHorizontalAlignment('center');
+  } catch (eBold) {}
+
+  // Formatos: datas e moeda.
+  try {
+    var colSolic = getColumnIndex_(sheet, 'Data_Solicitacao');
+    sheet.getRange(2, colSolic, numRowsValidation, 1).setNumberFormat('dd/MM/yyyy HH:mm');
+  } catch (eFmt0) {}
+  try {
+    var colPrev = getColumnIndex_(sheet, 'Previsao_Entrega');
+    sheet.getRange(2, colPrev, numRowsValidation, 1).setNumberFormat('dd/MM/yyyy');
+  } catch (eFmt1) {}
+  try {
+    var colDataCompra = getColumnIndex_(sheet, 'Data_Compra');
+    sheet.getRange(2, colDataCompra, numRowsValidation, 1).setNumberFormat('dd/MM/yyyy');
+  } catch (eFmt2) {}
+  try {
+    var colUlt = getColumnIndex_(sheet, 'Ultima_Atualizacao');
+    sheet.getRange(2, colUlt, numRowsValidation, 1).setNumberFormat('dd/MM/yyyy HH:mm');
+  } catch (eFmt3) {}
+  try {
+    var colPreco = getColumnIndex_(sheet, 'Preco_Venda');
+    sheet.getRange(2, colPreco, numRowsValidation, 1).setNumberFormat('"R$" #,##0.00');
+  } catch (eFmt4) {}
+
+  // Formatação condicional por linha inteira baseada em Status_Compra (idempotente).
+  // Observação: regras antigas são limpas apenas nesta aba para evitar duplicação.
+  try {
+    sheet.clearConditionalFormatRules();
+    var lastRowForRules = Math.max(sheet.getLastRow(), 2);
+    var dataRange = sheet.getRange(2, 1, Math.max(lastRowForRules - 1, 1), lastCol);
+    var colLetter = (function (colNumber) {
+      var temp = colNumber;
+      var letter = '';
+      while (temp > 0) {
+        var modulo = (temp - 1) % 26;
+        letter = String.fromCharCode(65 + modulo) + letter;
+        temp = Math.floor((temp - modulo) / 26);
+      }
+      return letter;
+    })(colStatus);
+
+    var rules = [];
+    rules.push(
+      SpreadsheetApp.newConditionalFormatRule()
+        .whenFormulaSatisfied('=$' + colLetter + '2="' + COMPRAS_STATUS_COMPRA.PENDENTE + '"')
+        .setBackground('#FEF3C7')
+        .setFontColor('#78350F')
+        .setRanges([dataRange])
+        .build()
+    );
+    rules.push(
+      SpreadsheetApp.newConditionalFormatRule()
+        .whenFormulaSatisfied('=$' + colLetter + '2="' + COMPRAS_STATUS_COMPRA.COMPRADO + '"')
+        .setBackground('#DCFCE7')
+        .setFontColor('#14532D')
+        .setRanges([dataRange])
+        .build()
+    );
+    rules.push(
+      SpreadsheetApp.newConditionalFormatRule()
+        .whenFormulaSatisfied('=$' + colLetter + '2="' + COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO + '"')
+        .setBackground('#FFEDD5')
+        .setFontColor('#7C2D12')
+        .setRanges([dataRange])
+        .build()
+    );
+    rules.push(
+      SpreadsheetApp.newConditionalFormatRule()
+        .whenFormulaSatisfied('=$' + colLetter + '2="' + COMPRAS_STATUS_COMPRA.CANCELADO + '"')
+        .setBackground('#FEE2E2')
+        .setFontColor('#7F1D1D')
+        .setRanges([dataRange])
+        .build()
+    );
+    sheet.setConditionalFormatRules(rules);
+  } catch (eCf) {}
 }
 
 function findComprasRowByHandoverId_(sheet, handoverId) {

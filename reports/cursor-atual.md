@@ -83,6 +83,16 @@ Regra: se o dado aparece no card de Medicamentos, ele deve ser encontrável pela
 
 **OAuth (`appsscript.json`):** foi declarado o escopo `https://www.googleapis.com/auth/script.scriptapp` junto aos existentes para `ScriptApp.getProjectTriggers` / `newTrigger` / `deleteTrigger`. Se mesmo assim o editor continuar com *Specified permissions are not sufficient to call ScriptApp.getProjectTriggers*, **não dependa** dessas funções para o primeiro setup: use o gatilho manual na UI apontando para **`handleComprasMedicamentosEdit`** (abaixo). Após `clasp push`, pode ser necessário **reautorizar** o projeto.
 
+### Layout da aba Compras_Medicamentos (Sheets)
+
+- Melhorado `applyComprasMedicamentosLayout_()` para deixar a aba mais operacional: cabeçalho institucional + congelar linha 1 + filtro, larguras melhores, alinhamento, wrap em `Observacao_Compra` e `Mensagem_Cliente`, formatos de data e moeda, e **cores por linha inteira** via formatação condicional baseada em `Status_Compra`:
+  - **Pendente de compra**: âmbar claro (precisa de ação)
+  - **Comprado**: verde claro
+  - **Não encontrado**: laranja claro
+  - **Cancelado**: vermelho claro
+- Wrapper público para reaplicar layout sem mexer em dados: **`aplicarLayoutComprasMedicamentos()`** (chama `aplicarLayoutComprasMedicamentos_()` → `applyComprasMedicamentosLayout_()`).
+- Confirmado: **não altera** regras de compra, onEdit, triggers, sync ou status; é apenas formatação/validação.
+
 ### Instalação manual do gatilho Compras_Medicamentos (recomendado se `getProjectTriggers` falhar)
 
 1. Abrir o **Apps Script Editor** do Handover.
