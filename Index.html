@@ -62,6 +62,55 @@
         display: none !important;
       }
 
+      .handover-login-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10050;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(11, 27, 58, 0.38);
+        backdrop-filter: blur(8px);
+      }
+
+      .handover-login-card {
+        width: min(420px, 100%);
+      }
+
+      .handover-login-brand {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+
+      .handover-login-title {
+        margin: 14px 0 10px;
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+
+      .handover-login-error {
+        min-height: 22px;
+        margin: 10px 0 0;
+        font-size: 13px;
+        font-weight: 650;
+        color: var(--danger);
+      }
+
+      .brand-logo-img {
+        max-height: 44px;
+        width: auto;
+        display: block;
+      }
+
+      #operador-atual[readonly] {
+        background: rgba(248, 250, 252, 0.95);
+        cursor: default;
+      }
+
       .ho-muted {
         color: var(--muted);
       }
@@ -2449,10 +2498,34 @@
     </style>
   </head>
   <body>
+    <div id="handover-login-overlay" class="handover-login-overlay" role="dialog" aria-modal="true" aria-labelledby="handover-login-title">
+      <div class="handover-login-card ho-card ho-card-pad">
+        <div class="handover-login-brand">
+          <img id="handover-login-logo" class="brand-logo-img hidden" alt="Drogarias Conceito">
+          <span id="handover-login-brand-text" class="brand-mark">Drogarias Conceito</span>
+          <span class="ho-muted" style="font-size:13px;line-height:1.35;">Handover — acesso com PIN</span>
+        </div>
+        <h1 id="handover-login-title" class="handover-login-title">Entrar</h1>
+        <p id="handover-login-status" class="handover-login-status ho-muted hidden"></p>
+        <div class="field">
+          <label for="handover-login-usuario">Usuário</label>
+          <input id="handover-login-usuario" type="text" autocomplete="username" spellcheck="false">
+        </div>
+        <div class="field">
+          <label for="handover-login-pin">PIN</label>
+          <input id="handover-login-pin" type="password" inputmode="numeric" autocomplete="current-password" spellcheck="false">
+        </div>
+        <p id="handover-login-error" class="handover-login-error" role="alert"></p>
+        <button type="button" id="handover-login-submit" class="btn-primary-header" style="width:100%;margin-top:6px;">Entrar</button>
+      </div>
+    </div>
+
+    <div id="app-shell" class="hidden" aria-hidden="true">
     <main class="page">
       <header class="app-header">
         <div class="app-header-left">
-          <span class="brand-mark">Drogarias Conceito</span>
+          <img id="handover-brand-logo" class="brand-logo-img hidden" alt="Drogarias Conceito">
+          <span id="handover-brand-text" class="brand-mark">Drogarias Conceito</span>
           <span class="brand-sep" aria-hidden="true"></span>
           <span class="brand-product">Handover</span>
         </div>
@@ -2466,10 +2539,18 @@
                 type="text"
                 name="operador-atual"
                 autocomplete="name"
-                placeholder="Nome no checklist e ações"
+                readonly
+                tabindex="-1"
+                title="Derivado da sessão (login)"
+                placeholder="—"
               >
             </label>
           </div>
+          <div class="header-pill" title="Sessão atual">
+            <span class="header-pill-label">Nome · perfil</span>
+            <span id="handover-session-profile" class="header-pill-value">—</span>
+          </div>
+          <button type="button" id="handover-logout-btn" class="btn-header-secondary">Sair</button>
           <div class="header-pill">
             <span class="header-pill-label">Última atualização</span>
             <span id="last-sync-label" class="header-pill-value">—</span>
@@ -2814,10 +2895,19 @@
       </div>
     </div>
 
+    </div>
+
     <div id="toast-root" aria-live="polite"></div>
 
     <script>
       const OPERADOR_STORAGE_KEY = 'handover_operador_atual_v14';
+      const HANDOVER_SESSION_STORAGE_KEY = 'handover_auth_session_v41';
+      /** URL pública estável do logo oficial (ex. Drive export=view&id=FILE_ID). Vazio = texto “Drogarias Conceito”. */
+      const HANDOVER_OFFICIAL_LOGO_URL = '';
+
+      let handoverSession = null;
+      let handoverAuthState = 'checking';
+
       const QUEUE_FILTERS_PENDENCIAS = ['pendentes', 'todos', 'urgentes', 'vencidos_hoje'];
       const QUEUE_FILTERS_MEDICAMENTOS = [
         'pendentes',
@@ -2976,6 +3066,15 @@
         if (event.key !== 'Escape') {
           return;
         }
+        var hoLogin = document.getElementById('handover-login-overlay');
+        if (
+          hoLogin &&
+          !hoLogin.classList.contains('hidden') &&
+          handoverAuthState !== 'logged_in'
+        ) {
+          event.preventDefault();
+          return;
+        }
         var auditOv = document.getElementById('audit-drawer-overlay');
         if (auditOv && !auditOv.classList.contains('hidden')) {
           closeAuditDrawer_();
@@ -2994,10 +3093,409 @@
         }
       });
 
-      initOperadorBar_();
+      bindHandoverLoginUi_();
       updateMedicinePriceVisibility_();
-      initChecklistTurnoUi_();
-      initDashboardSync_();
+      startHandoverAuthBootstrap_();
+
+      function bindHandoverLoginUi_() {
+        var btn = document.getElementById('handover-login-submit');
+        var pin = document.getElementById('handover-login-pin');
+        var usr = document.getElementById('handover-login-usuario');
+        if (btn) {
+          btn.addEventListener('click', submitHandoverLogin_);
+        }
+        if (pin) {
+          pin.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Enter') {
+              submitHandoverLogin_();
+            }
+          });
+        }
+        if (usr) {
+          usr.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Enter' && pin) {
+              pin.focus();
+            }
+          });
+        }
+        var lo = document.getElementById('handover-logout-btn');
+        if (lo) {
+          lo.addEventListener('click', handoverLogout_);
+        }
+      }
+
+      function saveSessionToStorage_(sess) {
+        if (!sess || !sess.token) {
+          return;
+        }
+        try {
+          localStorage.setItem(
+            HANDOVER_SESSION_STORAGE_KEY,
+            JSON.stringify({
+              token: sess.token,
+              usuario: sess.usuario,
+              nome: sess.nome,
+              perfil: sess.perfil,
+              displayName: sess.displayName || sess.nome || sess.usuario,
+            })
+          );
+        } catch (err) {
+          console.warn('Handover: sessão não persistida.', err);
+        }
+      }
+
+      function clearSessionStorage_() {
+        try {
+          localStorage.removeItem(HANDOVER_SESSION_STORAGE_KEY);
+          localStorage.removeItem(OPERADOR_STORAGE_KEY);
+        } catch (err) {
+          /* ignore */
+        }
+      }
+
+      function loadSessionFromStorage_() {
+        try {
+          var raw = localStorage.getItem(HANDOVER_SESSION_STORAGE_KEY);
+          if (!raw) {
+            return null;
+          }
+          var o = JSON.parse(raw);
+          if (!o || !o.token) {
+            return null;
+          }
+          return {
+            token: String(o.token),
+            usuario: o.usuario || '',
+            nome: o.nome || '',
+            perfil: o.perfil || 'operador',
+            displayName: o.displayName || o.nome || o.usuario || '',
+          };
+        } catch (err) {
+          return null;
+        }
+      }
+
+      function setLoginOverlayBusy_(busy, message) {
+        var st = document.getElementById('handover-login-status');
+        var usr = document.getElementById('handover-login-usuario');
+        var pin = document.getElementById('handover-login-pin');
+        var btn = document.getElementById('handover-login-submit');
+        if (st) {
+          if (busy && message) {
+            st.textContent = message;
+            st.classList.remove('hidden');
+          } else {
+            st.textContent = '';
+            st.classList.add('hidden');
+          }
+        }
+        [usr, pin, btn].forEach(function (el) {
+          if (el) {
+            el.disabled = !!busy;
+          }
+        });
+      }
+
+      function showLoginForm_() {
+        setLoginOverlayBusy_(false, '');
+      }
+
+      function hideLoginOverlayForAuth_() {
+        var ov = document.getElementById('handover-login-overlay');
+        if (ov) {
+          ov.classList.add('hidden');
+          ov.setAttribute('aria-hidden', 'true');
+        }
+      }
+
+      function showAppShell_() {
+        var sh = document.getElementById('app-shell');
+        if (sh) {
+          sh.classList.remove('hidden');
+          sh.setAttribute('aria-hidden', 'false');
+        }
+      }
+
+      function hideAppShell_() {
+        var sh = document.getElementById('app-shell');
+        if (sh) {
+          sh.classList.add('hidden');
+          sh.setAttribute('aria-hidden', 'true');
+        }
+      }
+
+      function applyOfficialLogoIfConfigured_() {
+        var url = String(HANDOVER_OFFICIAL_LOGO_URL || '').trim();
+        function wire(imgId, textId) {
+          var img = document.getElementById(imgId);
+          var txt = document.getElementById(textId);
+          if (!img) {
+            return;
+          }
+          if (!url) {
+            img.classList.add('hidden');
+            img.removeAttribute('src');
+            if (txt) {
+              txt.classList.remove('hidden');
+            }
+            return;
+          }
+          img.onload = function () {
+            img.classList.remove('hidden');
+            if (txt) {
+              txt.classList.add('hidden');
+            }
+          };
+          img.onerror = function () {
+            img.classList.add('hidden');
+            if (txt) {
+              txt.classList.remove('hidden');
+            }
+          };
+          img.src = url;
+        }
+        wire('handover-brand-logo', 'handover-brand-text');
+        wire('handover-login-logo', 'handover-login-brand-text');
+      }
+
+      function applySessionToHeader_() {
+        var el = document.getElementById('handover-session-profile');
+        if (!el || !handoverSession) {
+          return;
+        }
+        var nome =
+          handoverSession.displayName ||
+          handoverSession.nome ||
+          handoverSession.usuario ||
+          '—';
+        var perfil = handoverSession.perfil || 'operador';
+        el.textContent = nome + ' · ' + perfil;
+      }
+
+      function bootstrapDashboardAfterAuth_() {
+        hideLoginOverlayForAuth_();
+        showAppShell_();
+        applyOfficialLogoIfConfigured_();
+        applySessionToHeader_();
+        try {
+          localStorage.removeItem(OPERADOR_STORAGE_KEY);
+        } catch (err) {
+          /* ignore */
+        }
+        initOperadorBar_();
+        syncOperadorAvatar_();
+        syncAutorFieldFromOperador_();
+        syncMedicamentoAtendenteFromOperador_();
+        initChecklistTurnoUi_();
+        initDashboardSync_();
+        initHandoverPhase1Layout_();
+        refreshDashboardNow_(true);
+      }
+
+      function submitHandoverLogin_() {
+        var usuarioEl = document.getElementById('handover-login-usuario');
+        var pinEl = document.getElementById('handover-login-pin');
+        var btn = document.getElementById('handover-login-submit');
+        var errEl = document.getElementById('handover-login-error');
+        var u = usuarioEl ? usuarioEl.value.trim().toLowerCase() : '';
+        var p = pinEl ? pinEl.value.trim() : '';
+        if (errEl) {
+          errEl.textContent = '';
+        }
+        if (!u || !p) {
+          if (errEl) {
+            errEl.textContent = 'Informe usuário e PIN.';
+          }
+          return;
+        }
+        if (!btn) {
+          return;
+        }
+        var prevLabel = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Entrando...';
+        function finishBtn() {
+          btn.disabled = false;
+          btn.textContent = prevLabel;
+        }
+        try {
+          getScriptRunner_()
+            .withSuccessHandler(function (res) {
+              try {
+                if (!res || !res.success) {
+                  if (errEl) {
+                    errEl.textContent =
+                      (res && res.message) || 'Usuário ou PIN inválido';
+                  }
+                  finishBtn();
+                  return;
+                }
+                handoverSession = {
+                  token: res.token,
+                  usuario: res.usuario,
+                  nome: res.nome,
+                  perfil: res.perfil,
+                  displayName: res.displayName || res.nome || res.usuario,
+                };
+                handoverAuthState = 'logged_in';
+                saveSessionToStorage_(handoverSession);
+                finishBtn();
+                bootstrapDashboardAfterAuth_();
+              } catch (e) {
+                if (errEl) {
+                  errEl.textContent = 'Erro ao processar login.';
+                }
+                finishBtn();
+              }
+            })
+            .withFailureHandler(function (err) {
+              if (errEl) {
+                errEl.textContent =
+                  getErrorMessage(err) || 'Erro de conexão/servidor';
+              }
+              finishBtn();
+            })
+            .loginHandover(u, p);
+        } catch (e2) {
+          if (errEl) {
+            errEl.textContent = e2.message || 'Erro de conexão/servidor';
+          }
+          finishBtn();
+        }
+      }
+
+      function startHandoverAuthBootstrap_() {
+        applyOfficialLogoIfConfigured_();
+        hideAppShell_();
+        handoverAuthState = 'checking';
+        var ov = document.getElementById('handover-login-overlay');
+        if (ov) {
+          ov.classList.remove('hidden');
+          ov.setAttribute('aria-hidden', 'false');
+        }
+        var errEl = document.getElementById('handover-login-error');
+        if (errEl) {
+          errEl.textContent = '';
+        }
+        setLoginOverlayBusy_(true, 'Verificando sessão…');
+
+        var stored = loadSessionFromStorage_();
+        if (!stored || !stored.token) {
+          handoverAuthState = 'logged_out';
+          showLoginForm_();
+          return;
+        }
+        handoverSession = stored;
+        try {
+          getScriptRunner_()
+            .withSuccessHandler(function (res) {
+              try {
+                if (!res || !res.success) {
+                  clearSessionStorage_();
+                  handoverSession = null;
+                  handoverAuthState = 'logged_out';
+                  showLoginForm_();
+                  if (errEl) {
+                    errEl.textContent = 'Sessão expirada';
+                  }
+                  return;
+                }
+                handoverSession = {
+                  token: stored.token,
+                  usuario: res.usuario,
+                  nome: res.nome,
+                  perfil: res.perfil,
+                  displayName:
+                    stored.displayName || res.nome || res.usuario || '',
+                };
+                saveSessionToStorage_(handoverSession);
+                handoverAuthState = 'logged_in';
+                showLoginForm_();
+                if (errEl) {
+                  errEl.textContent = '';
+                }
+                bootstrapDashboardAfterAuth_();
+              } catch (e) {
+                clearSessionStorage_();
+                handoverSession = null;
+                handoverAuthState = 'logged_out';
+                showLoginForm_();
+                if (errEl) {
+                  errEl.textContent = 'Erro ao validar sessão';
+                }
+              }
+            })
+            .withFailureHandler(function (err) {
+              handoverAuthState = 'logged_out';
+              showLoginForm_();
+              if (errEl) {
+                errEl.textContent =
+                  getErrorMessage(err) || 'Erro de conexão/servidor';
+              }
+            })
+            .validateSessionHandover(stored.token);
+        } catch (e2) {
+          handoverAuthState = 'logged_out';
+          showLoginForm_();
+          if (errEl) {
+            errEl.textContent = e2.message || 'Erro de conexão/servidor';
+          }
+        }
+      }
+
+      function handoverLogout_() {
+        var tok = handoverSession && handoverSession.token;
+        function finishLocal() {
+          if (dashboardAutoRefreshTimer) {
+            window.clearInterval(dashboardAutoRefreshTimer);
+            dashboardAutoRefreshTimer = null;
+          }
+          hideAppShell_();
+          dashboardData = normalizeData({});
+          historicoResolvidos = [];
+          historicoLoadState = 'idle';
+          historicoLoadError = '';
+          pendingReopenHistoricoId = null;
+          activeMainTab = 'pendencias';
+          activeQueueFilter = 'pendentes';
+          clearSessionStorage_();
+          handoverSession = null;
+          handoverAuthState = 'logged_out';
+          var ov = document.getElementById('handover-login-overlay');
+          if (ov) {
+            ov.classList.remove('hidden');
+            ov.setAttribute('aria-hidden', 'false');
+          }
+          showLoginForm_();
+          var errEl = document.getElementById('handover-login-error');
+          if (errEl) {
+            errEl.textContent = '';
+          }
+          var usr = document.getElementById('handover-login-usuario');
+          var pin = document.getElementById('handover-login-pin');
+          if (pin) {
+            pin.value = '';
+          }
+          applyOfficialLogoIfConfigured_();
+          if (usr) {
+            window.setTimeout(function () {
+              usr.focus();
+            }, 80);
+          }
+        }
+        if (tok) {
+          try {
+            getScriptRunner_()
+              .withSuccessHandler(finishLocal)
+              .withFailureHandler(finishLocal)
+              .logoutHandover(tok);
+          } catch (e) {
+            finishLocal();
+          }
+        } else {
+          finishLocal();
+        }
+      }
 
       function runWithOperador_(fn) {
         var op = getOperadorAtual_();
@@ -3005,19 +3503,11 @@
           fn(op);
           return;
         }
-        pendingOperadorCallback_ = fn;
-        if (operadorModalInput) {
-          operadorModalInput.value = '';
+        if (handoverAuthState !== 'logged_in') {
+          showToast_('Faça login para continuar.', true);
+          return;
         }
-        if (operadorRequiredOverlay) {
-          operadorRequiredOverlay.classList.remove('hidden');
-          operadorRequiredOverlay.setAttribute('aria-hidden', 'false');
-          window.setTimeout(function () {
-            if (operadorModalInput) {
-              operadorModalInput.focus();
-            }
-          }, 50);
-        }
+        showToast_('Sessão sem nome de operador.', true);
       }
 
       function confirmOperadorRequiredModal_() {
@@ -3155,6 +3645,9 @@
       }
 
       function initDashboardSync_() {
+        if (handoverAuthState !== 'logged_in') {
+          return;
+        }
         touchLastSyncTime_();
         if (dashboardAutoRefreshTimer) {
           window.clearInterval(dashboardAutoRefreshTimer);
@@ -3202,6 +3695,9 @@
       }
 
       function refreshDashboardNow_(silent) {
+        if (handoverAuthState !== 'logged_in') {
+          return;
+        }
         if (!silent && isAnyBlockingModalOpen_()) {
           showToast_('Feche os modais para atualizar.', true);
           return;
@@ -3310,25 +3806,16 @@
         if (!operadorAtualInput) {
           return;
         }
-        try {
-          operadorAtualInput.value = localStorage.getItem(OPERADOR_STORAGE_KEY) || '';
-        } catch (e) {
-          operadorAtualInput.value = '';
+        var nome = '';
+        if (handoverSession) {
+          nome =
+            handoverSession.displayName ||
+            handoverSession.nome ||
+            handoverSession.usuario ||
+            '';
         }
+        operadorAtualInput.value = nome;
         syncOperadorAvatar_();
-        operadorAtualInput.addEventListener('change', function () {
-          try {
-            localStorage.setItem(OPERADOR_STORAGE_KEY, operadorAtualInput.value.trim());
-          } catch (err) {
-            console.warn('Handover: localStorage indisponível.', err);
-          }
-          syncOperadorAvatar_();
-          syncAutorFieldFromOperador_();
-        });
-        operadorAtualInput.addEventListener('input', function () {
-          syncOperadorAvatar_();
-          syncAutorFieldFromOperador_();
-        });
       }
 
       function getOperadorAtual_() {
@@ -4304,8 +4791,6 @@
           setText('tab-badge-historico', '–');
         }
       }
-
-      initHandoverPhase1Layout_();
 
       function renderAll() {
         updateLastActionLabel_();

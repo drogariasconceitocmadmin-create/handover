@@ -1,13 +1,21 @@
+## Parte 2 — Front login/PIN + sessão (maio/2026)
+
+- **Branch:** `feat/handover-auth-pin-v41`
+- **Escopo:** overlay de login (usuário + PIN), estados `checking` / `logged_out` / `logged_in`, `localStorage` (`handover_auth_session_v41`), validação via `validateSessionHandover`, logout via `logoutHandover`, header **Nome · perfil**, operador derivado da sessão (readonly), botão **Sair**. ESC não fecha o overlay sem sessão válida.
+- **Backend mínimo:** `doGet` passa `initialDataB64` vazio (`geral`/`medicamentos` vazios, `checklistTurno` null) para não entregar dados na carga HTML antes do login; dados vêm de `refreshDashboardBundle` após `logged_in`.
+- **Logo oficial:** constante `HANDOVER_OFFICIAL_LOGO_URL` em `Index.html` (vazia). Pasta Drive informada não foi acessível de forma autenticada neste ambiente → mantido fallback textual **Drogarias Conceito**. Para ativar imagem, colar URL pública estável no mesmo arquivo.
+- **Parte 3 (fora deste escopo):** exigir `sessionToken` nas ações críticas no backend; permissões por perfil na UI; endurecimento adicional.
+
+---
+
 # Cursor - Handover (retomada)
 
 ## Onde esta
 
 - Projeto: **Handover - Drogarias Conceito**, Apps Script isolado em `Handover/`.
 - Pasta atual: `C:\Users\Marco\Desktop\Sis Drogaria\Handover`.
-- Branch atual: `release/handover-v29-visual-clean`.
-- Worktree: estava limpo antes desta recuperacao.
-- HEAD atual: `7a79169 - fix(handover): remove logica de auto-refresh da v29 visual limpa`.
-- Remoto da branch: alinhado com `origin/release/handover-v29-visual-clean`.
+- Branch atual: `feat/handover-auth-pin-v41` (Parte 2 — front auth PIN).
+- Worktree / HEAD: ver `git log -1` na máquina local após o commit da Parte 2.
 
 ## Estado publicado / validado
 

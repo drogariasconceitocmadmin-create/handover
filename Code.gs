@@ -180,8 +180,13 @@ function doGet() {
   setupSpreadsheet();
 
   const template = HtmlService.createTemplateFromFile('Index');
+  // Sem dados na carga inicial: o dashboard só carrega após sessão válida no cliente (refreshDashboardBundle).
   template.initialDataB64 = Utilities.base64EncodeWebSafe(
-    JSON.stringify(fetchData()),
+    JSON.stringify({
+      geral: [],
+      medicamentos: [],
+      checklistTurno: null,
+    }),
     Utilities.Charset.UTF_8
   );
 

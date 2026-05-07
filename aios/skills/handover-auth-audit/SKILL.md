@@ -30,3 +30,10 @@
 ### Publicação
 - Não publicar autenticação sem um admin funcional e plano de rollback.
 
+### Frontend (Parte 2+)
+- Persistir sessão no cliente com `localStorage` (token + usuario + nome + perfil + displayName); **nunca** persistir PIN.
+- Ao carregar: se existir token → `validateSessionHandover`; se inválido → limpar storage e exibir login; se válido → liberar dashboard (`logged_in`).
+- `doGet` pode enviar payload inicial vazio para não expor dados antes da sessão; dashboard carrega via `refreshDashboardBundle` após login.
+- Operador exibido nas ações deve refletir a sessão (nome/displayName), não entrada livre persistida em storage legado.
+- Parte 3: validar `sessionToken` no servidor nas operações críticas (não confiar só no ocultar UI).
+
