@@ -1713,24 +1713,6 @@
         background: linear-gradient(180deg, rgba(220, 38, 38, 0.9) 0%, rgba(153, 27, 27, 0.9) 100%) !important;
       }
 
-      .queue-card.is-cancelado .qk-card-shell::after {
-        content: 'CANCELADO';
-        position: absolute;
-        top: 10px;
-        right: 12px;
-        transform: rotate(10deg);
-        font-size: 11px;
-        font-weight: 900;
-        letter-spacing: 0.16em;
-        color: rgba(127, 29, 29, 0.78);
-        border: 2px solid rgba(220, 38, 38, 0.55);
-        background: rgba(254, 202, 202, 0.55);
-        padding: 4px 10px;
-        border-radius: 999px;
-        pointer-events: none;
-        z-index: 2;
-      }
-
       .badge.status-entregue,
       .badge.status-feito {
         background: #dcfce7;
@@ -2858,6 +2840,15 @@
               <div class="checkbox-row field">
                 <input id="prePago" name="prePago" type="checkbox">
                 <label for="prePago" style="margin:0;">Pré-pago</label>
+              </div>
+
+              <div class="field">
+                <label for="formaRecebimento">Forma de recebimento</label>
+                <select id="formaRecebimento" name="formaRecebimento">
+                  <option value="A combinar">A combinar</option>
+                  <option value="Retira na loja">Retira na loja</option>
+                  <option value="Entregar no endereÃ§o cadastrado">Entregar no endereÃ§o cadastrado</option>
+                </select>
               </div>
 
               <div class="field">
@@ -4034,7 +4025,7 @@
         return digits.length === 10 || digits.length === 11 ? '55' + digits : '';
       }
 
-      function buildWhatsAppMessageClient_(clientName, medicineName) {
+      function buildWhatsAppMessageClientLegacy_(clientName, medicineName) {
         var name = String(clientName || '').trim() || 'cliente';
         var medicine = String(medicineName || '').trim() || 'informado';
         return [
@@ -4043,6 +4034,44 @@
           'Pode retirar na loja hoje.',
           '',
           'Se preferir, responda esta mensagem que verificamos a melhor forma de entrega.',
+        ].join('\n');
+      }
+
+      function buildWhatsAppMessageClient_(clientName, medicineName, formaRecebimento) {
+        var name = String(clientName || '').trim();
+        var greeting = name ? 'OlÃ¡, ' + name + '!' : 'OlÃ¡!';
+        var medicine = String(medicineName || '').trim() || 'seu medicamento';
+        var forma = String(formaRecebimento || '').trim();
+
+        if (forma === 'Retira na loja') {
+          return [
+            greeting +
+              ' Passando para avisar que o medicamento ' +
+              medicine +
+              ' jÃ¡ chegou aqui na Drogarias Conceito e estÃ¡ separado para retirada na loja.',
+            '',
+            'Pode vir buscar! Responda essa mensagem se precisar de entrega.',
+          ].join('\n');
+        }
+
+        if (forma === 'Entregar no endereÃ§o cadastrado') {
+          return [
+            greeting +
+              ' Passando para avisar que o medicamento ' +
+              medicine +
+              ' jÃ¡ chegou aqui na Drogarias Conceito e estÃ¡ separado para entrega no endereÃ§o cadastrado.',
+            '',
+            'Podemos seguir com a entrega?',
+          ].join('\n');
+        }
+
+        return [
+          greeting +
+            ' Passando para avisar que o medicamento ' +
+            medicine +
+            ' jÃ¡ chegou aqui na Drogarias Conceito e estÃ¡ separado para vocÃª.',
+          '',
+          'VocÃª prefere retirar na loja ou quer que a gente combine a entrega? Obrigado!',
         ].join('\n');
       }
 
@@ -4120,6 +4149,10 @@
           }
           if (prev) {
             prev.value = '';
+          }
+          var fr = document.getElementById('formaRecebimento');
+          if (fr) {
+            fr.value = 'A combinar';
           }
         }
         var encOnly = document.getElementById('med-encomenda-only');
@@ -6307,6 +6340,9 @@
           if (item.syncState === 'error') {
             cardClass += ' sync-error';
           }
+          if (item.medTipo === 'encomenda') {
+            chunks.push(row('Recebimento', item.metaFormaRecebimento));
+          }
           if (item.statusKey === 'cancelado') {
             cardClass += ' is-cancelado';
           }
@@ -6847,6 +6883,8 @@
             fornecedorCard = '';
           }
           var codigoCard = String(item.Codigo_Compra_Fornecedor || '').trim();
+          var formaRecebimentoCard =
+            tipoLow === 'encomenda' ? String(item.Forma_Recebimento || 'A combinar').trim() || 'A combinar' : '';
           var descPlainMed =
             'Tipo: ' +
             (item.Tipo || '-') +
@@ -6860,6 +6898,7 @@
             item.Status,
             fornecedorCard,
             codigoCard,
+            formaRecebimentoCard,
             waShort,
             auditMed,
             revLine,
@@ -6895,6 +6934,7 @@
             price: tipoLow === 'falta' ? '' : formatCurrencyBr_(item.Preco_Venda),
             metaFornecedorCompra: fornecedorCard,
             metaCodigoCompra: codigoCard,
+            metaFormaRecebimento: formaRecebimentoCard,
             isOverdue: venTierM !== '',
             vencidosTier: venTierM,
             extraMeta:
@@ -7989,6 +8029,10 @@
           if (codR) {
             codR.value = pl.codigoCompraFornecedor || '';
           }
+          var frR = document.getElementById('formaRecebimento');
+          if (frR) {
+            frR.value = pl.formaRecebimento || 'A combinar';
+          }
           updateMedicinePriceVisibility_();
         }
         syncAutorFieldFromOperador_();
@@ -8072,6 +8116,7 @@
                 payload.fornecedorCompra === 'Panpharma' || payload.fornecedorCompra === 'Santa Cruz'
                   ? String(payload.codigoCompraFornecedor || '').trim()
                   : '',
+              Forma_Recebimento: isFalta ? '' : payload.formaRecebimento || 'A combinar',
               Comprado: false,
               Entregue: false,
               Status: 'Pendente',
@@ -8159,6 +8204,7 @@
         if (fc === 'Panpharma' || fc === 'Santa Cruz') {
           cod = codEl ? String(codEl.value || '').trim() : '';
         }
+        var formaEl = document.getElementById('formaRecebimento');
         return {
           tipo: document.getElementById('tipo').value,
           medicamento: document.getElementById('medicamento').value,
@@ -8170,6 +8216,7 @@
           previsaoEntrega: document.getElementById('previsaoEntrega').value,
           fornecedorCompra: fc,
           codigoCompraFornecedor: cod,
+          formaRecebimento: formaEl ? formaEl.value || 'A combinar' : 'A combinar',
         };
       }
 
@@ -8462,7 +8509,13 @@
           'https://wa.me/' +
           phone +
           '?text=' +
-          encodeURIComponent(buildWhatsAppMessageClient_(medication.Cliente, medication.Medicamento));
+          encodeURIComponent(
+            buildWhatsAppMessageClient_(
+              medication.Cliente,
+              medication.Medicamento,
+              medication.Forma_Recebimento
+            )
+          );
         window.open(url, '_blank');
 
         var tok = ensureSessionTokenForAction_();

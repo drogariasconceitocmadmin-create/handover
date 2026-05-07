@@ -15,6 +15,12 @@ const COMPRAS_STATUS_COMPRA = {
   CANCELADO: 'Cancelado',
 };
 
+const FORMAS_RECEBIMENTO = {
+  A_COMBINAR: 'A combinar',
+  RETIRA_LOJA: 'Retira na loja',
+  ENTREGA_ENDERECO: 'Entregar no endereço cadastrado',
+};
+
 /**
  * Mensagem sugerida para Status_Compra = Não encontrado (só Mensagem_Cliente; sem WhatsApp automático).
  * Sem nome na coluna Cliente: primeira frase começa em "Olá!".
@@ -119,6 +125,7 @@ const HEADERS = {
     'Motivo_Cancelamento',
     'Fornecedor_Compra',
     'Codigo_Compra_Fornecedor',
+    'Forma_Recebimento',
   ],
   Compras_Medicamentos: [
     'ID_Handover',
@@ -143,6 +150,7 @@ const HEADERS = {
     'Motivo_Cancelamento',
     'Fornecedor_Compra',
     'Codigo_Compra_Fornecedor',
+    'Forma_Recebimento',
   ],
   Usuarios_Handover: HANDOVER_USERS_HEADERS,
   Arquivo_Resolvidos: [
@@ -224,6 +232,17 @@ function normalizeCodigoCompraFornecedorInput_(raw, fornecedorNorm) {
     return '';
   }
   return c.length > 160 ? c.slice(0, 160) : c;
+}
+
+function normalizeFormaRecebimento_(raw) {
+  var s = sanitizeText_(raw).trim();
+  if (s === FORMAS_RECEBIMENTO.RETIRA_LOJA) {
+    return FORMAS_RECEBIMENTO.RETIRA_LOJA;
+  }
+  if (s === FORMAS_RECEBIMENTO.ENTREGA_ENDERECO) {
+    return FORMAS_RECEBIMENTO.ENTREGA_ENDERECO;
+  }
+  return FORMAS_RECEBIMENTO.A_COMBINAR;
 }
 
 function doGet() {
@@ -1351,6 +1370,7 @@ function buildComprasRowNamedValuesFromMedicamento_(medItem, existingStatusCompr
       medItem.Codigo_Compra_Fornecedor,
       normalizeFornecedorCompraInput_(medItem.Fornecedor_Compra)
     ),
+    Forma_Recebimento: isFalta ? '' : normalizeFormaRecebimento_(medItem.Forma_Recebimento),
   };
 }
 
@@ -2341,6 +2361,7 @@ function appendHandoverRecord_(tab, data, authorLabel) {
         Motivo_Cancelamento: '',
         Fornecedor_Compra: fnCompra,
         Codigo_Compra_Fornecedor: codCompra,
+        Forma_Recebimento: '',
       });
       sheet.appendRow(rowValuesFalta);
       try {
@@ -2361,6 +2382,7 @@ function appendHandoverRecord_(tab, data, authorLabel) {
       throw new Error('Previsao_Entrega invalida. Use o formato YYYY-MM-DD com data real.');
     }
     const precoVenda = parseSalePrice_(data.precoVenda);
+    const formaRecebimento = normalizeFormaRecebimento_(data.formaRecebimento);
 
     const rowValues = buildRowFromHeaders_(HEADERS.Medicamentos, {
       ID: id,
@@ -2389,6 +2411,7 @@ function appendHandoverRecord_(tab, data, authorLabel) {
       Motivo_Cancelamento: '',
       Fornecedor_Compra: fnCompra,
       Codigo_Compra_Fornecedor: codCompra,
+      Forma_Recebimento: formaRecebimento,
     });
     sheet.appendRow(rowValues);
     try {
@@ -3334,6 +3357,8 @@ function normalizeItemForClient_(item) {
       item.Codigo_Compra_Fornecedor,
       item.Fornecedor_Compra
     );
+    item.Forma_Recebimento =
+      tipoMedNorm === 'encomenda' ? normalizeFormaRecebimento_(item.Forma_Recebimento) : '';
   }
 }
 
@@ -3609,7 +3634,7 @@ function registerWhatsAppAttempt(id, sessionToken) {
 
   const statusAvisoColumn = getColumnIndex_(sheet, 'Status_Aviso_WhatsApp');
   const dataAvisoColumn = getColumnIndex_(sheet, 'Data_Aviso_WhatsApp');
-  const message = buildWhatsAppMessage_(item.Cliente, item.Medicamento);
+  const message = buildWhatsAppMessage_(item.Cliente, item.Medicamento, item.Forma_Recebimento);
 
   sheet.getRange(location.rowNumber, statusAvisoColumn).setValue('Tentativa registrada');
   sheet.getRange(location.rowNumber, dataAvisoColumn).setValue(new Date());
@@ -3684,7 +3709,7 @@ function normalizeBrazilPhone_(phoneValue) {
   return digits.length === 10 || digits.length === 11 ? '55' + digits : '';
 }
 
-function buildWhatsAppMessage_(clientName, medicineName) {
+function buildWhatsAppMessageLegacy_(clientName, medicineName) {
   const name = sanitizeText_(clientName) || 'cliente';
   const medicine = sanitizeText_(medicineName) || 'informado';
 
@@ -3694,6 +3719,44 @@ function buildWhatsAppMessage_(clientName, medicineName) {
     'Pode retirar na loja hoje.',
     '',
     'Se preferir, responda esta mensagem que verificamos a melhor forma de entrega.',
+  ].join('\n');
+}
+
+function buildWhatsAppMessage_(clientName, medicineName, formaRecebimento) {
+  const name = sanitizeText_(clientName);
+  const greeting = name ? 'OlÃ¡, ' + name + '!' : 'OlÃ¡!';
+  const medicine = sanitizeText_(medicineName) || 'seu medicamento';
+  const forma = normalizeFormaRecebimento_(formaRecebimento);
+
+  if (forma === FORMAS_RECEBIMENTO.RETIRA_LOJA) {
+    return [
+      greeting +
+        ' Passando para avisar que o medicamento ' +
+        medicine +
+        ' jÃ¡ chegou aqui na Drogarias Conceito e estÃ¡ separado para retirada na loja.',
+      '',
+      'Pode vir buscar! Responda essa mensagem se precisar de entrega.',
+    ].join('\n');
+  }
+
+  if (forma === FORMAS_RECEBIMENTO.ENTREGA_ENDERECO) {
+    return [
+      greeting +
+        ' Passando para avisar que o medicamento ' +
+        medicine +
+        ' jÃ¡ chegou aqui na Drogarias Conceito e estÃ¡ separado para entrega no endereÃ§o cadastrado.',
+      '',
+      'Podemos seguir com a entrega?',
+    ].join('\n');
+  }
+
+  return [
+    greeting +
+      ' Passando para avisar que o medicamento ' +
+      medicine +
+      ' jÃ¡ chegou aqui na Drogarias Conceito e estÃ¡ separado para vocÃª.',
+    '',
+    'VocÃª prefere retirar na loja ou quer que a gente combine a entrega? Obrigado!',
   ].join('\n');
 }
 
