@@ -3,6 +3,8 @@
 - **Branch:** `feat/handover-auth-pin-v41-recebimento`
 - **Causa:** em `renderQueue()`, havia `chunks.push(...)` (e `row` inexistente nesse escopo) antes de qualquer `var chunks`; isso quebrava a lista de Medicamentos no Web App.
 - **Correção:** remover o bloco errado de `renderQueue()`; exibir **Recebimento** (`metaFormaRecebimento`) apenas em `buildQueueMetaRowsHtml_()`, após `var chunks = []`, no ramo encomenda.
+- **Git:** commit `2ec5fe1` na branch `feat/handover-auth-pin-v41-recebimento`.
+- **Apps Script:** versão **46** publicada no deployment `AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw` (URL `/exec` oficial). Smoke operacional (login, nova encomenda, planilha, WhatsApp visual, menu ⋯) deve ser revalidado na loja.
 
 ---
 
