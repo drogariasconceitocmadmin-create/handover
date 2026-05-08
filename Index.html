@@ -4043,8 +4043,37 @@
         return digits.length === 10 || digits.length === 11 ? '55' + digits : '';
       }
 
+      var FORMAT_NOME_PARTICULAS_CLIENT_ = { de: true, da: true, do: true, das: true, dos: true };
+
+      /** Nome do cliente só para texto de WhatsApp no browser (não altera cadastro). */
+      function formatNomeClienteMensagem_(nome) {
+        var s = String(nome || '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (!s) {
+          return '';
+        }
+        var parts = s.split(' ');
+        return parts
+          .map(function (word, i) {
+            if (!word) {
+              return '';
+            }
+            var lower = word.toLocaleLowerCase('pt-BR');
+            if (i > 0 && FORMAT_NOME_PARTICULAS_CLIENT_[lower]) {
+              return lower;
+            }
+            if (word.length === 1) {
+              return word.toLocaleUpperCase('pt-BR');
+            }
+            return word.charAt(0).toLocaleUpperCase('pt-BR') + word.slice(1).toLocaleLowerCase('pt-BR');
+          })
+          .filter(Boolean)
+          .join(' ');
+      }
+
       function buildWhatsAppMessageClientLegacy_(clientName, medicineName) {
-        var name = String(clientName || '').trim() || 'cliente';
+        var name = formatNomeClienteMensagem_(clientName) || 'Cliente';
         var medicine = String(medicineName || '').trim() || 'informado';
         return [
           'Olá, ' + name + '. Seu medicamento ' + medicine + ' chegou na Drogarias Conceito.',
@@ -4056,46 +4085,8 @@
       }
 
       function buildWhatsAppMessageClient_(clientName, medicineName, formaRecebimento) {
-        var name = String(clientName || '').trim();
-        var greeting = name ? 'OlÃ¡, ' + name + '!' : 'OlÃ¡!';
-        var medicine = String(medicineName || '').trim() || 'seu medicamento';
-        var forma = String(formaRecebimento || '').trim();
-
-        if (forma === 'Retira na loja') {
-          return [
-            greeting +
-              ' Passando para avisar que o medicamento ' +
-              medicine +
-              ' jÃ¡ chegou aqui na Drogarias Conceito e estÃ¡ separado para retirada na loja.',
-            '',
-            'Pode vir buscar! Responda essa mensagem se precisar de entrega.',
-          ].join('\n');
-        }
-
-        if (forma === 'Entregar no endereÃ§o cadastrado') {
-          return [
-            greeting +
-              ' Passando para avisar que o medicamento ' +
-              medicine +
-              ' jÃ¡ chegou aqui na Drogarias Conceito e estÃ¡ separado para entrega no endereÃ§o cadastrado.',
-            '',
-            'Podemos seguir com a entrega?',
-          ].join('\n');
-        }
-
-        return [
-          greeting +
-            ' Passando para avisar que o medicamento ' +
-            medicine +
-            ' jÃ¡ chegou aqui na Drogarias Conceito e estÃ¡ separado para vocÃª.',
-          '',
-          'VocÃª prefere retirar na loja ou quer que a gente combine a entrega? Obrigado!',
-        ].join('\n');
-      }
-
-      function buildWhatsAppMessageClient_(clientName, medicineName, formaRecebimento) {
-        var name = String(clientName || '').trim();
-        var greeting = name ? 'Ol\u00e1, ' + name + '!' : 'Ol\u00e1!';
+        var nameFmt = formatNomeClienteMensagem_(clientName);
+        var greeting = nameFmt ? 'Ol\u00e1, ' + nameFmt + '!' : 'Ol\u00e1!';
         var medicine = String(medicineName || '').trim() || 'seu medicamento';
         var forma = String(formaRecebimento || '').trim();
 
