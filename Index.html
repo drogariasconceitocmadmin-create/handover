@@ -863,6 +863,78 @@
         border-radius: var(--radius-sm);
       }
 
+      .card-detail-sheet {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .cd-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .cd-header-title {
+        margin: 0;
+        font-size: 1.12rem;
+        font-weight: 750;
+        line-height: 1.3;
+        color: var(--text);
+      }
+
+      .cd-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .cd-badge {
+        display: inline-flex;
+        align-items: center;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 5px 11px;
+        border-radius: 999px;
+        background: rgba(0, 75, 199, 0.1);
+        color: var(--brand-blue);
+        border: 1px solid rgba(0, 75, 199, 0.2);
+      }
+
+      .cd-badge.cd-badge-status {
+        background: rgba(16, 108, 70, 0.1);
+        color: #0d5a3a;
+        border-color: rgba(16, 108, 70, 0.22);
+      }
+
+      .cd-section {
+        margin: 0;
+      }
+
+      .cd-section-title {
+        margin: 0 0 10px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+
+      .cd-grid {
+        margin: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+        gap: 12px 18px;
+      }
+
+      @media (max-width: 520px) {
+        .cd-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
       .card-detail-body dl {
         margin: 0;
         display: grid;
@@ -4883,6 +4955,126 @@
         return lines.length ? '\n\n' + lines.join('\n') : '';
       }
 
+      function detailFieldNonEmpty_(v) {
+        if (v === null || v === undefined) {
+          return false;
+        }
+        var s = String(v).trim();
+        return s !== '' && s !== '-';
+      }
+
+      function detailMedicamentoRow_(label, value) {
+        if (!detailFieldNonEmpty_(value)) {
+          return '';
+        }
+        return (
+          '<div class="detail-row"><dt>' +
+          escapeHtml(label) +
+          '</dt><dd>' +
+          escapeHtml(String(value).trim()) +
+          '</dd></div>'
+        );
+      }
+
+      function detailMedicamentoSection_(title, innerHtml) {
+        if (!innerHtml || !String(innerHtml).trim()) {
+          return '';
+        }
+        return (
+          '<section class="cd-section"><h3 class="cd-section-title">' +
+          escapeHtml(title) +
+          '</h3><div class="cd-grid">' +
+          innerHtml +
+          '</div></section>'
+        );
+      }
+
+      function buildMedicamentoDetailSheetHtml_(raw, queueItem) {
+        var tipoLow = String((raw && raw.Tipo) || (queueItem && queueItem.medTipo) || '')
+          .trim()
+          .toLowerCase();
+        var tipoLabel =
+          tipoLow === 'falta' ? 'Falta' : tipoLow === 'encomenda' ? 'Encomenda' : String((raw && raw.Tipo) || '').trim() || '—';
+        var statusLbl =
+          (queueItem && queueItem.statusLabel) || String((raw && raw.Status) || '').trim() || '—';
+        var medNome = String((raw && raw.Medicamento) || (queueItem && queueItem.title) || 'Medicamento').trim();
+
+        var head =
+          '<header class="cd-header">' +
+          '<p class="cd-header-title">' +
+          escapeHtml(medNome) +
+          '</p>' +
+          '<div class="cd-badges">' +
+          '<span class="cd-badge">' +
+          escapeHtml('Tipo: ' + tipoLabel) +
+          '</span>' +
+          '<span class="cd-badge cd-badge-status">' +
+          escapeHtml('Status: ' + statusLbl) +
+          '</span>' +
+          '</div></header>';
+
+        var secCliente = '';
+        if (tipoLow === 'encomenda') {
+          secCliente =
+            detailMedicamentoRow_('Cliente', raw.Cliente) +
+            detailMedicamentoRow_('Telefone', raw.Telefone) +
+            detailMedicamentoRow_(
+              'Pré-pago',
+              raw.Pre_Pago === true ? 'Sim' : raw.Pre_Pago === false ? 'Não' : ''
+            ) +
+            detailMedicamentoRow_(
+              'Preço',
+              raw.Preco_Venda !== '' && raw.Preco_Venda !== null && raw.Preco_Venda !== undefined
+                ? formatCurrencyBr_(raw.Preco_Venda)
+                : ''
+            );
+        }
+
+        var secCompra =
+          detailMedicamentoRow_('Fornecedor', raw.Fornecedor_Compra) +
+          detailMedicamentoRow_('Código compra', raw.Codigo_Compra_Fornecedor) +
+          detailMedicamentoRow_('Forma recebimento', raw.Forma_Recebimento) +
+          detailMedicamentoRow_('Previsão', raw.Previsao_Entrega ? formatDate(raw.Previsao_Entrega) : '');
+
+        var criado = raw.Timestamp ? formatDateTime(raw.Timestamp) : '';
+        var ultimaLinha = '';
+        if (detailFieldNonEmpty_(raw.Ultima_Acao_Por)) {
+          ultimaLinha = String(raw.Ultima_Acao_Por).trim();
+        }
+        if (raw.Ultima_Acao_Em) {
+          ultimaLinha += (ultimaLinha ? ' · ' : '') + formatDateTime(raw.Ultima_Acao_Em);
+        }
+
+        var secOp =
+          detailMedicamentoRow_('Atendente', raw.Atendente) +
+          detailMedicamentoRow_('Criado em', criado) +
+          detailMedicamentoRow_('Última ação', ultimaLinha) +
+          detailMedicamentoRow_('Telefone', tipoLow === 'falta' ? raw.Telefone : '');
+
+        var secWa =
+          detailMedicamentoRow_('Status aviso', raw.Status_Aviso_WhatsApp) +
+          detailMedicamentoRow_('Data aviso', raw.Data_Aviso_WhatsApp ? formatDateTime(raw.Data_Aviso_WhatsApp) : '');
+
+        var secAudit =
+          detailMedicamentoRow_('Revertido por', raw.Revertido_Por) +
+          detailMedicamentoRow_('Data reversão', raw.Data_Reversao ? formatDateTime(raw.Data_Reversao) : '') +
+          detailMedicamentoRow_('Motivo reversão', raw.Motivo_Reversao) +
+          detailMedicamentoRow_('Cancelado por', raw.Cancelado_Por) +
+          detailMedicamentoRow_('Data cancelamento', raw.Data_Cancelamento ? formatDateTime(raw.Data_Cancelamento) : '') +
+          detailMedicamentoRow_('Motivo cancelamento', raw.Motivo_Cancelamento);
+
+        var html =
+          '<div class="card-detail-sheet">' +
+          head +
+          detailMedicamentoSection_('Cliente', secCliente) +
+          detailMedicamentoSection_('Compra / recebimento', secCompra) +
+          detailMedicamentoSection_('Operação', secOp) +
+          detailMedicamentoSection_('WhatsApp', secWa) +
+          detailMedicamentoSection_('Auditoria', secAudit) +
+          '</div>';
+        return html;
+      }
+
       function cardMoreVerDetalhes_(id) {
         closeAllCardMenus_();
         var item = findQueueItemById_(id);
@@ -4893,6 +5085,16 @@
         if (item.type === 'historico') {
           openHistoricoDetailById_(id);
           return;
+        }
+        if (item.type === 'medicamento') {
+          var rawMed = (dashboardData.medicamentos || []).find(function (m) {
+            return m.ID === id;
+          });
+          if (rawMed) {
+            var titleMed = String(rawMed.Medicamento || item.title || 'Medicamento').trim();
+            openCardDetailOverlay_(titleMed, buildMedicamentoDetailSheetHtml_(rawMed, item), { isHtml: true });
+            return;
+          }
         }
         var extras = buildCardDetailExtras_(item);
         var body =
