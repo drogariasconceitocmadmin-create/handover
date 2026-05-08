@@ -3839,6 +3839,44 @@ function buildWhatsAppMessage_(clientName, medicineName, formaRecebimento) {
   ].join('\n');
 }
 
+function buildWhatsAppMessage_(clientName, medicineName, formaRecebimento) {
+  const name = sanitizeText_(clientName);
+  const greeting = name ? 'Ol\u00e1, ' + name + '!' : 'Ol\u00e1!';
+  const medicine = sanitizeText_(medicineName) || 'seu medicamento';
+  const forma = normalizeFormaRecebimento_(formaRecebimento);
+
+  if (forma === FORMAS_RECEBIMENTO.RETIRA_LOJA) {
+    return [
+      greeting +
+        ' Passando para avisar que o medicamento ' +
+        medicine +
+        ' j\u00e1 chegou aqui na Drogarias Conceito e est\u00e1 separado para retirada na loja.',
+      '',
+      'Pode vir buscar! Responda essa mensagem se precisar de entrega.',
+    ].join('\n');
+  }
+
+  if (forma === FORMAS_RECEBIMENTO.ENTREGA_ENDERECO) {
+    return [
+      greeting +
+        ' Passando para avisar que o medicamento ' +
+        medicine +
+        ' j\u00e1 chegou aqui na Drogarias Conceito e est\u00e1 separado para entrega no endere\u00e7o cadastrado.',
+      '',
+      'Podemos seguir com a entrega?',
+    ].join('\n');
+  }
+
+  return [
+    greeting +
+      ' Passando para avisar que o medicamento ' +
+      medicine +
+      ' j\u00e1 chegou aqui na Drogarias Conceito e est\u00e1 separado para voc\u00ea.',
+    '',
+    'Voc\u00ea prefere retirar na loja ou quer que a gente combine a entrega? Obrigado!',
+  ].join('\n');
+}
+
 function writeHeaderRow_(sheet, expectedHeaders, targetColumns) {
   const totalColumns = Math.max(targetColumns, expectedHeaders.length, 1);
   const values = new Array(totalColumns).fill('');

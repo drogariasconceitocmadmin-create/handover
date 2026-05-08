@@ -1747,7 +1747,7 @@
         border: 1px solid rgba(227, 234, 245, 0.95);
         background: var(--surface);
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 14px 34px rgba(15, 23, 42, 0.05);
-        overflow: hidden;
+        overflow: visible;
         transition: box-shadow 0.18s ease;
       }
 
@@ -2847,7 +2847,7 @@
                 <select id="formaRecebimento" name="formaRecebimento">
                   <option value="A combinar">A combinar</option>
                   <option value="Retira na loja">Retira na loja</option>
-                  <option value="Entregar no endereÃ§o cadastrado">Entregar no endereÃ§o cadastrado</option>
+                  <option value="Entregar no endere&#x00E7;o cadastrado">Entregar no endere&#x00E7;o cadastrado</option>
                 </select>
               </div>
 
@@ -4075,6 +4075,44 @@
         ].join('\n');
       }
 
+      function buildWhatsAppMessageClient_(clientName, medicineName, formaRecebimento) {
+        var name = String(clientName || '').trim();
+        var greeting = name ? 'Ol\u00e1, ' + name + '!' : 'Ol\u00e1!';
+        var medicine = String(medicineName || '').trim() || 'seu medicamento';
+        var forma = String(formaRecebimento || '').trim();
+
+        if (forma === 'Retira na loja') {
+          return [
+            greeting +
+              ' Passando para avisar que o medicamento ' +
+              medicine +
+              ' j\u00e1 chegou aqui na Drogarias Conceito e est\u00e1 separado para retirada na loja.',
+            '',
+            'Pode vir buscar! Responda essa mensagem se precisar de entrega.',
+          ].join('\n');
+        }
+
+        if (forma === 'Entregar no endere\u00e7o cadastrado') {
+          return [
+            greeting +
+              ' Passando para avisar que o medicamento ' +
+              medicine +
+              ' j\u00e1 chegou aqui na Drogarias Conceito e est\u00e1 separado para entrega no endere\u00e7o cadastrado.',
+            '',
+            'Podemos seguir com a entrega?',
+          ].join('\n');
+        }
+
+        return [
+          greeting +
+            ' Passando para avisar que o medicamento ' +
+            medicine +
+            ' j\u00e1 chegou aqui na Drogarias Conceito e est\u00e1 separado para voc\u00ea.',
+          '',
+          'Voc\u00ea prefere retirar na loja ou quer que a gente combine a entrega? Obrigado!',
+        ].join('\n');
+      }
+
       function syncMedicamentoAtendenteFromOperador_() {
         if (!medicineFields || medicineFields.classList.contains('hidden')) {
           return;
@@ -4566,6 +4604,7 @@
 
         var mergedBase = buildWorkQueueItems(dashboardData);
         mergedBase = filterItemsByMainTab_(mergedBase);
+        mergedBase = applyMedicamentosSearch_(mergedBase);
 
         host.innerHTML =
           '<div class="filter-group">' +
@@ -8126,6 +8165,13 @@
               __syncState: 'syncing',
               __pendingSave: pendingCtx,
             });
+            activeMainTab = 'medicamentos';
+            activeQueueFilter = 'pendentes';
+            medQueueSearchQuery = '';
+            if (medQueueSearchInput) {
+              medQueueSearchInput.value = '';
+            }
+            postMainTabDomSync_();
           }
 
           closeFormModal_();
