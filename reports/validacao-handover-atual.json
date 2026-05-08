@@ -1,100 +1,108 @@
 {
   "projeto": "Handover - Drogarias Conceito",
-  "status_geral": "PARCIAL",
+  "status_geral": "FALHA",
   "pasta": "C:\\Users\\Marco\\Desktop\\Sis Drogaria\\Handover",
-  "branch_publicada": "feat/handover-auth-pin-v41-recebimento",
-  "commit_publicado": "8f9d037",
+  "branch": "feat/handover-auth-pin-v41-recebimento",
+  "commit_validado": "f627fc5",
   "scriptId": "1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd",
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
-  "versao_publicada": 44,
-  "rollback_feito": false,
+  "versao_publicada_para_teste": 45,
+  "rollback_feito": true,
+  "versao_ativa_apos_acao": 41,
   "pop_tocado": false,
   "pre_deploy": {
     "resultado": "OK",
     "branch": "feat/handover-auth-pin-v41-recebimento",
-    "head": "8f9d037",
+    "head": "f627fc5",
     "scriptId_handover": true,
     "pop_referenciado": false,
-    "sheet_clear": false,
+    "diff_principal_restrito": [
+      "Code.gs",
+      "Index.html"
+    ],
+    "sheet_clear_novo_no_diff": false,
     "deleteRow_novo_no_diff": false,
-    "saveData_medicamentos_por_cabecalho_real": true,
-    "selfTestEspelhoComprasRecebimento_presente": true,
-    "login_pin_presente": true,
-    "compras_medicamentos_preservado": true,
-    "campos_recebimento_presentes": true
+    "lockservice_novo_no_diff": false,
+    "polling_auto_refresh_novo_no_diff": false,
+    "sintaxe_code_gs": "OK",
+    "sintaxe_index_scripts": "OK"
   },
   "publicacao": {
     "clasp_status": "OK",
     "clasp_push": "OK",
-    "clasp_version": 44,
+    "clasp_version": 45,
     "clasp_deploy": "OK",
     "deployment_oficial_mantido": true,
     "url_oficial_mantida": true
   },
-  "smoke_p0_auth": {
-    "webapp_abriu": true,
-    "dashboard_sem_login_oculto": true,
-    "overlay_login_visivel": true,
-    "pin_errado": "OK",
-    "login_carlos_admin": "OK",
-    "header_nome_perfil": "OK - Carlos · admin",
-    "logout": "OK"
-  },
-  "smoke_p1_espelho": {
-    "panpharma": {
-      "registro": "CODEX_RECEB_HOTFIX_PANPHARMA_1778198890775",
-      "medicamentos": {
-        "Fornecedor_Compra": "Panpharma",
-        "Codigo_Compra_Fornecedor": "PX12345",
-        "Forma_Recebimento": "A combinar"
-      },
-      "compras_medicamentos": {
-        "Fornecedor_Compra": "Panpharma",
-        "Codigo_Compra_Fornecedor": "PX12345",
-        "Forma_Recebimento": "A combinar"
-      },
-      "resultado": "OK"
+  "smoke": {
+    "login_pin": {
+      "webapp_abriu": true,
+      "dashboard_bloqueado_sem_login": true,
+      "pin_errado": "OK",
+      "login_carlos_admin": "OK",
+      "logout": "INTERROMPIDO_APOS_FALHA_P0"
     },
-    "santa_cruz": {
-      "registro": "CODEX_RECEB_HOTFIX_SANTACRUZ_1778199080510",
-      "medicamentos": {
-        "Fornecedor_Compra": "Santa Cruz",
-        "Codigo_Compra_Fornecedor": "SC98765",
-        "Forma_Recebimento": "Retira na loja"
-      },
-      "compras_medicamentos": {
-        "Fornecedor_Compra": "Santa Cruz",
-        "Codigo_Compra_Fornecedor": "SC98765",
-        "Forma_Recebimento": "Retira na loja"
-      },
-      "resultado": "OK"
+    "nova_encomenda_pos_save": {
+      "resultado": "FALHA",
+      "registro_tentado": "CODEX_P0_DIRECT_1778273820684",
+      "apareceu_no_front": false,
+      "erro_console": [
+        "chunks is not defined",
+        "Gs"
+      ],
+      "causa_provavel": "Index.html chama chunks.push em renderMedicationQueue_ antes da declaracao de chunks."
+    },
+    "filtros_medicamentos": {
+      "resultado": "FALHA",
+      "motivo": "Renderizacao interrompida por chunks is not defined."
+    },
+    "compras_medicamentos": {
+      "resultado": "NAO_VALIDADO",
+      "motivo": "Rollback acionado antes da validacao da planilha."
+    },
+    "whatsapp_encoding": {
+      "resultado": "PARCIAL",
+      "evidencia": "Select Forma_Recebimento exibiu texto correto no DOM; WhatsApp nao foi validado fim a fim."
+    },
+    "menu_contextual": {
+      "resultado": "NAO_VALIDADO",
+      "motivo": "Fluxo interrompido antes de abrir menu de card validado."
+    },
+    "cancelamento": {
+      "resultado": "NAO_VALIDADO",
+      "motivo": "Fluxo interrompido antes do teste de cancelamento."
+    },
+    "regressao": {
+      "resultado": "NAO_VALIDADO_COMPLETO",
+      "motivo": "Criterio de rollback atingido."
     }
   },
-  "smoke_p2": {
-    "falta_sem_forma_recebimento": "OK",
-    "marcar_comprado": "OK",
-    "whatsapp_a_combinar": "OK - URL gerada sem envio real",
-    "whatsapp_retira_loja": "OK - URL gerada sem envio real",
-    "cancelamento": "OK",
-    "cancelado_sem_stamp_inclinado": "OK - validacao estatica",
-    "checklist": "OK",
-    "historico": "NAO_VALIDADO_AUTOMACAO"
+  "rollback": {
+    "executado": true,
+    "versao": 41,
+    "descricao": "Rollback Handover v41 falha smoke P0 f627fc5"
   },
-  "registros_criados": [
-    "CODEX_RECEB_HOTFIX_PANPHARMA_1778198890775",
-    "CODEX_RECEB_HOTFIX_DEBUG_1778198959787",
-    "CODEX_RECEB_HOTFIX_SANTACRUZ_1778199080510",
-    "CODEX_RECEB_HOTFIX_FALTA_1778199080510"
-  ],
   "falhas": {
-    "criticas": [],
-    "medias": [
-      "Historico nao foi validado pela automacao nesta rodada."
+    "criticas": [
+      {
+        "problema": "Nova Encomenda nao apareceu apos salvar.",
+        "evidencia": "Console com chunks is not defined; item CODEX_P0_DIRECT_1778273820684 ausente no front.",
+        "arquivo_funcao_provavel": "Index.html / renderMedicationQueue_"
+      },
+      {
+        "problema": "Filtros/lista de Medicamentos nao puderam ser aprovados.",
+        "evidencia": "Renderizacao interrompida por chunks is not defined.",
+        "arquivo_funcao_provavel": "Index.html / renderMedicationQueue_"
+      }
     ],
-    "leves": [
-      "Mensagens WhatsApp validadas por URL/retorno sem envio real; acentuacao aparece afetada pela codificacao visual do Apps Script/terminal."
-    ]
+    "medias": [
+      "WhatsApp encoding nao validado fim a fim.",
+      "Menu contextual nao validado.",
+      "Cancelamento nao validado."
+    ],
+    "leves": []
   },
-  "veredito": "Publicado com ressalvas. Hotfix P0/P1 de espelhamento aprovado em planilha real; v44 mantida publicada."
+  "veredito": "Publicacao reprovada. Rollback para v41 executado."
 }
