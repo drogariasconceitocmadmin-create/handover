@@ -6379,9 +6379,6 @@
           if (item.syncState === 'error') {
             cardClass += ' sync-error';
           }
-          if (item.medTipo === 'encomenda') {
-            chunks.push(row('Recebimento', item.metaFormaRecebimento));
-          }
           if (item.statusKey === 'cancelado') {
             cardClass += ' is-cancelado';
           }
@@ -6589,6 +6586,7 @@
           if (item.medTipo === 'encomenda') {
             chunks.push(row('Cliente', item.metaCliente));
             chunks.push(row('Telefone', item.metaTelefone));
+            chunks.push(row('Recebimento', item.metaFormaRecebimento));
           }
           chunks.push(row('Atendente', item.metaAtendente));
           chunks.push(row('Previsão', item.forecast));

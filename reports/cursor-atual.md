@@ -1,3 +1,11 @@
+## Hotfix P0 — `chunks is not defined` (maio/2026)
+
+- **Branch:** `feat/handover-auth-pin-v41-recebimento`
+- **Causa:** em `renderQueue()`, havia `chunks.push(...)` (e `row` inexistente nesse escopo) antes de qualquer `var chunks`; isso quebrava a lista de Medicamentos no Web App.
+- **Correção:** remover o bloco errado de `renderQueue()`; exibir **Recebimento** (`metaFormaRecebimento`) apenas em `buildQueueMetaRowsHtml_()`, após `var chunks = []`, no ramo encomenda.
+
+---
+
 ## Parte 4 — Login rápido + PIN sem travar + gestão Usuarios_Handover (maio/2026)
 
 - **Branch:** `feat/handover-auth-pin-v41`
