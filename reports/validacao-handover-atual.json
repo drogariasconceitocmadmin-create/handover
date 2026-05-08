@@ -1,88 +1,100 @@
 {
   "projeto": "Handover - Drogarias Conceito",
-  "status_geral": "FALHA",
+  "status_geral": "PARCIAL",
   "pasta": "C:\\Users\\Marco\\Desktop\\Sis Drogaria\\Handover",
-  "branch_publicada_para_teste": "feat/handover-auth-pin-v41-recebimento",
-  "commit_publicado_para_teste": "5479efe",
+  "branch_publicada": "feat/handover-auth-pin-v41-recebimento",
+  "commit_publicado": "8f9d037",
   "scriptId": "1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd",
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
-  "versao_publicada_para_teste": 43,
-  "versao_restaurada": 41,
-  "rollback_feito": true,
+  "versao_publicada": 44,
+  "rollback_feito": false,
   "pop_tocado": false,
   "pre_deploy": {
     "resultado": "OK",
     "branch": "feat/handover-auth-pin-v41-recebimento",
-    "head": "5479efe",
+    "head": "8f9d037",
     "scriptId_handover": true,
     "pop_referenciado": false,
     "sheet_clear": false,
     "deleteRow_novo_no_diff": false,
+    "saveData_medicamentos_por_cabecalho_real": true,
+    "selfTestEspelhoComprasRecebimento_presente": true,
     "login_pin_presente": true,
-    "pin_novo_temporario_presente": true,
-    "aplicar_pins_temporarios_presente": true,
     "compras_medicamentos_preservado": true,
-    "cancelMedicationRequest_preservado": true,
-    "fornecedor_codigo_presente": true,
-    "forma_recebimento_presente": true,
-    "mensagens_whatsapp_por_forma": true
+    "campos_recebimento_presentes": true
   },
   "publicacao": {
     "clasp_status": "OK",
     "clasp_push": "OK",
-    "clasp_version": 43,
+    "clasp_version": 44,
     "clasp_deploy": "OK",
     "deployment_oficial_mantido": true,
     "url_oficial_mantida": true
   },
-  "smoke": {
+  "smoke_p0_auth": {
     "webapp_abriu": true,
     "dashboard_sem_login_oculto": true,
     "overlay_login_visivel": true,
-    "pin_errado": "OK - exibiu erro e saiu de Entrando...",
+    "pin_errado": "OK",
     "login_carlos_admin": "OK",
     "header_nome_perfil": "OK - Carlos · admin",
-    "fornecedor_codigo": "FALHA - Compras_Medicamentos nao recebeu fornecedor/codigo corretamente",
-    "forma_recebimento": "PARCIAL - salva em Medicamentos e aparece em Compras, mas falha de espelhamento impediu aprovacao",
-    "mensagens_whatsapp": "NAO_CONCLUIDO",
-    "cancelamento": "NAO_CONCLUIDO",
-    "checklist": "NAO_CONCLUIDO",
-    "historico": "NAO_CONCLUIDO"
+    "logout": "OK"
   },
-  "evidencias": {
-    "medicamentos": {
-      "registro": "CODEX_RECEB_AC_1778197198732",
-      "Fornecedor_Compra": "Panpharma",
-      "Codigo_Compra_Fornecedor": "COD-PAN-1778197198732",
-      "Forma_Recebimento": "A combinar"
+  "smoke_p1_espelho": {
+    "panpharma": {
+      "registro": "CODEX_RECEB_HOTFIX_PANPHARMA_1778198890775",
+      "medicamentos": {
+        "Fornecedor_Compra": "Panpharma",
+        "Codigo_Compra_Fornecedor": "PX12345",
+        "Forma_Recebimento": "A combinar"
+      },
+      "compras_medicamentos": {
+        "Fornecedor_Compra": "Panpharma",
+        "Codigo_Compra_Fornecedor": "PX12345",
+        "Forma_Recebimento": "A combinar"
+      },
+      "resultado": "OK"
     },
-    "compras_medicamentos": {
-      "registro": "CODEX_RECEB_AC_1778197198732",
-      "Fornecedor_Compra": "Nao informado",
-      "Codigo_Compra_Fornecedor": "",
-      "Forma_Recebimento": "A combinar",
-      "observacao": "Leitura indicou possivel desalinhamento de colunas ao redor de cancelamento/forma de recebimento."
+    "santa_cruz": {
+      "registro": "CODEX_RECEB_HOTFIX_SANTACRUZ_1778199080510",
+      "medicamentos": {
+        "Fornecedor_Compra": "Santa Cruz",
+        "Codigo_Compra_Fornecedor": "SC98765",
+        "Forma_Recebimento": "Retira na loja"
+      },
+      "compras_medicamentos": {
+        "Fornecedor_Compra": "Santa Cruz",
+        "Codigo_Compra_Fornecedor": "SC98765",
+        "Forma_Recebimento": "Retira na loja"
+      },
+      "resultado": "OK"
     }
   },
-  "rollback": {
-    "feito": true,
-    "versao": 41,
-    "motivo": "Compras_Medicamentos falhou ao receber fornecedor/codigo por ID."
+  "smoke_p2": {
+    "falta_sem_forma_recebimento": "OK",
+    "marcar_comprado": "OK",
+    "whatsapp_a_combinar": "OK - URL gerada sem envio real",
+    "whatsapp_retira_loja": "OK - URL gerada sem envio real",
+    "cancelamento": "OK",
+    "cancelado_sem_stamp_inclinado": "OK - validacao estatica",
+    "checklist": "OK",
+    "historico": "NAO_VALIDADO_AUTOMACAO"
   },
   "registros_criados": [
-    "CODEX_RECEB_AC_1778197032166",
-    "CODEX_RECEB_AC_1778197117755",
-    "CODEX_RECEB_AC_1778197198732"
+    "CODEX_RECEB_HOTFIX_PANPHARMA_1778198890775",
+    "CODEX_RECEB_HOTFIX_DEBUG_1778198959787",
+    "CODEX_RECEB_HOTFIX_SANTACRUZ_1778199080510",
+    "CODEX_RECEB_HOTFIX_FALTA_1778199080510"
   ],
   "falhas": {
-    "criticas": [
-      "Compras_Medicamentos nao recebeu corretamente Fornecedor_Compra e Codigo_Compra_Fornecedor ao espelhar Encomenda por ID."
-    ],
+    "criticas": [],
     "medias": [
-      "Smoke funcional completo nao concluido por rollback obrigatorio."
+      "Historico nao foi validado pela automacao nesta rodada."
     ],
-    "leves": []
+    "leves": [
+      "Mensagens WhatsApp validadas por URL/retorno sem envio real; acentuacao aparece afetada pela codificacao visual do Apps Script/terminal."
+    ]
   },
-  "veredito": "Nao aprovado. v43 foi revertida para v41 estavel."
+  "veredito": "Publicado com ressalvas. Hotfix P0/P1 de espelhamento aprovado em planilha real; v44 mantida publicada."
 }

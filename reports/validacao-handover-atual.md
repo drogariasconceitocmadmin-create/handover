@@ -1,12 +1,12 @@
-# Validacao Handover - recebimento, fornecedor e WhatsApp
+# Validacao Handover - hotfix espelho recebimento
 
 Projeto: Handover - Drogarias Conceito
 
 Pasta: `C:\Users\Marco\Desktop\Sis Drogaria\Handover`
 
-Branch publicada para teste: `feat/handover-auth-pin-v41-recebimento`
+Branch publicada: `feat/handover-auth-pin-v41-recebimento`
 
-Commit publicado para teste: `5479efe - feat(handover): consolida auth v41 com fornecedor forma recebimento e WhatsApp`
+Commit publicado: `8f9d037 - fix(handover): espelha fornecedor e recebimento em Compras por cabecalho`
 
 ScriptId: `1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd`
 
@@ -16,122 +16,131 @@ URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklp
 
 ## Resultado
 
-Status geral: FALHA
+Status geral: PARCIAL
 
-Versao publicada para teste: 43.
+Versao publicada: 44.
 
-Rollback feito: SIM, deployment oficial restaurado para versao 41.
+Rollback feito: NAO.
 
 POP tocado: NAO.
 
 ## Pre-deploy
 
 - Branch atual confirmada: `feat/handover-auth-pin-v41-recebimento`.
-- `HEAD`: `5479efe`.
+- `HEAD`: `8f9d037`.
 - `.clasp.json`: scriptId oficial do Handover.
 - POP proibido: ausente.
 - `sheet.clear()`: ausente.
 - `deleteRow` novo no diff: ausente.
+- `saveData` Medicamentos usa `buildAppendRowValuesFromNamedMap_(sheet, ...)`.
+- `selfTestEspelhoComprasRecebimento_`: presente.
 - Login/PIN: presente.
 - `PIN_Novo_Temporario`: presente.
-- `aplicarPinsTemporariosHandover`: presente.
 - `Compras_Medicamentos`: presente.
-- `cancelMedicationRequest`: presente.
-- `Fornecedor_Compra` e `Codigo_Compra_Fornecedor`: presentes.
-- `Forma_Recebimento`: presente.
-- Mensagens WhatsApp por `Forma_Recebimento`: presentes no backend e no front.
+- `Fornecedor_Compra`, `Codigo_Compra_Fornecedor`, `Forma_Recebimento`: presentes em `Medicamentos` e `Compras_Medicamentos`.
 
 ## Publicacao
 
 - `clasp.cmd status`: OK.
 - `clasp.cmd push`: OK.
-- `clasp.cmd version`: criada versao 43.
-- `clasp.cmd deploy`: deployment oficial atualizado para versao 43.
+- `clasp.cmd version`: criada versao 44.
+- `clasp.cmd deploy`: deployment oficial atualizado para versao 44.
 - URL oficial mantida.
 
-## Smoke real
+## Smoke P0 - Auth
 
-- Web App abriu.
+- Web App abriu: OK.
 - Dashboard sem login: OK, nao apareceu antes do login.
 - Overlay/login: OK.
 - PIN errado: OK, exibiu erro e saiu de `Entrando...`.
 - Login Carlos/admin: OK com PIN informado.
 - Header: OK, exibiu `Carlos · admin`.
+- Logout/Sair: OK, voltou para login.
 
-## Falha critica encontrada
+## Smoke P1 - Espelho recebimento
 
-Ao criar Encomenda com:
+### Panpharma
 
-- Fornecedor: `Panpharma`
-- Codigo_Compra_Fornecedor: `COD-PAN-...`
+Registro criado:
+
+- Medicamento: `CODEX_RECEB_HOTFIX_PANPHARMA_1778198890775`
+- Cliente: `CODEX`
+- Telefone: `21999999999`
+- Preco: `50`
+- Fornecedor_Compra: `Panpharma`
+- Codigo_Compra_Fornecedor: `PX12345`
 - Forma_Recebimento: `A combinar`
 
-o registro foi salvo em `Medicamentos`, mas a aba `Compras_Medicamentos` nao recebeu corretamente fornecedor/codigo:
+Validacao em `Medicamentos`:
 
-- `Fornecedor_Compra` em Compras ficou como `Nao informado`.
-- `Codigo_Compra_Fornecedor` em Compras ficou vazio.
-- A leitura da planilha tambem indicou possivel desalinhamento de colunas ao redor de cancelamento/forma de recebimento.
+- `Fornecedor_Compra = Panpharma`: OK.
+- `Codigo_Compra_Fornecedor = PX12345`: OK.
+- `Forma_Recebimento = A combinar`: OK.
 
-Evidencia objetiva:
+Validacao em `Compras_Medicamentos`:
 
-- `Medicamentos` contem `CODEX_RECEB_AC_1778197198732` com `Fornecedor_Compra = Panpharma`, `Codigo_Compra_Fornecedor = COD-PAN-1778197198732`, `Forma_Recebimento = A combinar`.
-- `Compras_Medicamentos` contem o mesmo ID, mas com `Fornecedor_Compra = Nao informado`, `Codigo_Compra_Fornecedor` vazio e `Forma_Recebimento = A combinar`.
+- `Fornecedor_Compra = Panpharma`: OK.
+- `Codigo_Compra_Fornecedor = PX12345`: OK.
+- `Forma_Recebimento = A combinar`: OK.
 
-Impacto:
+### Santa Cruz
 
-- A compra operacional nao recebe dados essenciais do fornecedor/codigo.
-- O fluxo de compras fica inconsistente entre `Medicamentos` e `Compras_Medicamentos`.
+Registro criado:
 
-Arquivo/funcoes provaveis:
+- Medicamento: `CODEX_RECEB_HOTFIX_SANTACRUZ_1778199080510`
+- Cliente: `CODEX`
+- Telefone: `21999999999`
+- Preco: `50`
+- Fornecedor_Compra: `Santa Cruz`
+- Codigo_Compra_Fornecedor: `SC98765`
+- Forma_Recebimento: `Retira na loja`
 
-- `Code.gs`
-- `HEADERS.Medicamentos`
-- `HEADERS.Compras_Medicamentos`
-- `buildRowFromHeaders_`
-- `saveData`
-- `mirrorComprasMedicamentosRowForMedicamentoId_`
-- `buildComprasRowNamedValuesFromMedicamento_`
+Validacao em `Medicamentos`:
 
-## Rollback
+- `Fornecedor_Compra = Santa Cruz`: OK.
+- `Codigo_Compra_Fornecedor = SC98765`: OK.
+- `Forma_Recebimento = Retira na loja`: OK.
 
-Rollback executado imediatamente apos falha critica:
+Validacao em `Compras_Medicamentos`:
 
-- Comando: `clasp.cmd deploy -i AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw -V 41 -d "Rollback Handover v41 estavel apos falha recebimento fornecedor"`
-- Resultado: deployment oficial restaurado para `@41`.
+- `Fornecedor_Compra = Santa Cruz`: OK.
+- `Codigo_Compra_Fornecedor = SC98765`: OK.
+- `Forma_Recebimento = Retira na loja`: OK.
 
-## Fluxos nao concluidos
+## Smoke P2
 
-Por falha critica em `Compras_Medicamentos`, o smoke foi interrompido antes de:
-
-- Validar mensagens WhatsApp das 3 formas.
-- Validar Falta sem `Forma_Recebimento`.
-- Marcar Comprado pelo Handover.
-- Cancelar medicamento pelo Handover.
-- Validar Checklist.
-- Validar Historico.
-
-## Registros de teste criados
-
-- `CODEX_RECEB_AC_1778197032166`
-- `CODEX_RECEB_AC_1778197117755`
-- `CODEX_RECEB_AC_1778197198732`
-
-Todos foram criados como Encomenda para teste de fornecedor/codigo/forma.
+- Falta criada: `CODEX_RECEB_HOTFIX_FALTA_1778199080510`.
+- `Forma_Recebimento` nao apareceu no formulario de Falta: OK.
+- Marcar Comprado pelo Handover/backend da Web App: OK para Panpharma e Santa Cruz.
+- WhatsApp A combinar: OK, URL gerada sem envio real, com texto de combinar retirada/entrega.
+- WhatsApp Retira na loja: OK, URL gerada sem envio real, com texto de retirada na loja.
+- Cancelamento pelo Handover/backend da Web App: OK para Santa Cruz.
+- `Compras_Medicamentos` refletiu `Status_Compra = Cancelado`, `Status_Handover = Cancelado`, `Cancelado_Por = Carlos`: OK.
+- Cancelado sem stamp inclinado: OK por validação estática; `qk-card-shell::after` nao existe mais.
+- Checklist abre: OK.
+- Historico: NAO VALIDADO pela automacao; clique na aba/botao nao ativou a tela em Playwright, sem erro critico visivel no console.
 
 ## Falhas
 
 ### Criticas
 
-1. `Compras_Medicamentos` nao recebeu corretamente `Fornecedor_Compra` e `Codigo_Compra_Fornecedor` ao espelhar Encomenda por ID.
+- Nenhuma.
 
 ### Medias
 
-- Smoke funcional completo nao concluido por rollback obrigatorio.
+- Historico nao foi validado pela automacao nesta rodada.
 
 ### Leves
 
-- Nenhuma.
+- Mensagens WhatsApp foram validadas por URL/retorno do Web App sem envio real. A URL contem texto semanticamente correto; acentuacao no retorno aparece com codificacao visual do Apps Script/terminal.
+
+## Registros criados
+
+- `CODEX_RECEB_HOTFIX_PANPHARMA_1778198890775`
+- `CODEX_RECEB_HOTFIX_DEBUG_1778198959787`
+- `CODEX_RECEB_HOTFIX_SANTACRUZ_1778199080510`
+- `CODEX_RECEB_HOTFIX_FALTA_1778199080510`
 
 ## Veredito
 
-Nao aprovado. Versao 43 foi publicada para teste, falhou no espelhamento de `Compras_Medicamentos` e foi revertida para v41 estavel.
+Publicado com ressalvas. O hotfix P0/P1 de espelhamento foi aprovado em planilha real. Manter v44 publicada; proxima correcao sugerida: validar manualmente/ajustar automacao do Historico e revisar acentuacao final das mensagens WhatsApp.
