@@ -3,96 +3,137 @@
   "status_geral": "PARCIAL",
   "pasta": "C:\\Users\\Marco\\Desktop\\Sis Drogaria\\Handover",
   "branch": "feat/handover-auth-pin-v41-recebimento",
-  "commit_validado": "15682e8",
+  "commit_validado": "e6c2380",
   "scriptId": "1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd",
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
-  "versao_publicada": 47,
+  "spreadsheetId": "1tHDX3I5yVx2UioNki695UIoNxHjXxpxCuKZwv2l7Dv8",
+  "versao_publicada": 48,
   "rollback_feito": false,
-  "versao_ativa_apos_acao": 47,
+  "versao_ativa_apos_acao": 48,
   "pop_tocado": false,
-  "pre_deploy": {
+  "preflight": {
     "resultado": "OK",
     "branch": "feat/handover-auth-pin-v41-recebimento",
-    "head": "15682e8",
+    "head": "e6c2380",
     "scriptId_handover": true,
     "pop_referenciado": false,
     "sheet_clear_novo_no_diff": false,
     "deleteRow_novo_no_diff": false,
     "login_pin_presente": true,
     "compras_medicamentos_presente": true,
-    "processarStatusCompraPorIdHandover_": true,
-    "formatNomeClienteMensagem_": true,
+    "formatNomeClienteMensagem_index": true,
+    "buildWhatsAppMessageClient_sem_mojibake": true,
     "sintaxe_code_gs": "OK",
     "sintaxe_index_scripts": "OK"
   },
   "publicacao": {
     "clasp_status": "OK",
     "clasp_push": "OK",
-    "clasp_version": 47,
+    "clasp_version": 48,
     "clasp_deploy": "OK",
     "deployment_oficial_mantido": true,
     "url_oficial_mantida": true
   },
   "smoke": {
-    "login_pin": "OK",
-    "atualizar_agora": {
-      "resultado": "OK_COM_OBSERVACAO",
-      "durante": "Atualizando...",
-      "depois": "Atualizar agora",
-      "tempo_aproximado_segundos": "15-20"
+    "login_pin": {
+      "resultado": "OK",
+      "overlay_login": true,
+      "pin_errado_sem_liberacao": true,
+      "login_carlos_admin": true,
+      "logout": true
     },
     "nova_encomenda": {
       "resultado": "OK",
-      "medicamento": "TESTE_V46_WHATSAPP_1778281012098",
-      "cliente": "maria clara",
-      "fornecedor": "Panpharma",
-      "codigo": "V46COD",
-      "forma_recebimento": "A combinar",
-      "apareceu_no_front": true,
-      "medicamentos_sheet": true,
-      "compras_medicamentos_sheet": true
+      "registros": [
+        "CODEX_V48_ENCOMENDA",
+        "CODEX_V48_RETIRA",
+        "CODEX_V48_ENTREGA"
+      ],
+      "apareceu_handover": true,
+      "apareceu_medicamentos_sheet": true,
+      "apareceu_compras_medicamentos": true
     },
-    "whatsapp_capitalizacao": {
-      "resultado": "FALHA_MEDIA",
+    "compras_medicamentos": {
+      "resultado": "OK",
+      "fornecedor_codigo_forma": true,
+      "status_compra_inicial": "Pendente de compra"
+    },
+    "whatsapp": {
+      "resultado": "OK",
+      "capitalizacao": [
+        "Maria Clara",
+        "Ana Paula",
+        "Joao da Silva"
+      ],
+      "acentuacao": true,
       "sem_mojibake": true,
-      "observado": "Olá, maria clara!",
-      "esperado": "Olá, Maria Clara!"
+      "formas": {
+        "A combinar": "OK",
+        "Retira na loja": "OK",
+        "Entregar no endereço cadastrado": "OK"
+      }
     },
     "reversao_cancelado_planilha": {
-      "resultado": "NAO_VALIDADO_POR_PERMISSAO",
-      "api_sheets": "HTTP 403",
-      "ui_sheets": "exigiu login",
+      "resultado": "NAO_VALIDADO_POR_LIMITACAO_TECNICA",
+      "motivo": "Edicao por API nao dispara onEdit; UI Sheets exigiu login.",
       "validacao_estatica": true
     },
     "cancelamento_handover": {
-      "resultado": "NAO_VALIDADO_COMPLETO",
-      "motivo": "Automacao nao localizou o card no filtro correto para concluir cancelamento."
+      "resultado": "OK",
+      "registro": "CODEX_V48_CANCELAR",
+      "status_compra": "Cancelado",
+      "status_handover": "Cancelado",
+      "cancelado_por": "Carlos",
+      "data_cancelamento_preenchida": true,
+      "motivo": "Smoke v48 cancelamento"
     },
     "filtros": {
-      "resultado": "PARCIAL",
-      "comprados_exibiu_item": true,
-      "observacao": "Chips de contagem podem ficar desalinhados com busca ativa."
+      "resultado": "OK_COM_RESSALVA",
+      "testados": [
+        "Todos",
+        "Pendentes",
+        "Faltas",
+        "Encomendas",
+        "Comprados",
+        "Comprados sem aviso",
+        "Entregues",
+        "Cancelados",
+        "Vencidos/Hoje",
+        "Resolvidos parcialmente"
+      ],
+      "contador_positivo_lista_vazia": false
+    },
+    "atualizar_agora": {
+      "resultado": "OK_COM_RESSALVA",
+      "durante": "Atualizando...",
+      "depois": "Atualizar agora",
+      "tempo_segundos": 26
     },
     "menu": {
       "resultado": "OK",
-      "overflow_visible": true,
+      "medicamentos_sem_corte": true,
       "imprimir_ausente": true
     },
     "checklist": "OK",
     "historico": "PARCIAL"
   },
+  "registros_criados": [
+    "CODEX_V48_ENCOMENDA",
+    "CODEX_V48_RETIRA",
+    "CODEX_V48_ENTREGA",
+    "CODEX_V48_CANCELAR"
+  ],
   "falhas": {
     "criticas": [],
     "medias": [
-      "Capitalizacao do nome no WhatsApp nao funcionou: saiu 'maria clara'.",
-      "Reversao de Cancelado pela planilha nao foi validada por falta de permissao de escrita/login Sheets no ambiente.",
-      "Cancelamento pelo Handover nao foi concluido pela automacao."
+      "Reversao Cancelado pela planilha nao foi validada por limitacao tecnica do ambiente.",
+      "Historico nao foi validado completamente."
     ],
     "leves": [
-      "Atualizar agora voltou ao estado normal, mas levou cerca de 15 a 20 segundos.",
-      "Chips de filtro podem ficar desalinhados com busca ativa."
+      "Atualizar agora levou cerca de 26 segundos.",
+      "Automacao por texto pode confundir chips Comprados e Comprados sem aviso."
     ]
   },
-  "veredito": "Publicado com ressalvas. Versao 47 mantida; proxima correcao deve ajustar capitalizacao client-side do WhatsApp e validar reversao pela planilha manualmente."
+  "veredito": "Publicado e aprovado com ressalvas operacionais. v48 mantida publicada."
 }

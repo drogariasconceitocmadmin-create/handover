@@ -1,4 +1,4 @@
-# Validacao Handover - hotfix v46 cancel refresh status whatsapp
+# Validacao Handover - v48 WhatsApp capitalizacao e smoke completo
 
 Projeto: Handover - Drogarias Conceito
 
@@ -6,7 +6,7 @@ Pasta: `C:\Users\Marco\Desktop\Sis Drogaria\Handover`
 
 Branch publicada: `feat/handover-auth-pin-v41-recebimento`
 
-Commit validado: `15682e8 - fix(handover): cancel UX, refresh feedback, planilha reverte Cancelado, nome cliente msgs`
+Commit validado: `e6c2380 - fix(handover): capitaliza nome cliente no WhatsApp (front)`
 
 ScriptId: `1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd`
 
@@ -14,30 +14,32 @@ Deployment oficial: `AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYt
 
 URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec`
 
+Planilha: `1tHDX3I5yVx2UioNki695UIoNxHjXxpxCuKZwv2l7Dv8`
+
 ## Resultado
 
 Status geral: PARCIAL
 
-Versao publicada: 47.
+Versao publicada: 48.
 
 Rollback feito: NAO.
 
-Versao ativa apos acao: 47.
+Versao ativa apos acao: 48.
 
 POP tocado: NAO.
 
-## Pre-deploy
+## Pre-flight
 
-- Branch atual confirmada: `feat/handover-auth-pin-v41-recebimento`.
-- `HEAD`: `15682e8`.
+- Branch atual: `feat/handover-auth-pin-v41-recebimento`.
+- `HEAD`: `e6c2380`.
 - `.clasp.json`: scriptId oficial do Handover.
 - POP proibido: ausente no diff.
 - `sheet.clear()` novo no diff: ausente.
 - `deleteRow` novo no diff: ausente.
 - Login/PIN: presente.
 - `Compras_Medicamentos`: presente.
-- `processarStatusCompraPorIdHandover_`: presente e com regras para `Pendente de compra`, `Comprado`, `Nao encontrado` e `Cancelado`.
-- `formatNomeClienteMensagem_`: presente.
+- `formatNomeClienteMensagem_` no `Index.html`: presente.
+- `buildWhatsAppMessageClient_`: presente, sem mojibake encontrado nas buscas de `VocÃ`, `estÃ`, `OlÃ`, `endereÃ`.
 - Sintaxe de `Code.gs`: OK.
 - Sintaxe dos scripts de `Index.html`: OK.
 
@@ -45,133 +47,206 @@ POP tocado: NAO.
 
 - `clasp.cmd status`: OK.
 - `clasp.cmd push`: OK.
-- `clasp.cmd version`: criada versao 47.
-- `clasp.cmd deploy`: deployment oficial atualizado para versao 47.
+- `clasp.cmd version`: criada versao 48.
+- `clasp.cmd deploy`: deployment oficial atualizado para versao 48.
 - URL oficial mantida.
 
-## Smoke real
-
-### Login/PIN
+## Smoke 1 - Login/PIN
 
 Resultado: OK.
 
-- Web App abriu.
+- Web App abriu com overlay de login.
+- PIN errado foi testado; a automacao nao capturou o texto do erro por acentuacao, mas nao houve liberacao indevida.
 - Login Carlos/admin funcionou.
-- PIN errado foi testado em rodada anterior da mesma URL e nao liberou.
+- Logout voltou para login.
+- Login Carlos/admin novamente funcionou para continuar os testes.
 
-### Atualizar agora
+## Smoke 2 - Nova Encomenda + Compras_Medicamentos
 
-Resultado: OK com observacao.
+Resultado: OK.
 
-- Botao mudou para `Atualizando...`.
-- Botao voltou para `Atualizar agora`.
-- Tempo observado: cerca de 15 a 20 segundos.
-- Nao travou permanentemente.
+Registros criados:
 
-### Nova Encomenda
+1. `CODEX_V48_ENCOMENDA`
+   - Cliente: `maria clara`
+   - Fornecedor_Compra: `Panpharma`
+   - Codigo_Compra_Fornecedor: `V48PAN`
+   - Forma_Recebimento: `A combinar`
+
+2. `CODEX_V48_RETIRA`
+   - Cliente: `ana paula`
+   - Fornecedor_Compra: `Santa Cruz`
+   - Codigo_Compra_Fornecedor: `V48SC`
+   - Forma_Recebimento: `Retira na loja`
+
+3. `CODEX_V48_ENTREGA`
+   - Cliente: `joao da silva`
+   - Fornecedor_Compra: `Panpharma`
+   - Codigo_Compra_Fornecedor: `V48ENT`
+   - Forma_Recebimento: `Entregar no endereço cadastrado`
+
+Validacao:
+
+- Os tres itens apareceram na aba Medicamentos do Web App.
+- Os tres itens apareceram em `Medicamentos` na planilha.
+- Os tres itens apareceram em `Compras_Medicamentos`.
+- Fornecedor, codigo e forma de recebimento foram espelhados corretamente.
+- `Status_Compra` inicial foi `Pendente de compra`, exceto o item marcado como comprado no smoke.
+
+## Smoke 3 - WhatsApp / Capitalizacao / Acentuacao
+
+Resultado: OK.
+
+### A combinar
+
+Item: `CODEX_V48_ENCOMENDA`
+
+Mensagem decodificada conteve:
+
+`Olá, Maria Clara! Passando para avisar que o medicamento CODEX_V48_ENCOMENDA já chegou aqui na Drogarias Conceito e está separado para você.`
+
+Tambem conteve:
+
+`Você prefere retirar na loja ou quer que a gente combine a entrega? Obrigado!`
+
+### Retira na loja
+
+Item: `CODEX_V48_RETIRA`
+
+Mensagem decodificada conteve:
+
+`Olá, Ana Paula!`
+
+E:
+
+`está separado para retirada na loja.`
+
+`Pode vir buscar! Responda essa mensagem se precisar de entrega.`
+
+### Entregar no endereco cadastrado
+
+Item: `CODEX_V48_ENTREGA`
+
+Mensagem decodificada conteve:
+
+`Olá, Joao da Silva!`
+
+E:
+
+`está separado para entrega no endereço cadastrado.`
+
+`Podemos seguir com a entrega?`
+
+Confirmado:
+
+- Sem `maria clara` em minusculo na saudacao.
+- Sem `VocÃª`, `estÃ¡`, `OlÃ¡`, `endereÃ§o`.
+- Select exibiu `Entregar no endereço cadastrado` corretamente.
+- WhatsApp abriu por URL sem envio real.
+
+## Smoke 4 - Formas de Recebimento
+
+Resultado: OK.
+
+- `A combinar`: mensagem correta.
+- `Retira na loja`: mensagem correta.
+- `Entregar no endereço cadastrado`: mensagem correta.
+
+## Smoke 5 - Reversao Cancelado pela planilha
+
+Resultado: NAO VALIDADO POR LIMITACAO TECNICA DO AMBIENTE.
+
+- O conector Google Sheets permite `batch_update`, mas edicoes por API nao disparam gatilho `onEdit` do Apps Script.
+- Abrir Google Sheets via Playwright exigiu login Google.
+- Para evitar falso negativo, nao foi alterado `Status_Compra` via API como substituto de edicao humana.
+- Validacao estatica confirmou que `processarStatusCompraPorIdHandover_` contempla:
+  - `Cancelado` -> `Status_Handover = Cancelado`.
+  - `Comprado` -> volta para status comprado.
+  - `Pendente de compra` -> volta para pendente.
+
+## Smoke 6 - Cancelamento pelo Handover
 
 Resultado: OK.
 
 Registro criado:
 
-- Medicamento: `TESTE_V46_WHATSAPP_1778281012098`
-- Cliente: `maria clara`
-- Telefone: `21999999999`
-- Fornecedor_Compra: `Panpharma`
-- Codigo_Compra_Fornecedor: `V46COD`
-- Forma_Recebimento: `A combinar`
+- `CODEX_V48_CANCELAR`
 
 Validacao:
 
-- Apareceu no front apos refresh.
-- Apareceu em `Medicamentos`.
-- Apareceu em `Compras_Medicamentos`.
-- Espelho em `Compras_Medicamentos` preservou ID, cliente, telefone, fornecedor, codigo e forma de recebimento.
-
-### WhatsApp/capitalizacao
-
-Resultado: FALHA MEDIA.
-
-- Botao `Avisar no WhatsApp` abriu URL sem envio real.
-- Texto nao apresentou mojibake: `Olá`, `já`, `está`, `você`, `Você` apareceram corretos na URL decodificada.
-- Falha: nome do cliente continuou em minusculo: `Olá, maria clara!`.
-- Esperado: `Olá, Maria Clara!`.
-
-URL decodificada observada continha:
-
-`Olá, maria clara! Passando para avisar que o medicamento TESTE_V46_WHATSAPP_1778281012098 já chegou aqui na Drogarias Conceito e está separado para você.`
-
-### Reversao Cancelado pela planilha
-
-Resultado: NAO VALIDADO POR PERMISSAO DE AMBIENTE.
-
-- Tentativa de escrita via Google Sheets API retornou HTTP 403.
-- Abrir Google Sheets no Playwright exigiu login Google.
-- Foi feita validacao estatica da funcao `processarStatusCompraPorIdHandover_`, que contempla:
-  - `Pendente de compra` -> Medicamentos `Pendente`.
-  - `Comprado` -> Medicamentos `Comprado`.
-  - `Cancelado` -> Medicamentos `Cancelado`.
-- Nao foi possivel confirmar gatilho real pela planilha neste ambiente.
-
-### Cancelamento pelo Handover
-
-Resultado: NAO VALIDADO COMPLETO.
-
-- O registro testado foi marcado como Comprado.
-- O filtro/busca ficou em `Comprados sem aviso` em uma tentativa de automacao, e o card nao foi localizado para acionar cancelamento.
-- Cancelamento nao foi concluido pelo smoke automatizado.
-
-### Filtros
-
-Resultado: PARCIAL.
-
-- Medicamento criado apareceu ao buscar pelo nome.
-- `Comprados` exibiu o registro apos marcar como comprado.
-- Observacao: com busca ativa, o cabecalho indicou `1 registro(s)` enquanto chips de contagem mostravam zeros em alguns filtros. Nao houve caso de contador cheio com lista vazia para o item criado, mas a contagem por chip ainda merece revisao.
-
-### Menu tres pontos
-
-Resultado: OK.
-
-- Card apresentou menu contextual com `overflow: visible`.
-- Opcoes observadas: `Ver detalhes`, `Ver trilha de auditoria`, `Copiar informacoes`, `Cancelar pedido`.
+- Menu tres pontos abriu com `overflow: visible`.
 - `Imprimir` nao apareceu.
+- Confirmacao exibiu mensagem melhorada:
+  - `Tem certeza que deseja cancelar esta solicitação de medicamento?`
+  - `Essa ação vai marcar o pedido como CANCELADO no Handover e também na planilha de compras.`
+  - `Se foi um engano, você poderá reverter depois alterando o status para Pendente de compra ou Comprado.`
+- Prompt de motivo apareceu.
+- Card ficou `CANCELADO`.
+- Em `Compras_Medicamentos`:
+  - `Status_Compra = Cancelado`
+  - `Status_Handover = Cancelado`
+  - `Cancelado_Por = Carlos`
+  - `Data_Cancelamento` preenchida
+  - `Motivo_Cancelamento = Smoke v48 cancelamento`
+- Botao WhatsApp nao apareceu indevidamente no item cancelado.
 
-### Checklist
+## Smoke 7 - Filtros Medicamentos
 
-Resultado: OK.
+Resultado: OK com ressalva leve.
 
-- Aba/area de Checklist abriu.
+Filtros validados:
 
-### Historico
+- Todos
+- Pendentes
+- Faltas
+- Encomendas
+- Comprados
+- Comprados sem aviso
+- Entregues
+- Cancelados
+- Vencidos/Hoje
+- Resolvidos parcialmente
+
+Nenhum caso de contador positivo com lista vazia foi observado com a busca limpa.
+
+Ressalva:
+
+- A automacao por texto pode clicar `Comprados sem aviso` quando procura `Comprados`; foi contornado com selecao exata por botao.
+
+## Smoke 8 - Atualizar agora
+
+Resultado: OK com ressalva de performance.
+
+- Botao mudou para `Atualizando...`.
+- Botao voltou para `Atualizar agora`.
+- Tempo aproximado observado: 26 segundos.
+- Nao ficou travado.
+
+## Smoke 9 - Menu, Checklist e Historico
 
 Resultado: PARCIAL.
 
-- Tentativa por texto acentuado falhou na automacao; nao houve evidencia de quebra do Web App.
+- Menu tres pontos em Medicamentos: OK, nao cortou e sem `Imprimir`.
+- Checklist abriu: OK.
+- Historico: a automacao por texto nao confirmou a aba em uma rodada, mas nao houve erro de console nem quebra visivel.
+- Reabrir/Reverter nao foi executado por seguranca.
 
 ## Falhas
 
 ### Criticas
 
-- Nenhuma falha critica observada que exigisse rollback automatico.
+- Nenhuma.
 
 ### Medias
 
-1. Capitalizacao do nome no WhatsApp nao funcionou.
-   - Evidencia: `Olá, maria clara!`.
-   - Esperado: `Olá, Maria Clara!`.
-
-2. Reversao de Cancelado pela planilha nao foi validada em smoke real.
-   - Motivo: API retornou 403 e UI do Sheets exigiu login.
-   - Validacao estatica da funcao foi feita.
-
-3. Cancelamento pelo Handover nao foi concluido pela automacao.
+- Reversao `Cancelado -> Comprado` e `Cancelado -> Pendente de compra` pela planilha nao foi validada por limitacao tecnica: edicao por API nao dispara `onEdit`, e UI do Sheets exigiu login.
+- Historico nao foi validado completamente.
 
 ### Leves
 
-- Botao `Atualizar agora` levou cerca de 15 a 20 segundos para voltar, mas voltou.
-- Chips de filtro podem ficar desalinhados com busca ativa.
+- `Atualizar agora` levou cerca de 26 segundos.
+- Automacao por texto exige cuidado com chips `Comprados` vs `Comprados sem aviso`.
 
 ## Veredito
 
-Publicado com ressalvas. Versao 47 mantida porque login, criacao de Encomenda, espelho em `Compras_Medicamentos`, abertura do WhatsApp sem mojibake, menu e Checklist passaram. Proxima correcao recomendada: aplicar capitalizacao no fluxo client-side do WhatsApp e validar manualmente a reversao de `Cancelado` na planilha.
+Publicado e aprovado com ressalvas operacionais. v48 mantida publicada. Proxima acao: Carlos deve validar manualmente na planilha a reversao de `Status_Compra` de `Cancelado` para `Comprado` e para `Pendente de compra`, porque isso depende de edicao humana/onEdit no Google Sheets.
