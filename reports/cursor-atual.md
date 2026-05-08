@@ -1,3 +1,13 @@
+## Hotfix v46 — smoke (cancel, atualizar, planilha, nome cliente) (maio/2026)
+
+- **Branch:** `feat/handover-auth-pin-v41-recebimento`
+- **Cancelamento (UI):** `window.confirm` com texto explicando impacto no Handover e em **Compras_Medicamentos** e possibilidade de reverter via planilha (**Pendente de compra** / **Comprado**).
+- **Atualizar agora:** botão passa a **Atualizando...**, desabilita durante `refreshDashboardBundle` e restaura label/estado no sucesso ou erro (sem auto-refresh).
+- **Planilha → Medicamentos:** removido bloqueio `ja_cancelado` em `processarStatusCompraPorIdHandover_`; **Pendente de compra** na planilha agora zera **Comprado/Entregue**, define **Status** Pendente e sincroniza; `syncMedicationStatus_` só preserva **Cancelado** quando comprado/entregue continuam falsos (permite sair de Cancelado quando a planilha marca **Comprado**).
+- **Mensagens ao cliente:** `formatNomeClienteMensagem_` (pt-BR, partículas *de/da/do/das/dos* no meio em minúsculas) em **WhatsApp** (`buildWhatsAppMessage_`, legado) e saudação em **Não encontrado** (`buildMensagemClienteNaoEncontrado_`); removida duplicata antiga de `buildWhatsAppMessage_` com mojibake.
+
+---
+
 ## Hotfix P0 — `chunks is not defined` (maio/2026)
 
 - **Branch:** `feat/handover-auth-pin-v41-recebimento`

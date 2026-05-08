@@ -3862,6 +3862,21 @@
         if (!tok) {
           return;
         }
+        var refreshBtn = !silent ? document.getElementById('refresh-dashboard-btn') : null;
+        var refreshPrevLabel = '';
+        var refreshPrevDisabled = false;
+        function restoreRefreshBtn_() {
+          if (refreshBtn) {
+            refreshBtn.disabled = refreshPrevDisabled;
+            refreshBtn.textContent = refreshPrevLabel || 'Atualizar agora';
+          }
+        }
+        if (refreshBtn) {
+          refreshPrevLabel = refreshBtn.textContent;
+          refreshPrevDisabled = refreshBtn.disabled;
+          refreshBtn.disabled = true;
+          refreshBtn.textContent = 'Atualizando...';
+        }
         var started = Date.now();
         try {
           getScriptRunner_()
@@ -3871,18 +3886,21 @@
               touchLastSyncTime_();
               initChecklistTurnoUi_();
               renderAll();
+              restoreRefreshBtn_();
               if (!silent) {
                 showToast_('Dados atualizados');
               }
             })
             .withFailureHandler(function (error) {
               perfLog_('refreshDashboardBundle_fail', started);
+              restoreRefreshBtn_();
               if (!silent) {
                 showToast_(getErrorMessage(error), true);
               }
             })
             .refreshDashboardBundle(activeChecklistTurno, tok);
         } catch (error) {
+          restoreRefreshBtn_();
           if (!silent) {
             showToast_(error.message, true);
           }
@@ -8436,7 +8454,11 @@
       }
 
       function cancelMedicationRequest_(id) {
-        if (!window.confirm('Cancelar esta solicitação de medicamento?')) {
+        var cancelMsg =
+          'Tem certeza que deseja cancelar esta solicitação de medicamento?\n\n' +
+          'Essa ação vai marcar o pedido como CANCELADO no Handover e também na planilha de compras.\n\n' +
+          'Se foi um engano, você poderá reverter depois alterando o status para Pendente de compra ou Comprado.';
+        if (!window.confirm(cancelMsg)) {
           return;
         }
         var motivo = '';

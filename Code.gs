@@ -21,13 +21,48 @@ const FORMAS_RECEBIMENTO = {
   ENTREGA_ENDERECO: 'Entregar no endereço cadastrado',
 };
 
+/** Partículas em minúsculas no meio do nome (mensagens ao cliente). */
+var FORMAT_NOME_PARTICULAS_ = { de: true, da: true, do: true, das: true, dos: true };
+
+/**
+ * Formata nome do cliente para mensagens (WhatsApp / Mensagem_Cliente): título simples em pt-BR.
+ * Não altera o cadastro na planilha; só uso em texto gerado.
+ */
+function formatNomeClienteMensagem_(raw) {
+  var s = sanitizeText_(raw);
+  if (!s) {
+    return '';
+  }
+  s = s.replace(/\s+/g, ' ').trim();
+  if (!s) {
+    return '';
+  }
+  var parts = s.split(' ');
+  return parts
+    .map(function (word, i) {
+      if (!word) {
+        return '';
+      }
+      var lower = word.toLocaleLowerCase('pt-BR');
+      if (i > 0 && FORMAT_NOME_PARTICULAS_[lower]) {
+        return lower;
+      }
+      if (word.length === 1) {
+        return word.toLocaleUpperCase('pt-BR');
+      }
+      return word.charAt(0).toLocaleUpperCase('pt-BR') + word.slice(1).toLocaleLowerCase('pt-BR');
+    })
+    .filter(Boolean)
+    .join(' ');
+}
+
 /**
  * Mensagem sugerida para Status_Compra = Não encontrado (só Mensagem_Cliente; sem WhatsApp automático).
  * Sem nome na coluna Cliente: primeira frase começa em "Olá!".
  * Sem Medicamento: usa "medicamento solicitado".
  */
 function buildMensagemClienteNaoEncontrado_(cliente, medicamento) {
-  var nome = sanitizeText_(cliente);
+  var nome = formatNomeClienteMensagem_(cliente);
   var medRaw = sanitizeText_(medicamento);
   var sobreMedicamento = medRaw
     ? 'Sobre o medicamento ' + medRaw + ', '
@@ -1641,21 +1676,11 @@ function processarStatusCompraPorIdHandover_(idHandover) {
   var colDataCompra = getColumnIndex_(cSheet, 'Data_Compra');
   var colCompradoPor = getColumnIndex_(cSheet, 'Comprado_Por');
 
-  var med0 = rowToObjectFromSheetRow_(sh, rn);
-  normalizeItemForClient_(med0);
-  var medLow0 = sanitizeText_(med0.Status).toLowerCase();
-  if (medLow0 === 'cancelado' && statusCompra !== COMPRAS_STATUS_COMPRA.CANCELADO) {
-    Logger.log(
-      'processarStatusCompraPorIdHandover_: id=' +
-        id +
-        ' Status_Compra=' +
-        statusCompra +
-        ' compras=SIM medicamentos=SIM abort=item_ja_cancelado'
-    );
-    return { ok: false, reason: 'ja_cancelado' };
-  }
-
   if (statusCompra === COMPRAS_STATUS_COMPRA.PENDENTE) {
+    sh.getRange(rn, compradoCol).setValue(false);
+    sh.getRange(rn, entregueCol).setValue(false);
+    sh.getRange(rn, statusCol).setValue('Pendente');
+    syncMedicationStatus_(sh, rn);
     var medP = rowToObjectFromSheetRow_(sh, rn);
     normalizeItemForClient_(medP);
     var finalP = sanitizeText_(medP.Status);
@@ -1667,8 +1692,7 @@ function processarStatusCompraPorIdHandover_(idHandover) {
         ' Status_Compra_aplicado=' +
         COMPRAS_STATUS_COMPRA.PENDENTE +
         ' compras=SIM medicamentos=SIM status_final=' +
-        finalP +
-        ' (somente espelho Compras; nao altera Medicamentos)'
+        finalP
     );
     return { ok: true, statusFinal: finalP };
   }
@@ -3734,11 +3758,11 @@ function syncMedicationStatus_(sheet, rowNumber) {
   var curSt = String(sheet.getRange(rowNumber, statusColumn).getValue() || '')
     .trim()
     .toLowerCase();
-  if (curSt === 'cancelado') {
-    return;
-  }
   const comprado = toBoolean_(sheet.getRange(rowNumber, compradoColumn).getValue());
   const entregue = toBoolean_(sheet.getRange(rowNumber, entregueColumn).getValue());
+  if (curSt === 'cancelado' && !comprado && !entregue) {
+    return;
+  }
 
   let status = 'Pendente';
   if (entregue) {
@@ -3789,7 +3813,7 @@ function normalizeBrazilPhone_(phoneValue) {
 }
 
 function buildWhatsAppMessageLegacy_(clientName, medicineName) {
-  const name = sanitizeText_(clientName) || 'cliente';
+  const name = formatNomeClienteMensagem_(clientName) || 'Cliente';
   const medicine = sanitizeText_(medicineName) || 'informado';
 
   return [
@@ -3802,45 +3826,7 @@ function buildWhatsAppMessageLegacy_(clientName, medicineName) {
 }
 
 function buildWhatsAppMessage_(clientName, medicineName, formaRecebimento) {
-  const name = sanitizeText_(clientName);
-  const greeting = name ? 'OlÃ¡, ' + name + '!' : 'OlÃ¡!';
-  const medicine = sanitizeText_(medicineName) || 'seu medicamento';
-  const forma = normalizeFormaRecebimento_(formaRecebimento);
-
-  if (forma === FORMAS_RECEBIMENTO.RETIRA_LOJA) {
-    return [
-      greeting +
-        ' Passando para avisar que o medicamento ' +
-        medicine +
-        ' jÃ¡ chegou aqui na Drogarias Conceito e estÃ¡ separado para retirada na loja.',
-      '',
-      'Pode vir buscar! Responda essa mensagem se precisar de entrega.',
-    ].join('\n');
-  }
-
-  if (forma === FORMAS_RECEBIMENTO.ENTREGA_ENDERECO) {
-    return [
-      greeting +
-        ' Passando para avisar que o medicamento ' +
-        medicine +
-        ' jÃ¡ chegou aqui na Drogarias Conceito e estÃ¡ separado para entrega no endereÃ§o cadastrado.',
-      '',
-      'Podemos seguir com a entrega?',
-    ].join('\n');
-  }
-
-  return [
-    greeting +
-      ' Passando para avisar que o medicamento ' +
-      medicine +
-      ' jÃ¡ chegou aqui na Drogarias Conceito e estÃ¡ separado para vocÃª.',
-    '',
-    'VocÃª prefere retirar na loja ou quer que a gente combine a entrega? Obrigado!',
-  ].join('\n');
-}
-
-function buildWhatsAppMessage_(clientName, medicineName, formaRecebimento) {
-  const name = sanitizeText_(clientName);
+  const name = formatNomeClienteMensagem_(clientName);
   const greeting = name ? 'Ol\u00e1, ' + name + '!' : 'Ol\u00e1!';
   const medicine = sanitizeText_(medicineName) || 'seu medicamento';
   const forma = normalizeFormaRecebimento_(formaRecebimento);
