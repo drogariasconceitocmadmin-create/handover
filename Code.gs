@@ -161,6 +161,7 @@ const HEADERS = {
     'Fornecedor_Compra',
     'Codigo_Compra_Fornecedor',
     'Forma_Recebimento',
+    'Observacao_Solicitacao',
   ],
   Compras_Medicamentos: [
     'ID_Handover',
@@ -186,6 +187,7 @@ const HEADERS = {
     'Fornecedor_Compra',
     'Codigo_Compra_Fornecedor',
     'Forma_Recebimento',
+    'Observacao_Solicitacao',
   ],
   Usuarios_Handover: HANDOVER_USERS_HEADERS,
   Arquivo_Resolvidos: [
@@ -396,7 +398,9 @@ function applyComprasMedicamentosLayout_(sheet) {
   sheet.setFrozenRows(1);
 
   // UX: larguras e colunas operacionais (sem reordenar/destruir dados)
-  var widths = [140, 120, 90, 240, 120, 170, 120, 130, 90, 90, 140, 120, 140, 360, 380, 140, 160, 120, 110, 220, 130, 150];
+  var widths = [
+    140, 120, 90, 240, 120, 170, 120, 130, 90, 90, 140, 120, 140, 360, 380, 140, 160, 120, 110, 220, 130, 150, 320,
+  ];
   for (var c = 0; c < Math.min(widths.length, lastCol); c++) {
     sheet.setColumnWidth(c + 1, widths[c]);
   }
@@ -439,6 +443,14 @@ function applyComprasMedicamentosLayout_(sheet) {
   try {
     sheet.getRange(2, colMsg, numRowsValidation, 1).setWrap(true).setVerticalAlignment('top');
   } catch (eWrap1) {}
+  try {
+    var colObsSol = getColumnIndex_(sheet, 'Observacao_Solicitacao');
+    sheet.getRange(2, colObsSol, numRowsValidation, 1).setWrap(true).setVerticalAlignment('top');
+    sheet.getRange(1, colObsSol).setBackground('#dbeafe').setFontColor('#0b1b3a').setFontWeight('bold');
+    sheet
+      .getRange(1, colObsSol)
+      .setNote('Observação do atendente no momento da solicitação. (Diferente de Observacao_Compra.)');
+  } catch (eWrapObsSol) {}
   try {
     sheet.getRange(2, colStatus, numRowsValidation, 1).setFontWeight('bold').setHorizontalAlignment('center');
   } catch (eBold) {}
@@ -1406,6 +1418,7 @@ function buildComprasRowNamedValuesFromMedicamento_(medItem, existingStatusCompr
       normalizeFornecedorCompraInput_(medItem.Fornecedor_Compra)
     ),
     Forma_Recebimento: isFalta ? '' : normalizeFormaRecebimento_(medItem.Forma_Recebimento),
+    Observacao_Solicitacao: sanitizeText_(medItem.Observacao_Solicitacao || ''),
   };
 }
 
@@ -2465,6 +2478,7 @@ function appendHandoverRecord_(tab, data, authorLabel) {
         Fornecedor_Compra: fnCompra,
         Codigo_Compra_Fornecedor: codCompra,
         Forma_Recebimento: '',
+        Observacao_Solicitacao: sanitizeText_(data.observacaoSolicitacao || ''),
       });
       sheet.appendRow(rowValuesFalta);
       try {
@@ -2515,6 +2529,7 @@ function appendHandoverRecord_(tab, data, authorLabel) {
       Fornecedor_Compra: fnCompra,
       Codigo_Compra_Fornecedor: codCompra,
       Forma_Recebimento: formaRecebimento,
+      Observacao_Solicitacao: sanitizeText_(data.observacaoSolicitacao || ''),
     });
     sheet.appendRow(rowValues);
     try {
@@ -2990,6 +3005,7 @@ function reopenHistoricoItem(archivedRecordId, sessionToken, motivo) {
         Motivo_Cancelamento: '',
         Fornecedor_Compra: fnAr,
         Codigo_Compra_Fornecedor: codAr,
+        Observacao_Solicitacao: sanitizeText_(archived.Observacao_Solicitacao || ''),
       };
       msheet.appendRow(buildAppendRowValuesFromNamedMap_(msheet, namedMed));
       try {
@@ -3428,6 +3444,7 @@ function normalizeItemForClient_(item) {
   item.Entregue = toBoolean_(item.Entregue);
   item.Tem_Vencimento = toBoolean_(item.Tem_Vencimento);
   item.Telefone = sanitizeText_(item.Telefone);
+  item.Observacao_Solicitacao = sanitizeText_(item.Observacao_Solicitacao);
   item.Status = sanitizeText_(item.Status) || deriveMedicationStatus_(item);
   item.Status_Aviso_WhatsApp = sanitizeText_(item.Status_Aviso_WhatsApp);
   item.Preco_Venda = normalizeSalePriceForClient_(item.Preco_Venda);

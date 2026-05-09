@@ -2882,7 +2882,7 @@
               <p id="queue-subtitle" class="queue-subtitle ho-muted"></p>
               <div id="med-search-wrap" class="med-search-row hidden">
                 <label for="med-queue-search" class="ho-muted" style="display:block;font-size:12px;font-weight:700;margin-bottom:4px;">Buscar</label>
-                <input id="med-queue-search" type="search" placeholder="Buscar por medicamento, cliente, telefone, atendente, preço, status..." autocomplete="off">
+                <input id="med-queue-search" type="search" placeholder="Buscar por medicamento, cliente, observação da solicitação, telefone, atendente, preço, status..." autocomplete="off">
               </div>
               <div id="queue-filters-host"></div>
               <div id="historico-filters-panel" class="historico-filters hidden"></div>
@@ -3072,6 +3072,17 @@
             <div class="field">
               <label for="atendente">Atendente</label>
               <input id="atendente" name="atendente">
+            </div>
+
+            <div class="field">
+              <label for="observacaoSolicitacao">Observação da solicitação</label>
+              <textarea
+                id="observacaoSolicitacao"
+                name="observacaoSolicitacao"
+                rows="3"
+                maxlength="2000"
+                placeholder="Ex.: cliente aceita similar, urgência, laboratório específico, combinar entrega..."
+              ></textarea>
             </div>
 
             <div class="field" id="med-fornecedor-compra-field">
@@ -5253,6 +5264,7 @@
             item.metaWhatsapp,
             item.metaUltimaAcao,
             item.timeLabel,
+            item.metaObservacaoSolicitacao,
           ];
           // Ensure type (Falta/Encomenda) is searchable.
           if (item.medTipo) {
@@ -5365,6 +5377,9 @@
             lines.push('Telefone: ' + (item.metaTelefone || '-'));
           }
           lines.push('Atendente: ' + (item.metaAtendente || '-'));
+          if (item.metaObservacaoSolicitacao) {
+            lines.push('Observação: ' + item.metaObservacaoSolicitacao);
+          }
           if (item.forecast) {
             lines.push('Previsão: ' + item.forecast);
           }
@@ -5478,6 +5493,8 @@
           detailMedicamentoRow_('Última ação', ultimaLinha) +
           detailMedicamentoRow_('Telefone', tipoLow === 'falta' ? raw.Telefone : '');
 
+        var secSolicitacao = detailMedicamentoRow_('Observação da solicitação', raw.Observacao_Solicitacao);
+
         var secWa =
           detailMedicamentoRow_('Status aviso', raw.Status_Aviso_WhatsApp) +
           detailMedicamentoRow_('Data aviso', raw.Data_Aviso_WhatsApp ? formatDateTime(raw.Data_Aviso_WhatsApp) : '');
@@ -5494,6 +5511,7 @@
           '<div class="card-detail-sheet">' +
           head +
           detailMedicamentoSection_('Cliente', secCliente) +
+          detailMedicamentoSection_('Solicitação', secSolicitacao) +
           detailMedicamentoSection_('Compra / recebimento', secCompra) +
           detailMedicamentoSection_('Operação', secOp) +
           detailMedicamentoSection_('WhatsApp', secWa) +
@@ -7300,6 +7318,7 @@
             chunks.push(row('Recebimento', item.metaFormaRecebimento));
           }
           chunks.push(row('Atendente', item.metaAtendente));
+          chunks.push(row('Observação', item.metaObservacaoSolicitacao));
           chunks.push(row('Previsão', item.forecast));
           chunks.push(row('Fornecedor', item.metaFornecedorCompra));
           chunks.push(row('Código compra', item.metaCodigoCompra));
@@ -7633,6 +7652,7 @@
           var codigoCard = String(item.Codigo_Compra_Fornecedor || '').trim();
           var formaRecebimentoCard =
             tipoLow === 'encomenda' ? String(item.Forma_Recebimento || 'A combinar').trim() || 'A combinar' : '';
+          var obsSolMed = String(item.Observacao_Solicitacao || '').trim();
           var descPlainMed =
             'Tipo: ' +
             (item.Tipo || '-') +
@@ -7651,6 +7671,7 @@
             auditMed,
             revLine,
             descPlainMed,
+            obsSolMed,
           ]
             .join(' ')
             .toLowerCase();
@@ -7683,6 +7704,7 @@
             metaFornecedorCompra: fornecedorCard,
             metaCodigoCompra: codigoCard,
             metaFormaRecebimento: formaRecebimentoCard,
+            metaObservacaoSolicitacao: obsSolMed,
             isOverdue: venTierM !== '',
             vencidosTier: venTierM,
             extraMeta:
@@ -8768,6 +8790,10 @@
           document.getElementById('cliente').value = pl.cliente || '';
           document.getElementById('telefone').value = pl.telefone || '';
           document.getElementById('atendente').value = pl.atendente || '';
+          var obsR = document.getElementById('observacaoSolicitacao');
+          if (obsR) {
+            obsR.value = pl.observacaoSolicitacao || '';
+          }
           document.getElementById('previsaoEntrega').value = pl.previsaoEntrega || '';
           var fcR = document.getElementById('fornecedorCompra');
           var codR = document.getElementById('codigoCompraFornecedor');
@@ -8865,6 +8891,7 @@
                   ? String(payload.codigoCompraFornecedor || '').trim()
                   : '',
               Forma_Recebimento: isFalta ? '' : payload.formaRecebimento || 'A combinar',
+              Observacao_Solicitacao: payload.observacaoSolicitacao || '',
               Comprado: false,
               Entregue: false,
               Status: 'Pendente',
@@ -8960,6 +8987,7 @@
           cod = codEl ? String(codEl.value || '').trim() : '';
         }
         var formaEl = document.getElementById('formaRecebimento');
+        var obsSolEl = document.getElementById('observacaoSolicitacao');
         return {
           tipo: document.getElementById('tipo').value,
           medicamento: document.getElementById('medicamento').value,
@@ -8968,6 +8996,7 @@
           cliente: document.getElementById('cliente').value,
           telefone: document.getElementById('telefone').value,
           atendente: document.getElementById('atendente').value,
+          observacaoSolicitacao: obsSolEl ? String(obsSolEl.value || '').trim() : '',
           previsaoEntrega: document.getElementById('previsaoEntrega').value,
           fornecedorCompra: fc,
           codigoCompraFornecedor: cod,
