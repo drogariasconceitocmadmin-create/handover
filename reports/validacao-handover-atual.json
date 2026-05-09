@@ -1,152 +1,110 @@
 {
   "projeto": "Handover - Drogarias Conceito",
-  "status_geral": "OK",
-  "pasta": "C:\\Users\\Marco\\Desktop\\Sis Drogaria\\Handover",
-  "branch": "feat/handover-auth-pin-v41-recebimento",
-  "commit_validado": "f146dfd",
+  "status_geral": "FALHA",
+  "branch_publicada": "release/handover-v54-checklist-clean",
+  "commit_publicado": "f248a9a",
+  "versao_publicada": 54,
+  "versao_ativa_apos_acao": 51,
+  "rollback_feito": true,
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
-  "spreadsheetId": "1tHDX3I5yVx2UioNki695UIoNxHjXxpxCuKZwv2l7Dv8",
-  "versao_publicada": 50,
-  "rollback_feito": false,
   "pop_tocado": false,
   "preflight": {
     "resultado": "OK",
     "branch_correta": true,
-    "commit_f146dfd_presente": true,
+    "head_f248a9a": true,
+    "feat_handover_auth_pin_v41_recebimento_publicada": false,
+    "d12ccd6_incluido": false,
+    "auditoria_handover_incluida": false,
+    "updateHandoverItem_incluido": false,
+    "getHandoverAuditTrail_incluido": false,
+    "botao_editar_incluido": false,
+    "modal_edicao_incluido": false,
     "clasp_handover": true,
     "pop_ausente": true,
     "sheet_clear_novo": false,
     "deleteRow_novo": false,
-    "login_pin_presente": true,
-    "auto_sync_presente": true,
-    "compras_medicamentos_presente": true,
-    "observacao_solicitacao_medicamentos_header": true,
-    "observacao_solicitacao_compras_header": true,
-    "status_compra_preservado": true,
-    "layout_compras_preservado": true,
-    "menu_imprimir_ausente": true,
-    "sintaxe_code_gs": "OK",
-    "sintaxe_index_scripts": "OK"
+    "templates": {
+      "manha": 17,
+      "tarde": 11,
+      "noite": 12
+    },
+    "item_id_total": 40,
+    "item_id_unicos": 40,
+    "checklist_turnos_ensureHeadersLegacyAdditive": true,
+    "texto_operacao_deste_periodo_sem_mojibake": true,
+    "diff_contra_feb9351": [
+      "Code.gs",
+      "Index.html"
+    ]
   },
   "publicacao": {
     "clasp_status": "OK",
     "clasp_push": "OK",
-    "versao_criada": 50,
+    "versao_criada": 54,
     "deployment_atualizado": true,
+    "novo_deployment_criado": false,
     "url_mantida": true
   },
   "login_pin": {
     "resultado": "OK",
-    "dashboard_bloqueado_sem_login": true,
-    "overlay_login": true,
-    "pin_errado_nao_liberou": true,
+    "login_obrigatorio": true,
+    "pin_errado_bloqueado": true,
     "login_carlos_admin": true,
-    "logout": true
-  },
-  "observacao_solicitacao": {
-    "resultado": "OK",
-    "falta": {
-      "medicamento": "TESTE_OBS_FALTA",
-      "salvou_medicamentos": true,
-      "apareceu_card": true,
-      "espelhou_compras": true,
-      "busca_generico": true,
-      "busca_generico_acentuado": true,
-      "campos_indevidos_ocultos": true,
-      "observacao": "cliente aceita genérico, mas precisa para hoje"
-    },
-    "encomenda": {
-      "medicamento": "TESTE_OBS_ENCOMENDA",
-      "salvou_medicamentos": true,
-      "apareceu_card": true,
-      "espelhou_compras": true,
-      "fornecedor_compra": "Panpharma",
-      "codigo_compra_fornecedor": "OBS123",
-      "forma_recebimento": "A combinar",
-      "observacao_solicitacao": "cliente só quer laboratório específico",
-      "observacao_compra_separada": true,
-      "mensagem_cliente_separada": true,
-      "ver_detalhes_acionado": true
-    }
-  },
-  "compras_medicamentos": {
-    "resultado": "OK",
-    "cabecalhos_preservados": true,
-    "dropdown_status_compra": true,
-    "cores_layout_preservados": true,
-    "observacao_solicitacao_destaque": true,
-    "observacao_compra_separada": true,
-    "mensagem_cliente_separada": true,
-    "fornecedor_codigo_visiveis": true,
-    "forma_recebimento_visivel": true,
-    "status_handover_atualiza": true
+    "header_carlos_admin": true
   },
   "medicamentos": {
-    "resultado": "OK",
-    "filtros_testados": [
-      "Todos",
-      "Pendentes",
-      "Faltas",
-      "Encomendas",
-      "Comprados",
-      "Comprados sem aviso",
-      "Entregues",
-      "Cancelados",
-      "Vencidos/Hoje",
-      "Resolvidos parcialmente"
+    "resultado": "FALHA",
+    "registro_teste": "CODEX_V54_MED_OK",
+    "modal_fechou_apos_salvar": true,
+    "apareceu_temporariamente_na_ui": true,
+    "apareceu_apos_atualizar_agora": true,
+    "apareceu_apos_logout_login": false,
+    "persistiu_em_medicamentos": false
+  },
+  "compras_medicamentos": {
+    "resultado": "FALHA",
+    "registro_teste": "CODEX_V54_MED_OK",
+    "espelhou": false,
+    "fornecedor_compra": "NAO VALIDADO - registro nao persistiu",
+    "codigo_compra_fornecedor": "NAO VALIDADO - registro nao persistiu",
+    "forma_recebimento": "NAO VALIDADO - registro nao persistiu",
+    "observacao_solicitacao": "NAO VALIDADO - registro nao persistiu"
+  },
+  "whatsapp": "NAO VALIDADO - registro nao persistiu",
+  "checklist": {
+    "resultado": "NAO EXECUTADO",
+    "motivo": "Rollback imediato exigido por falha P0 de persistencia em Medicamentos/Compras"
+  },
+  "regressao_curta": {
+    "menu": "NAO EXECUTADO",
+    "historico": "NAO EXECUTADO",
+    "atualizar_agora": "PARCIAL - funcionou antes do rollback, mas item nao persistiu",
+    "logout": "OK"
+  },
+  "rollback": {
+    "executado": true,
+    "versao_destino": 51,
+    "comando": "clasp.cmd deploy --deploymentId AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw --versionNumber 51 --description \"Rollback v51 apos falha persistencia v54 release limpa checklist\"",
+    "pos_rollback_login_overlay": true
+  },
+  "limpeza": {
+    "registros_criados": [
+      "CODEX_V54_MED_OK"
     ],
-    "contador_lista_sem_inconsistencia_absurda": true,
-    "marcar_comprado": true,
-    "whatsapp": {
-      "abriu_sem_envio": true,
-      "nome_capitalizado": true,
-      "acentuacao_ok": true,
-      "sem_mojibake": true,
-      "url_decodificada_contem": ["Olá, Teste Obs!", "Você", "está", "para você"]
-    },
-    "cancelamento": {
-      "resultado": "OK",
-      "card_cancelado": true,
-      "whatsapp_ausente_cancelado": true,
-      "compras_refletiu_cancelado": true,
-      "cancelado_por": "Carlos"
-    }
-  },
-  "auto_sync": {
-    "resultado": "OK",
-    "header_atualizado_ha": true,
-    "atualizar_agora_atualizando": true,
-    "atualizar_agora_voltou_normal": true,
-    "tempo_refresh_aproximado_segundos": 25
-  },
-  "checks_gerais": {
-    "pendencias": "OK",
-    "checklist": "OK",
-    "historico": "OK",
-    "visual_header": "OK",
-    "menu_sem_imprimir": true,
-    "sem_rolagem_horizontal_grosseira_1366": true
-  },
-  "limpeza_rodada": {
-    "resultado": "OK",
-    "registros_criados": ["TESTE_OBS_FALTA", "TESTE_OBS_ENCOMENDA", "TESTE_CHECK_GERAL"],
-    "removidos_por_aba": {
-      "Medicamentos": 2,
-      "Compras_Medicamentos": 2,
-      "Geral": 1
-    },
-    "busca_teste_obs_vazia": true,
-    "busca_teste_check_geral_vazia": true,
-    "sheet_clear_usado": false
+    "registros_removidos": [],
+    "observacao": "O registro de teste nao persistiu na planilha; nada foi removido."
   },
   "falhas": {
-    "criticas": [],
-    "medias": [],
-    "leves": [
-      "Ver detalhes foi acionado no smoke, mas a leitura automatizada nao capturou o texto completo da secao; estrutura por secoes confirmada no codigo.",
-      "Reversoes manuais por edicao direta da planilha nao foram executadas pela UI do Google Sheets nesta rodada."
-    ]
+    "criticas": [
+      "v54 nao persistiu a nova Encomenda criada pelo Web App em Medicamentos.",
+      "v54 nao espelhou a nova Encomenda em Compras_Medicamentos.",
+      "O item apareceu apenas como estado otimista/local e desapareceu apos nova sessao."
+    ],
+    "medias": [
+      "Checklist v54 nao foi testado no Web App publicado porque o P0 de Medicamentos falhou antes."
+    ],
+    "leves": []
   },
-  "decisao_final": "Manter v50 publicada; Handover aprovado para uso operacional hoje."
+  "decisao_final": "Rollback aplicado para v51. Release limpa v54 bloqueada por falha critica de persistencia Medicamentos/Compras."
 }

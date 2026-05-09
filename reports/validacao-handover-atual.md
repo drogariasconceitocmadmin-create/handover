@@ -1,187 +1,122 @@
-# Validacao Handover - v50 Observacao Solicitacao e check geral
+# Validacao Handover - Release limpa Checklist v54
 
 Projeto: Handover - Drogarias Conceito
 
-Pasta: `C:\Users\Marco\Desktop\Sis Drogaria\Handover`
+Branch publicada: `release/handover-v54-checklist-clean`
 
-Branch publicada: `feat/handover-auth-pin-v41-recebimento`
-
-Commit validado: `f146dfd - feat(handover): Observacao_Solicitacao em Medicamentos e espelho Compras`
+Commit publicado: `f248a9a - fix(handover): torna Item_ID do checklist aditivo e corrige textos`
 
 Deployment oficial: `AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw`
 
 URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec`
 
-Planilha: `1tHDX3I5yVx2UioNki695UIoNxHjXxpxCuKZwv2l7Dv8`
-
 ## Resultado
 
-Status geral: OK
+Status geral: FALHA
 
-Versao publicada: 50.
+Versao publicada: 54.
 
-Rollback feito: NAO.
+Rollback feito: SIM, deployment retornado para versao 51.
 
 POP tocado: NAO.
 
-## Pre-flight
+## Preflight
 
-- Branch atual: `feat/handover-auth-pin-v41-recebimento`.
-- Commit `f146dfd` presente no HEAD.
-- `.clasp.json`: scriptId oficial do Handover.
-- POP proibido: ausente.
-- `sheet.clear()` novo no diff: ausente.
-- `deleteRow` novo no diff: ausente; ocorrencia existente e legada de arquivamento nao entrou neste commit.
-- Login/PIN: presente.
-- Auto-sync/status no header: presente.
-- `Compras_Medicamentos`: presente.
-- `Observacao_Solicitacao`: presente em `HEADERS.Medicamentos` e `HEADERS.Compras_Medicamentos`.
-- `Status_Compra`: preservado.
-- `aplicarLayoutComprasMedicamentos`: preservado.
-- Menu sem `Imprimir`: preservado.
-- Sintaxe `Code.gs`: OK.
-- Sintaxe dos scripts de `Index.html`: OK.
+- Branch atual `release/handover-v54-checklist-clean`: OK.
+- HEAD `f248a9a`: OK.
+- Branch `feat/handover-auth-pin-v41-recebimento` nao publicada: OK.
+- `d12ccd6` fora do historico publicado: OK.
+- `Auditoria_Handover`: ausente.
+- `updateHandoverItem`: ausente.
+- `getHandoverAuditTrail`: ausente.
+- Botao/modal Editar: ausente.
+- `.clasp.json` do Handover oficial: OK.
+- POP ausente: OK.
+- `sheet.clear()` novo: ausente.
+- `deleteRow` novo: ausente; ocorrencia existente e legada nao entrou neste release.
+- Templates Checklist: Manha 17, Tarde 11, Noite 12.
+- `Item_ID`: 40 IDs unicos.
+- `Checklist_Turnos` com `ensureHeadersLegacyAdditive_`: OK.
+- Texto `operacao deste periodo`: sem mojibake no codigo.
+- Diff contra `feb9351`: apenas `Code.gs` e `Index.html`.
 
 ## Publicacao
 
 - `clasp.cmd status`: OK.
 - `clasp.cmd push`: OK.
-- `clasp.cmd version`: criada versao 50.
-- `clasp.cmd deploy`: deployment oficial atualizado para versao 50.
+- Versao criada: 54.
+- Deployment oficial atualizado para v54.
 - URL oficial mantida.
+- Novo deployment nao foi criado.
 
-## Login/PIN
+## Smoke P0 - Login e Medicamentos
 
-Resultado: OK.
+Login/PIN: OK.
 
-- Web App abriu com dashboard bloqueado sem login.
-- Overlay de login exibido.
-- PIN errado nao liberou dashboard.
+- Tela abriu bloqueada sem login.
+- PIN errado bloqueou acesso e nao ficou preso em Entrando.
 - Login Carlos/admin funcionou.
-- Logout voltou para login.
+- Header Carlos/admin confirmado.
 
-## Observacao_Solicitacao
+Medicamentos/Compras: FALHA critica.
 
-Resultado: OK.
+Registro de teste:
 
-Falta criada:
+- `CODEX_V54_MED_OK`
 
-- Medicamento: `TESTE_OBS_FALTA`
-- Observacao_Solicitacao: `cliente aceita genérico, mas precisa para hoje`
+Resultado:
 
-Validacoes:
+- O modal de Medicamento fechou apos salvar.
+- O item apareceu temporariamente na UI.
+- O item apareceu apos clicar Atualizar agora.
+- Apos logout/login, o item nao apareceu mais.
+- Busca direta na planilha oficial nao encontrou o item em `Medicamentos`.
+- Busca direta na planilha oficial nao encontrou o item em `Compras_Medicamentos`.
 
-- Salvou em `Medicamentos`.
-- Apareceu no card.
-- Espelhou em `Compras_Medicamentos`.
-- Busca por `generico` encontrou o item.
-- Busca por `genérico` encontrou o item.
-- Campos indevidos de Falta ficaram ocultos: cliente, telefone, pre-pago, preco e forma de recebimento.
+Conclusao:
 
-Encomenda criada:
+- O item ficou apenas como estado otimista/local.
+- A persistencia real em `Medicamentos` falhou.
+- O espelho em `Compras_Medicamentos` falhou.
+- Criterio de rollback acionado antes do smoke de Checklist.
 
-- Medicamento: `TESTE_OBS_ENCOMENDA`
-- Cliente: `Teste Obs`
-- Telefone: `21999999999`
-- Fornecedor_Compra: `Panpharma`
-- Codigo_Compra_Fornecedor: `OBS123`
-- Forma_Recebimento: `A combinar`
-- Observacao_Solicitacao: `cliente só quer laboratório específico`
+## Smoke P1 - Checklist
 
-Validacoes:
+Nao executado apos P0, porque a regra exigia rollback imediato quando Medicamentos nao persistisse.
 
-- Salvou em `Medicamentos`.
-- Apareceu no card.
-- Espelhou em `Compras_Medicamentos`.
-- `Fornecedor_Compra = Panpharma`.
-- `Codigo_Compra_Fornecedor = OBS123`.
-- `Forma_Recebimento = A combinar`.
-- `Observacao_Solicitacao` preenchida.
-- `Observacao_Compra` e `Mensagem_Cliente` permaneceram separadas.
-- `Ver detalhes` acionou o modal; a presenca da secao de solicitacao tambem foi confirmada estaticamente no codigo.
+## Rollback
 
-## Medicamentos e Compras
+Executado:
 
-Resultado: OK.
+`clasp.cmd deploy --deploymentId AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw --versionNumber 51 --description "Rollback v51 apos falha persistencia v54 release limpa checklist"`
 
-- Aba Medicamentos abriu.
-- Filtros testados sem UI quebrada: Todos, Pendentes, Faltas, Encomendas, Comprados, Comprados sem aviso, Entregues, Cancelados, Vencidos/Hoje, Resolvidos parcialmente.
-- Marcar como Comprado funcionou.
-- WhatsApp abriu sem envio real, com texto correto e sem mojibake:
-  - `Olá, Teste Obs!`
-  - `Você`
-  - `está`
-  - `para você`
-- Cancelamento pelo Handover funcionou.
-- Card ficou Cancelado.
-- WhatsApp ficou ausente no item Cancelado.
-- `Compras_Medicamentos` refletiu Cancelado, `Status_Handover = Cancelado` e `Cancelado_Por = Carlos`.
-- Aba `Compras_Medicamentos` preservou cabecalhos, dropdown de `Status_Compra`, cores/layout e destaque de `Observacao_Solicitacao`.
+Versao ativa apos acao: 51.
 
-## Auto-sync e Atualizar agora
+Validacao pos-rollback:
 
-Resultado: OK.
+- URL oficial voltou a exibir bloqueio de login.
 
-- Header mostrou estado de sync: `Atualizado há Xs`.
-- Botao `Atualizar agora` mudou para `Atualizando...`.
-- Botao voltou para `Atualizar agora`.
-- Tempo aproximado do refresh manual: 20-25s.
+## Limpeza
 
-## Pendencias, Checklist e Historico
-
-Resultado: OK.
-
-- Pendencia `TESTE_CHECK_GERAL` foi criada e persistiu na aba `Geral`.
-- Checklist abriu.
-- Historico abriu.
-- Menu contextual sem `Imprimir`.
-- Menu nao ficou inutilizavel por corte.
-
-## Visual rapido
-
-Resultado: OK.
-
-- Header sem duplicidade grosseira.
-- Estados vazios premium visiveis.
-- Badges zero suaves.
-- Logo/fallback OK.
-- Sem rolagem horizontal grosseira em 1366px.
-- Botao Sair discreto.
-- Novo registro permanece como CTA principal.
-
-## Limpeza desta rodada
-
-Resultado: OK.
-
-Registros criados:
-
-- `TESTE_OBS_FALTA`
-- `TESTE_OBS_ENCOMENDA`
-- `TESTE_CHECK_GERAL`
-
-Registros removidos:
-
-- `Medicamentos`: 2 linhas (`TESTE_OBS_FALTA`, `TESTE_OBS_ENCOMENDA`).
-- `Compras_Medicamentos`: 2 linhas espelhadas.
-- `Geral`: 1 linha (`TESTE_CHECK_GERAL`).
-
-Confirmacao apos limpeza:
-
-- Busca por `TESTE_OBS_` vazia em `Medicamentos` e `Compras_Medicamentos`.
-- Busca por `TESTE_CHECK_GERAL` vazia em `Geral`.
-- Cabecalhos e usuarios preservados.
+- Nenhuma linha real foi gravada na planilha para `CODEX_V54_MED_OK`; portanto nao houve registro persistido a remover.
+- Usuarios, cabecalhos e abas nao foram alterados manualmente.
 
 ## Falhas
 
-Falhas criticas: nenhuma.
+Criticas:
 
-Falhas medias: nenhuma.
+- v54 nao persistiu a nova Encomenda criada pelo Web App em `Medicamentos`.
+- v54 nao espelhou a nova Encomenda em `Compras_Medicamentos`.
+- O item apareceu apenas como estado otimista/local e desapareceu apos nova sessao.
 
-Falhas leves:
+Medias:
 
-- `Ver detalhes` foi acionado no smoke, mas a leitura automatizada nao capturou o texto completo da secao; a estrutura por secoes foi confirmada no preflight e no codigo.
-- Reversoes manuais por edicao direta da planilha nao foram executadas pela UI do Google Sheets nesta rodada; validacao da aba e do gatilho existente preservada.
+- Checklist v54 nao foi testado no Web App publicado, porque o P0 de Medicamentos falhou antes.
+
+Leves:
+
+- Nenhuma.
 
 ## Decisao
 
-Manter v50 publicada. Handover aprovado para uso operacional hoje.
+Rollback aplicado para v51. Release limpa v54 bloqueada por falha critica de persistencia Medicamentos/Compras.
