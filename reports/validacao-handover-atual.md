@@ -1,10 +1,10 @@
-# Validacao Handover v56 - Cancelamento Falta/Encomenda em Compras
+# Validacao Handover v57 - Performance Save Medicamentos
 
 Projeto: Handover - Drogarias Conceito
 
 Branch publicada: `hotfix/handover-p0-save-medicamentos`
 
-Commit publicado: `4fbe8d6 - fix(handover): espelha cancelamento Falta/Encomenda em Compras_Medicamentos`
+Commit publicado: `636ef8d - perf(handover): reduz espera ao salvar medicamento e melhora leitura dos cards`
 
 Deployment oficial: `AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw`
 
@@ -14,7 +14,7 @@ URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklp
 
 Status geral: OK COM RESSALVA
 
-Versao publicada: 56.
+Versao publicada: 57.
 
 Rollback feito: NAO.
 
@@ -23,127 +23,114 @@ POP tocado: NAO.
 ## Preflight
 
 - Branch `hotfix/handover-p0-save-medicamentos`: OK.
-- HEAD `4fbe8d6`: OK.
+- HEAD `636ef8d`: OK.
 - `.clasp.json` do Handover oficial: OK.
 - POP ausente: OK.
 - `sheet.clear()` novo: ausente.
 - `deleteRow` novo: ausente; ocorrencia existente e legada nao entrou neste hotfix.
-- Hotfix de codigo alterou somente `Code.gs`: OK.
-- Checklist/Login/PIN/WhatsApp/layout nao foram alterados neste commit: OK.
-- Base funcional v55 preservada: OK.
+- Checklist nao foi alterado pelo hotfix: OK.
+- Login/PIN nao foi alterado pelo hotfix: OK.
+- `Status_Compra` nao foi alterado pelo hotfix: OK.
+- `saveData` nao chama `setupSpreadsheet()` diretamente: OK.
+- Observacao: `requireSessionHandover_` ainda chama `setupSpreadsheet()` por caminho legado de validacao de sessao.
+- Log de performance presente: `[Handover][perf] saveData total...` no backend e `[Handover] saveData ms=...` no console do front.
 
 ## Publicacao
 
 - `clasp.cmd status`: OK.
 - `clasp.cmd push`: OK.
-- Versao criada: 56.
-- Deployment oficial atualizado para v56.
+- Versao criada: 57.
+- Deployment oficial atualizado para v57.
 - Novo deployment nao foi criado.
 
-## Smoke P0 - Criacao ainda funciona
-
-### Encomenda
-
-Registro:
-
-- `TESTE_V56_ENCOMENDA_OK`
-
-Resultado:
+## Smoke 1 - Login
 
 - Login Carlos/admin: OK.
-- Criacao pelo Web App: OK.
+- Dashboard abriu: OK.
+
+## Smoke 2 - Performance Encomenda
+
+Registro:
+
+- `TESTE_PERF_ENCOMENDA_V57`
+
+Resultado:
+
+- Tempo do clique Salvar ate modal fechar com sucesso real: 11,7s.
+- Log capturado: `[Handover] saveData ms= 11121`.
 - Gravou em `Medicamentos`: OK.
 - Espelhou em `Compras_Medicamentos`: OK.
-- Persistencia apos refresh/reload confirmada por backend/planilha: OK.
+- Persistiu apos logout/login: OK.
+- Modal nao fechou em falso: OK.
 - Campos conferidos:
   - Fornecedor_Compra: `Panpharma`.
-  - Codigo_Compra_Fornecedor: `V56ENC`.
+  - Codigo_Compra_Fornecedor: `PERF57`.
   - Forma_Recebimento: `A combinar`.
 
-### Falta
+Observacao:
+
+- Uma tentativa sem `Previsao_Entrega` foi bloqueada pela validacao do formulario com a mensagem `Informe a previsao de entrega.`; nao houve chamada de sucesso falsa.
+
+## Smoke 3 - Performance Falta
 
 Registro:
 
-- `TESTE_V56_FALTA_CANCEL`
+- `TESTE_PERF_FALTA_V57`
 
 Resultado:
 
-- Criacao pelo Web App: OK.
+- Tempo do clique Salvar ate modal fechar com sucesso real: 19,9s.
+- Log capturado: `[Handover] saveData ms= 19619`.
 - Gravou em `Medicamentos`: OK.
 - Espelhou em `Compras_Medicamentos`: OK.
+- Cancelamento pelo Handover: OK.
+- `Compras_Medicamentos.Status_Compra` ficou `Cancelado`: OK.
 
-## Smoke P1 - Cancelamento de Encomenda
+## Smoke 4 - Regressao curta
 
-Registro:
+WhatsApp:
 
-- `TESTE_V56_ENCOMENDA_OK`
+- Encomenda marcada como Comprado.
+- Botao `Avisar no WhatsApp` abriu URL `api.whatsapp.com` sem envio real.
+- Texto decodificado conferido com acentuacao correta:
+  - `Olá, Teste Perf!`
+  - `está`
+  - `você`
+  - `Você`
+- Mojibake visual: nao observado.
 
-Resultado em `Medicamentos`:
+Atualizar agora:
 
-- Status = `Cancelado`.
-- Cancelado_Por = `Carlos`.
-- Data_Cancelamento preenchida.
-- Motivo_Cancelamento = `limpeza teste v56`.
+- Botao virou `Atualizando...`: OK.
+- Botao voltou para `Atualizar agora`: OK.
 
-Resultado em `Compras_Medicamentos`:
+Menu:
 
-- Status_Compra = `Cancelado`.
-- Status_Handover = `Cancelado`.
-- Cancelado_Por = `Carlos`.
-- Data_Cancelamento preenchida.
-- Comprado_Por vazio.
-- Data_Compra vazia.
+- Menu do card nao trouxe `Imprimir`: OK.
 
-## Smoke P2 - Cancelamento de Falta
+Cards:
 
-Registro:
+- Titulo do card medido em `19px`: OK.
+- Descricao do card medida em `15px`: OK.
+- Sem overflow horizontal observado: OK.
 
-- `TESTE_V56_FALTA_CANCEL`
+## Performance residual
 
-Resultado em `Medicamentos`:
-
-- Status = `Cancelado`.
-- Cancelado_Por = `Carlos`.
-- Data_Cancelamento preenchida.
-- Motivo_Cancelamento = `limpeza teste v56`.
-
-Resultado em `Compras_Medicamentos`:
-
-- Status_Compra = `Cancelado`.
-- Status_Handover = `Cancelado`.
-- Cancelado_Por = `Carlos`.
-- Data_Cancelamento preenchida.
-- Nao permaneceu `Pendente de compra`.
-
-## Regressao curta
-
-Registro adicional:
-
-- `TESTE_V56_WHATSAPP_OK`
-
-Resultado:
-
-- Criacao de Encomenda simples: OK.
-- Persistencia em `Medicamentos`: OK.
-- Espelho em `Compras_Medicamentos`: OK.
-- Cancelamento logico: OK.
-- Espelho Cancelado em Compras: OK.
-- Menu sem `Imprimir`: OK.
-- Login/logout: OK.
-- Atualizar agora: parcial/inconclusivo na automacao final, mas operou durante o fluxo principal de criacao/cancelamento.
-- WhatsApp: inconclusivo; a automacao nao conseguiu abrir a janela antes do cancelamento do item.
+- Estimativa anterior: 25-30s.
+- Encomenda v57 medida: 11,7s.
+- Falta v57 medida: 19,9s.
+- `refreshDashboardBundle` ainda aparece pesado em logs do front, com medicoes observadas de 14,8s, 20,0s e 26,4s.
 
 ## Limpeza
 
 Registros criados nesta rodada:
 
-- `TESTE_V56_ENCOMENDA_OK`
-- `TESTE_V56_FALTA_CANCEL`
-- `TESTE_V56_WHATSAPP_OK`
+- `TESTE_PERF_ENCOMENDA_V57`
+- `TESTE_PERF_FALTA_V57`
 
 Limpeza realizada:
 
-- Os tres registros foram cancelados logicamente pelo Handover.
+- Os dois registros foram cancelados logicamente pelo Handover.
 - Nenhuma linha foi apagada fisicamente.
 - Usuarios, cabecalhos e abas nao foram alterados manualmente.
 
@@ -155,13 +142,13 @@ Criticas:
 
 Medias:
 
-- Nenhuma.
+- Falta ainda levou 19,9s para salvar; abaixo do pior caso de 25-30s, mas ainda perceptivelmente lenta.
+- `refreshDashboardBundle` continua pesado, com medicoes entre 14,8s e 26,4s.
 
 Leves:
 
-- WhatsApp ficou inconclusivo na automacao desta rodada.
-- Atualizar agora ficou parcial/inconclusivo na automacao final, apesar de o fluxo principal ter atualizado dados e planilha corretamente.
+- Tentativa sem previsao de entrega foi bloqueada corretamente por validacao do formulario.
 
 ## Veredito
 
-v56 publicada e aprovada com ressalva leve. O objetivo principal foi atendido: cancelamento de Falta e Encomenda agora espelha `Cancelado` em `Compras_Medicamentos`.
+v57 publicada e mantida. Persistencia real, espelho em `Compras_Medicamentos`, WhatsApp, Atualizar agora e cards passaram. A performance melhorou na Encomenda, mas ainda ha gargalo residual no refresh e na Falta.

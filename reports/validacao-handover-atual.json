@@ -2,101 +2,118 @@
   "projeto": "Handover - Drogarias Conceito",
   "status_geral": "OK_COM_RESSALVA",
   "branch_publicada": "hotfix/handover-p0-save-medicamentos",
-  "commit_publicado": "4fbe8d6",
-  "versao_publicada": 56,
+  "commit_publicado": "636ef8d",
+  "versao_publicada": 57,
   "rollback_feito": false,
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
   "pop_tocado": false,
   "preflight": {
     "branch_correta": true,
-    "head_4fbe8d6": true,
+    "head_636ef8d": true,
     "clasp_handover": true,
     "pop_ausente": true,
     "sheet_clear_novo": false,
     "deleteRow_novo": false,
-    "codigo_alterado_somente_code_gs": true,
-    "checklist_login_whatsapp_layout_alterados": false,
-    "base_v55_preservada": true
+    "checklist_alterado": false,
+    "login_pin_alterado": false,
+    "status_compra_alterado": false,
+    "saveData_chamada_direta_setupSpreadsheet_removida": true,
+    "requireSessionHandover_setupSpreadsheet_legado_presente": true,
+    "log_perf_presente": true
   },
   "publicacao": {
     "clasp_status": "OK",
     "clasp_push": "OK",
-    "versao_criada": 56,
+    "versao_criada": 57,
     "deployment_atualizado": true,
     "novo_deployment_criado": false
   },
   "login_pin": {
     "login_carlos_admin": true,
-    "logout_login_testado": true
+    "dashboard_abriu": true,
+    "logout_login_persistencia_testado": true
   },
-  "criacao_encomenda": {
-    "registro": "TESTE_V56_ENCOMENDA_OK",
-    "webapp": true,
-    "medicamentos": true,
-    "compras_medicamentos": true,
-    "fornecedor_compra": "Panpharma",
-    "codigo_compra_fornecedor": "V56ENC",
-    "forma_recebimento": "A combinar"
+  "performance": {
+    "tempo_antes_estimado": "25-30s",
+    "encomenda": {
+      "registro": "TESTE_PERF_ENCOMENDA_V57",
+      "tempo_ms": 11683,
+      "tempo_legivel": "11,7s",
+      "log_console": "[Handover] saveData ms= 11121",
+      "modal_fechou_apos_sucesso_real": true,
+      "medicamentos": true,
+      "compras_medicamentos": true,
+      "persistencia_logout_login": true
+    },
+    "falta": {
+      "registro": "TESTE_PERF_FALTA_V57",
+      "tempo_ms": 19915,
+      "tempo_legivel": "19,9s",
+      "log_console": "[Handover] saveData ms= 19619",
+      "medicamentos": true,
+      "compras_medicamentos": true,
+      "cancelamento_compras_refletido": true
+    },
+    "refresh_dashboard": {
+      "refreshDashboardBundle_ms_observados": [14821, 20023, 26432],
+      "atualizar_agora": "OK - botao vira Atualizando... e volta para Atualizar agora",
+      "gargalo_residual": "refreshDashboardBundle ainda fica na faixa de 14-26s em algumas operacoes"
+    }
   },
-  "criacao_falta": {
-    "registro": "TESTE_V56_FALTA_CANCEL",
-    "webapp": true,
-    "medicamentos": true,
-    "compras_medicamentos": true
+  "medicamentos": {
+    "criacao_encomenda": true,
+    "criacao_falta": true,
+    "persistencia_real": true,
+    "placeholder_otimista_falso": false
   },
-  "cancelamento_encomenda": {
-    "registro": "TESTE_V56_ENCOMENDA_OK",
-    "medicamentos_status": "Cancelado",
-    "medicamentos_cancelado_por": "Carlos",
-    "medicamentos_data_cancelamento": true,
-    "compras_status_compra": "Cancelado",
-    "compras_status_handover": "Cancelado",
-    "compras_cancelado_por": "Carlos",
-    "compras_data_cancelamento": true,
-    "comprado_por_vazio_ou_coerente": true,
-    "data_compra_vazia_ou_coerente": true,
-    "ok": true
-  },
-  "cancelamento_falta": {
-    "registro": "TESTE_V56_FALTA_CANCEL",
-    "medicamentos_status": "Cancelado",
-    "medicamentos_cancelado_por": "Carlos",
-    "medicamentos_data_cancelamento": true,
-    "compras_status_compra": "Cancelado",
-    "compras_status_handover": "Cancelado",
-    "compras_cancelado_por": "Carlos",
-    "compras_data_cancelamento": true,
-    "nao_permaneceu_pendente_de_compra": true,
-    "ok": true
+  "compras_medicamentos": {
+    "encomenda_espelhou": true,
+    "falta_espelhou": true,
+    "fornecedor_codigo_forma_encomenda": true,
+    "cancelamento_falta_status_compra": "Cancelado",
+    "cancelamento_encomenda_status_compra": "Cancelado"
   },
   "regressao_curta": {
-    "registro": "TESTE_V56_WHATSAPP_OK",
-    "criacao_encomenda_simples": true,
-    "persistencia_medicamentos": true,
-    "espelho_compras": true,
-    "cancelamento_logico": true,
+    "whatsapp": {
+      "abriu_sem_envio_real": true,
+      "url": "https://api.whatsapp.com/send/?phone=5521999999999",
+      "texto_visual": "OK - Ola/Teste Perf, Voce/esta/voce com acentuacao correta na URL decodificada",
+      "mojibake_visual": false
+    },
     "menu_sem_imprimir": true,
-    "whatsapp": "INCONCLUSIVO - automacao nao abriu a janela antes do cancelamento",
-    "atualizar_agora": "PARCIAL/INCONCLUSIVO na automacao final"
+    "atualizar_agora": true,
+    "cards": {
+      "titulo_font_size": "19px",
+      "descricao_font_size": "15px",
+      "overflow_horizontal": false
+    }
   },
   "limpeza": {
     "registros_criados": [
-      "TESTE_V56_ENCOMENDA_OK",
-      "TESTE_V56_FALTA_CANCEL",
-      "TESTE_V56_WHATSAPP_OK"
+      "TESTE_PERF_ENCOMENDA_V57",
+      "TESTE_PERF_FALTA_V57"
     ],
-    "registros_removidos": [],
-    "modo": "cancelamento logico pelo Handover",
-    "delete_fisico": false
+    "registros_removidos": [
+      "TESTE_PERF_ENCOMENDA_V57 - cancelado logicamente",
+      "TESTE_PERF_FALTA_V57 - cancelado logicamente"
+    ],
+    "delete_fisico": false,
+    "usuarios_cabecalhos_abas_preservados": true
   },
   "falhas": {
     "criticas": [],
-    "medias": [],
+    "medias": [
+      "Falta ainda levou 19,9s para salvar; abaixo do pior caso de 25-30s, mas ainda perceptivelmente lenta.",
+      "refreshDashboardBundle continua pesado, com medicoes entre 14,8s e 26,4s."
+    ],
     "leves": [
-      "WhatsApp inconclusivo na automacao desta rodada.",
-      "Atualizar agora parcial/inconclusivo na automacao final."
+      "Tentativa sem Previsao de entrega foi bloqueada corretamente por validacao do formulario; nao foi falha de backend."
     ]
   },
-  "veredito": "v56 publicada e aprovada com ressalva leve. Cancelamento de Falta e Encomenda espelha Cancelado em Compras_Medicamentos."
+  "reports": {
+    "commitado": true,
+    "push": true
+  },
+  "veredito": "v57 publicada e mantida. Persistencia real, espelho em Compras_Medicamentos, WhatsApp, Atualizar agora e cards passaram. Performance melhorou na Encomenda, mas ainda ha gargalo residual no refresh e na Falta."
 }
