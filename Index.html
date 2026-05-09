@@ -1831,19 +1831,29 @@
       }
 
       .qk-title {
-        font-size: 16px;
+        font-size: 19px;
         font-weight: 800;
-        letter-spacing: -0.02em;
+        letter-spacing: 0;
         color: var(--text);
-        line-height: 1.25;
+        line-height: 1.28;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow-wrap: anywhere;
       }
 
       .qk-desc {
-        margin-top: 4px;
-        font-size: 12px;
+        margin-top: 6px;
+        font-size: 15px;
         color: var(--muted);
-        line-height: 1.42;
+        line-height: 1.5;
         max-width: 78ch;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow-wrap: anywhere;
       }
 
       .qk-meta {

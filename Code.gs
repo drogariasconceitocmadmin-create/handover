@@ -345,18 +345,7 @@ function setupSpreadsheet() {
   const ss = getSpreadsheet_();
 
   Object.keys(HEADERS).forEach(function (sheetName) {
-    const sheet = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
-    if (
-      sheetName === SHEET_NAMES.GERAL ||
-      sheetName === SHEET_NAMES.ARQUIVO ||
-      sheetName === SHEET_NAMES.MEDICAMENTOS ||
-      sheetName === SHEET_NAMES.COMPRAS_MEDICAMENTOS ||
-      sheetName === SHEET_NAMES.CHECKLIST
-    ) {
-      ensureHeadersLegacyAdditive_(sheet, HEADERS[sheetName]);
-    } else {
-      ensureHeaders_(sheet, HEADERS[sheetName]);
-    }
+    const sheet = ensureSheetHeadersFor_(sheetName);
     if (sheetName === SHEET_NAMES.COMPRAS_MEDICAMENTOS) {
       try {
         applyComprasMedicamentosLayout_(sheet);
@@ -367,9 +356,25 @@ function setupSpreadsheet() {
   });
 }
 
+function ensureSheetHeadersFor_(sheetName) {
+  const ss = getSpreadsheet_();
+  const sheet = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
+  if (
+    sheetName === SHEET_NAMES.GERAL ||
+    sheetName === SHEET_NAMES.ARQUIVO ||
+    sheetName === SHEET_NAMES.MEDICAMENTOS ||
+    sheetName === SHEET_NAMES.COMPRAS_MEDICAMENTOS ||
+    sheetName === SHEET_NAMES.CHECKLIST
+  ) {
+    ensureHeadersLegacyAdditive_(sheet, HEADERS[sheetName]);
+  } else {
+    ensureHeaders_(sheet, HEADERS[sheetName]);
+  }
+  return sheet;
+}
+
 function getComprasMedicamentosSheet_() {
-  setupSpreadsheet();
-  return getSheetOrThrow_(getSpreadsheet_(), SHEET_NAMES.COMPRAS_MEDICAMENTOS);
+  return ensureSheetHeadersFor_(SHEET_NAMES.COMPRAS_MEDICAMENTOS);
 }
 
 /**
@@ -1518,7 +1523,6 @@ function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId, opt) {
   if (!id) {
     return;
   }
-  setupSpreadsheet();
   var medLoc = findRowById_(SHEET_NAMES.MEDICAMENTOS, id);
   if (!medLoc) {
     return;
@@ -2398,10 +2402,12 @@ function buildChecklistTurnoPayload_(turnoOpt) {
 }
 
 function saveData(tab, data, sessionToken) {
-  setupSpreadsheet();
+  const started = Date.now();
   const sess = requireSessionHandover_(sessionToken);
   const authorLabel = getSessionDisplayName_(sess);
-  return appendHandoverRecord_(tab, data, authorLabel);
+  const result = appendHandoverRecord_(tab, data, authorLabel);
+  Logger.log('[Handover][perf] saveData total tab=' + tab + ' ms=' + (Date.now() - started));
+  return result;
 }
 
 /**
@@ -2409,14 +2415,12 @@ function saveData(tab, data, sessionToken) {
  */
 function appendHandoverRecord_(tab, data, authorLabel) {
   const started = Date.now();
-  setupSpreadsheet();
 
   if (tab !== SHEET_NAMES.GERAL && tab !== SHEET_NAMES.MEDICAMENTOS) {
     throw new Error('Aba invalida: ' + tab);
   }
 
-  const ss = getSpreadsheet_();
-  const sheet = getSheetOrThrow_(ss, tab);
+  const sheet = ensureSheetHeadersFor_(tab);
   const id = Utilities.getUuid();
   const timestamp = new Date();
   const op = authorLabel;
