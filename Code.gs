@@ -5,6 +5,7 @@ const SHEET_NAMES = {
   ARQUIVO: 'Arquivo_Resolvidos',
   CHECKLIST: 'Checklist_Turnos',
   USUARIOS: 'Usuarios_Handover',
+  AUDITORIA_HANDOVER: 'Auditoria_Handover',
 };
 
 /** Valores exatos da coluna Status_Compra (dropdown na aba operacional). */
@@ -253,6 +254,20 @@ const HEADERS = {
     'Responsavel',
     'Data_Hora_Check',
     'Observacao',
+  ],
+  Auditoria_Handover: [
+    'ID_Auditoria',
+    'Data_Hora',
+    'Acao',
+    'Origem',
+    'ID_Item',
+    'Usuario',
+    'Nome',
+    'Perfil',
+    'Campo',
+    'Valor_Anterior',
+    'Valor_Novo',
+    'Resumo',
   ],
 };
 
@@ -2447,6 +2462,455 @@ function deleteHandoverItem(id, origem, sessionToken, motivo) {
     success: true,
     id: sanitizeText_(id),
     origem: sheetName,
+  };
+}
+
+function auditTrailDisplayValue_(value) {
+  if (value == null || value === '') {
+    return '';
+  }
+  if (value instanceof Date) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+  }
+  if (typeof value === 'boolean') {
+    return value ? 'Sim' : 'Não';
+  }
+  var s = sanitizeText_(value);
+  if (s.length > 1800) {
+    return s.substring(0, 1799) + '\u2026';
+  }
+  return s;
+}
+
+function appendHandoverAuditLog_(entries) {
+  if (!entries || !entries.length) {
+    return;
+  }
+  setupSpreadsheet();
+  var sheet = getSheetOrThrow_(getSpreadsheet_(), SHEET_NAMES.AUDITORIA_HANDOVER);
+  entries.forEach(function (entry) {
+    var row = {
+      ID_Auditoria: Utilities.getUuid(),
+      Data_Hora: new Date(),
+      Acao: sanitizeText_(entry.acao || 'EDITAR'),
+      Origem: sanitizeText_(entry.origem || ''),
+      ID_Item: sanitizeText_(entry.idItem || ''),
+      Usuario: sanitizeText_(entry.usuario || ''),
+      Nome: sanitizeText_(entry.nome || ''),
+      Perfil: sanitizeText_(entry.perfil || ''),
+      Campo: sanitizeText_(entry.campo || ''),
+      Valor_Anterior: auditTrailDisplayValue_(entry.valorAnterior),
+      Valor_Novo: auditTrailDisplayValue_(entry.valorNovo),
+      Resumo: (function () {
+        var r = sanitizeText_(entry.resumo || '');
+        return r.length > 1800 ? r.substring(0, 1799) + '\u2026' : r;
+      })(),
+    };
+    sheet.appendRow(buildAppendRowValuesFromNamedMap_(sheet, row));
+  });
+}
+
+function getHandoverAuditTrail(idItem, origem, sessionToken) {
+  setupSpreadsheet();
+  requireSessionHandover_(sessionToken);
+  var idT = sanitizeText_(idItem);
+  if (!idT) {
+    throw new Error('ID invalido.');
+  }
+  var sheet = getSheetOrThrow_(getSpreadsheet_(), SHEET_NAMES.AUDITORIA_HANDOVER);
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    return { success: true, rows: [] };
+  }
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
+  var headerCells = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var values = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  var origT = sanitizeText_(origem);
+  var out = [];
+  for (var i = 0; i < values.length; i++) {
+    var obj = rowCellsToObject_(headerCells, values[i]);
+    if (sanitizeText_(obj.ID_Item) !== idT) {
+      continue;
+    }
+    if (origT && sanitizeText_(obj.Origem) !== origT) {
+      continue;
+    }
+    if (obj.Data_Hora instanceof Date) {
+      obj.Data_Hora = Utilities.formatDate(
+        obj.Data_Hora,
+        Session.getScriptTimeZone(),
+        "yyyy-MM-dd'T'HH:mm:ss"
+      );
+    }
+    out.push(obj);
+  }
+  out.sort(function (a, b) {
+    var da = a.Data_Hora ? new Date(String(a.Data_Hora).replace(' ', 'T')) : 0;
+    var db = b.Data_Hora ? new Date(String(b.Data_Hora).replace(' ', 'T')) : 0;
+    return db - da;
+  });
+  return { success: true, rows: out };
+}
+
+function geralDateKey_(v) {
+  if (!v && v !== 0) {
+    return '';
+  }
+  if (v instanceof Date) {
+    return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+  var s = String(v).trim();
+  return s.length >= 10 ? s.substring(0, 10) : s;
+}
+
+/**
+ * Atualiza registro existente em Geral ou Medicamentos com auditoria persistente.
+ * @param {string} id
+ * @param {string} origem Geral | Medicamentos
+ * @param {Object} payload campos permitidos por origem
+ */
+function updateHandoverItem(id, origem, payload, sessionToken) {
+  setupSpreadsheet();
+  var sess = requireSessionHandover_(sessionToken);
+  var idSan = sanitizeText_(id);
+  if (!idSan) {
+    throw new Error('ID invalido.');
+  }
+  payload = payload || {};
+  var sheetNameIn = sanitizeText_(origem);
+  var sheetName =
+    sheetNameIn === 'Geral' || sheetNameIn === SHEET_NAMES.GERAL
+      ? SHEET_NAMES.GERAL
+      : sheetNameIn === 'Medicamentos' || sheetNameIn === SHEET_NAMES.MEDICAMENTOS
+      ? SHEET_NAMES.MEDICAMENTOS
+      : '';
+  if (!sheetName) {
+    throw new Error('Origem invalida para edicao.');
+  }
+  var loc = findRowById_(sheetName, idSan);
+  if (!loc) {
+    throw new Error('Item nao encontrado.');
+  }
+  var before = rowToObjectFromSheetRow_(loc.sheet, loc.rowNumber);
+  if (toBoolean_(before.Excluido)) {
+    throw new Error('Item excluido nao pode ser editado.');
+  }
+
+  var updates = {};
+  var auditChanges = [];
+  var nowAc = new Date();
+  var opLabel = getSessionDisplayName_(sess);
+
+  if (sheetName === SHEET_NAMES.GERAL) {
+    if (toBoolean_(before.Resolvido)) {
+      throw new Error('Pendencia resolvida nao pode ser editada pelo painel.');
+    }
+    var tituloNew = sanitizeText_(payload.titulo);
+    var tituloOld = sanitizeText_(before.Titulo || before['Título'] || '');
+    if (tituloNew !== tituloOld) {
+      updates.Titulo = tituloNew;
+      auditChanges.push({ col: 'Titulo', label: 'Título', old: tituloOld, neu: tituloNew });
+    }
+    var descNew = sanitizeText_(payload.descricao);
+    var descOld = sanitizeText_(before.Descricao || before['Descrição'] || '');
+    if (descNew !== descOld) {
+      updates.Descricao = descNew;
+      auditChanges.push({ col: 'Descricao', label: 'Descrição', old: descOld, neu: descNew });
+    }
+    var urgNew = normalizeUrgenciaGeral_(payload.urgencia);
+    var urgOld = normalizeUrgenciaGeral_(before.Urgencia || '');
+    if (urgNew !== urgOld) {
+      updates.Urgencia = urgNew;
+      auditChanges.push({ col: 'Urgencia', label: 'Urgência', old: urgOld, neu: urgNew });
+    }
+    var tvNew = toBoolean_(payload.temVencimento);
+    var tvOld = toBoolean_(before.Tem_Vencimento);
+    if (tvNew !== tvOld) {
+      updates.Tem_Vencimento = tvNew;
+      auditChanges.push({
+        col: 'Tem_Vencimento',
+        label: 'Tem vencimento / prazo',
+        old: tvOld ? 'Sim' : 'Não',
+        neu: tvNew ? 'Sim' : 'Não',
+      });
+    }
+    if (tvNew) {
+      var parsedDv = parseDate_(payload.dataVencimento);
+      if (!parsedDv) {
+        throw new Error('Data de vencimento invalida.');
+      }
+      var dvNew = Utilities.formatDate(parsedDv, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      var dvOld = geralDateKey_(before.Data_Vencimento);
+      if (dvNew !== dvOld) {
+        updates.Data_Vencimento = parsedDv;
+        auditChanges.push({
+          col: 'Data_Vencimento',
+          label: 'Data de vencimento',
+          old: dvOld,
+          neu: dvNew,
+        });
+      }
+      var hvNew = sanitizeText_(payload.horaVencimento || '');
+      var hvOld = sanitizeText_(before.Hora_Vencimento || '');
+      if (hvNew !== hvOld) {
+        updates.Hora_Vencimento = hvNew;
+        auditChanges.push({
+          col: 'Hora_Vencimento',
+          label: 'Hora limite',
+          old: hvOld,
+          neu: hvNew,
+        });
+      }
+    } else {
+      updates.Tem_Vencimento = false;
+      var dvClear = geralDateKey_(before.Data_Vencimento);
+      if (dvClear) {
+        updates.Data_Vencimento = '';
+        auditChanges.push({
+          col: 'Data_Vencimento',
+          label: 'Data de vencimento',
+          old: dvClear,
+          neu: '',
+        });
+      }
+      var hvClear = sanitizeText_(before.Hora_Vencimento || '');
+      if (hvClear) {
+        updates.Hora_Vencimento = '';
+        auditChanges.push({
+          col: 'Hora_Vencimento',
+          label: 'Hora limite',
+          old: hvClear,
+          neu: '',
+        });
+      }
+    }
+  } else {
+    var stLow = String(before.Status || '')
+      .trim()
+      .toLowerCase();
+    if (stLow === 'cancelado') {
+      throw new Error('Medicamento cancelado nao pode ser editado.');
+    }
+    var tipoLow = String(before.Tipo || '')
+      .trim()
+      .toLowerCase();
+    var isFalta = tipoLow === 'falta';
+
+    var medNew = sanitizeText_(payload.medicamento);
+    if (!medNew) {
+      throw new Error('Medicamento e obrigatorio.');
+    }
+    if (medNew !== sanitizeText_(before.Medicamento || '')) {
+      updates.Medicamento = medNew;
+      auditChanges.push({
+        col: 'Medicamento',
+        label: 'Medicamento',
+        old: auditTrailDisplayValue_(before.Medicamento),
+        neu: medNew,
+      });
+    }
+
+    var atNew = sanitizeText_(payload.atendente);
+    if (!atNew) {
+      throw new Error('Atendente e obrigatorio.');
+    }
+    if (atNew !== sanitizeText_(before.Atendente || '')) {
+      updates.Atendente = atNew;
+      auditChanges.push({
+        col: 'Atendente',
+        label: 'Atendente',
+        old: auditTrailDisplayValue_(before.Atendente),
+        neu: atNew,
+      });
+    }
+
+    var obsNew = sanitizeText_(payload.observacaoSolicitacao);
+    var obsOld = sanitizeText_(before.Observacao_Solicitacao || '');
+    if (obsNew !== obsOld) {
+      updates.Observacao_Solicitacao = obsNew;
+      auditChanges.push({
+        col: 'Observacao_Solicitacao',
+        label: 'Observação da solicitação',
+        old: obsOld,
+        neu: obsNew,
+      });
+    }
+
+    var prevParsed = parseDate_(payload.previsaoEntrega);
+    if (!prevParsed) {
+      throw new Error('Previsao de entrega invalida.');
+    }
+    var prevNewStr = Utilities.formatDate(prevParsed, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    var prevOldStr = geralDateKey_(before.Previsao_Entrega);
+    if (prevNewStr !== prevOldStr) {
+      updates.Previsao_Entrega = prevParsed;
+      auditChanges.push({
+        col: 'Previsao_Entrega',
+        label: 'Previsão de entrega',
+        old: prevOldStr,
+        neu: prevNewStr,
+      });
+    }
+
+    if (!isFalta) {
+      var cliNew = sanitizeText_(payload.cliente);
+      if (cliNew !== sanitizeText_(before.Cliente || '')) {
+        updates.Cliente = cliNew;
+        auditChanges.push({
+          col: 'Cliente',
+          label: 'Cliente',
+          old: auditTrailDisplayValue_(before.Cliente),
+          neu: cliNew,
+        });
+      }
+      var telNew = sanitizeText_(payload.telefone);
+      if (telNew !== sanitizeText_(before.Telefone || '')) {
+        updates.Telefone = telNew;
+        auditChanges.push({
+          col: 'Telefone',
+          label: 'Telefone',
+          old: auditTrailDisplayValue_(before.Telefone),
+          neu: telNew,
+        });
+      }
+      var precoParsed = parseSalePrice_(payload.precoVenda);
+      var precoOldStr = auditTrailDisplayValue_(before.Preco_Venda);
+      var precoNewStr = precoParsed === '' ? '' : auditTrailDisplayValue_(precoParsed);
+      if (precoOldStr !== precoNewStr) {
+        updates.Preco_Venda = precoParsed === '' ? '' : precoParsed;
+        auditChanges.push({
+          col: 'Preco_Venda',
+          label: 'Preço de venda',
+          old: precoOldStr,
+          neu: precoNewStr,
+        });
+      }
+      var ppNew = toBoolean_(payload.prePago);
+      var ppOld = toBoolean_(before.Pre_Pago);
+      if (ppNew !== ppOld) {
+        updates.Pre_Pago = ppNew;
+        auditChanges.push({
+          col: 'Pre_Pago',
+          label: 'Pré-pago',
+          old: ppOld ? 'Sim' : 'Não',
+          neu: ppNew ? 'Sim' : 'Não',
+        });
+      }
+      var fnNew = normalizeFornecedorCompraInput_(payload.fornecedorCompra);
+      var fnOld = normalizeFornecedorCompraInput_(before.Fornecedor_Compra);
+      if (fnNew !== fnOld) {
+        updates.Fornecedor_Compra = fnNew;
+        auditChanges.push({
+          col: 'Fornecedor_Compra',
+          label: 'Fornecedor de compra',
+          old: fnOld,
+          neu: fnNew,
+        });
+      }
+      var codNew = normalizeCodigoCompraFornecedorInput_(payload.codigoCompraFornecedor, fnNew);
+      var codOld = normalizeCodigoCompraFornecedorInput_(before.Codigo_Compra_Fornecedor, fnOld);
+      if (codNew !== codOld) {
+        updates.Codigo_Compra_Fornecedor = codNew;
+        auditChanges.push({
+          col: 'Codigo_Compra_Fornecedor',
+          label: 'Código de compra',
+          old: codOld,
+          neu: codNew,
+        });
+      }
+      var frNew = normalizeFormaRecebimento_(payload.formaRecebimento);
+      var frOld = normalizeFormaRecebimento_(before.Forma_Recebimento);
+      if (frNew !== frOld) {
+        updates.Forma_Recebimento = frNew;
+        auditChanges.push({
+          col: 'Forma_Recebimento',
+          label: 'Retirada ou entrega',
+          old: frOld,
+          neu: frNew,
+        });
+      }
+    } else {
+      var fnFNew = normalizeFornecedorCompraInput_(payload.fornecedorCompra);
+      var fnFOld = normalizeFornecedorCompraInput_(before.Fornecedor_Compra);
+      if (fnFNew !== fnFOld) {
+        updates.Fornecedor_Compra = fnFNew;
+        auditChanges.push({
+          col: 'Fornecedor_Compra',
+          label: 'Fornecedor de compra',
+          old: fnFOld,
+          neu: fnFNew,
+        });
+      }
+      var codFNew = normalizeCodigoCompraFornecedorInput_(payload.codigoCompraFornecedor, fnFNew);
+      var codFOld = normalizeCodigoCompraFornecedorInput_(before.Codigo_Compra_Fornecedor, fnFOld);
+      if (codFNew !== codFOld) {
+        updates.Codigo_Compra_Fornecedor = codFNew;
+        auditChanges.push({
+          col: 'Codigo_Compra_Fornecedor',
+          label: 'Código de compra',
+          old: codFOld,
+          neu: codFNew,
+        });
+      }
+    }
+  }
+
+  if (!auditChanges.length) {
+    return {
+      success: true,
+      itemAtualizado:
+        sheetName === SHEET_NAMES.GERAL ? fetchGeralRecordById_(idSan) : fetchMedicationRecordById_(idSan),
+    };
+  }
+
+  updates.Ultima_Acao_Por = opLabel;
+  updates.Ultima_Acao_Em = nowAc;
+
+  Object.keys(updates).forEach(function (k) {
+    var col = getColumnIndex_(loc.sheet, k);
+    loc.sheet.getRange(loc.rowNumber, col).setValue(updates[k]);
+  });
+
+  var auditOrigem = sheetName === SHEET_NAMES.GERAL ? 'Geral' : 'Medicamentos';
+  var dn = sanitizeText_(sess.nome || '') || sess.usuario;
+  var resumo =
+    dn +
+    ' editou ' +
+    auditChanges
+      .map(function (c) {
+        return c.label;
+      })
+      .join(', ') +
+    '.';
+
+  var auditRows = auditChanges.map(function (ch) {
+    return {
+      acao: 'EDITAR',
+      origem: auditOrigem,
+      idItem: idSan,
+      usuario: sess.usuario,
+      nome: sanitizeText_(sess.nome || ''),
+      perfil: sess.perfil,
+      campo: ch.label,
+      valorAnterior: ch.old,
+      valorNovo: ch.neu,
+      resumo: resumo,
+    };
+  });
+  appendHandoverAuditLog_(auditRows);
+
+  if (sheetName === SHEET_NAMES.MEDICAMENTOS) {
+    try {
+      mirrorComprasMedicamentosRowForMedicamentoId_(idSan);
+    } catch (mirErr) {
+      Logger.log('updateHandoverItem mirrorCompras: ' + mirErr);
+    }
+  }
+
+  return {
+    success: true,
+    itemAtualizado:
+      sheetName === SHEET_NAMES.GERAL ? fetchGeralRecordById_(idSan) : fetchMedicationRecordById_(idSan),
   };
 }
 

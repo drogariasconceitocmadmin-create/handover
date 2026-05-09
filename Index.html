@@ -2038,19 +2038,38 @@
       }
 
       .qk-title {
-        font-size: 16px;
-        font-weight: 800;
-        letter-spacing: -0.02em;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: -0.015em;
         color: var(--text);
-        line-height: 1.25;
+        line-height: 1.35;
+        word-break: break-word;
       }
 
       .qk-desc {
-        margin-top: 4px;
-        font-size: 12px;
+        margin-top: 6px;
+        font-size: 13px;
         color: var(--muted);
-        line-height: 1.42;
+        line-height: 1.45;
         max-width: 78ch;
+      }
+
+      .qk-desc--clamp {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .ho-edit-dialog {
+        max-width: 520px;
+        width: calc(100% - 24px);
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      .ho-edit-body .field {
+        margin-bottom: 10px;
       }
 
       .qk-meta {
@@ -3078,6 +3097,34 @@
       </div>
     </div>
 
+    <div
+      id="handover-edit-overlay"
+      class="modal-overlay hidden"
+      aria-hidden="true"
+      onclick="onHandoverEditOverlayClick_(event)"
+    >
+      <div
+        class="modal-dialog card ho-edit-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="handover-edit-title"
+        onclick="event.stopPropagation()"
+      >
+        <div class="modal-head">
+          <h2 id="handover-edit-title">Editar registro</h2>
+          <button type="button" class="modal-icon-btn" onclick="closeHandoverEditModal_()" aria-label="Fechar">
+            ×
+          </button>
+        </div>
+        <div id="handover-edit-body" class="form-grid ho-edit-body"></div>
+        <div class="form-actions">
+          <button type="button" class="light" onclick="closeHandoverEditModal_()">Cancelar</button>
+          <button type="button" class="btn-queue-primary" onclick="submitHandoverEdit_()">Salvar</button>
+        </div>
+        <div id="handover-edit-status" class="status" aria-live="polite"></div>
+      </div>
+    </div>
+
     <div id="form-modal-overlay" class="modal-overlay hidden" aria-hidden="true">
       <div class="modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="form-modal-title">
         <div class="modal-head">
@@ -3327,6 +3374,7 @@
       let lastAuditTimelineHeadline = '';
       let lastAuditTimelineBasic = false;
       let lastAuditRawRecord = null;
+      let handoverEditContext_ = null;
       let checklistPendingItemId = null;
       let isChecklistExpanded = false;
       const openChecklistCategories = new Set();
@@ -3483,6 +3531,11 @@
         var auditOv = document.getElementById('audit-drawer-overlay');
         if (auditOv && !auditOv.classList.contains('hidden')) {
           closeAuditDrawer_();
+          return;
+        }
+        var hoEditEsc = document.getElementById('handover-edit-overlay');
+        if (hoEditEsc && !hoEditEsc.classList.contains('hidden')) {
+          closeHandoverEditModal_();
           return;
         }
         if (formModalOverlay && !formModalOverlay.classList.contains('hidden')) {
@@ -4169,12 +4222,14 @@
 
       function isAnyBlockingModalOpen_() {
         var auditOv = document.getElementById('audit-drawer-overlay');
+        var hoEdit = document.getElementById('handover-edit-overlay');
         return (
           (formModalOverlay && !formModalOverlay.classList.contains('hidden')) ||
           (operadorRequiredOverlay && !operadorRequiredOverlay.classList.contains('hidden')) ||
           (reopenConfirmOverlay && !reopenConfirmOverlay.classList.contains('hidden')) ||
           (cardDetailOverlay && !cardDetailOverlay.classList.contains('hidden')) ||
-          (auditOv && !auditOv.classList.contains('hidden'))
+          (auditOv && !auditOv.classList.contains('hidden')) ||
+          (hoEdit && !hoEdit.classList.contains('hidden'))
         );
       }
 
@@ -4291,6 +4346,10 @@
           return false;
         }
         if (hasBlockingQueueSync_()) {
+          return false;
+        }
+        var hoEditOv = document.getElementById('handover-edit-overlay');
+        if (hoEditOv && !hoEditOv.classList.contains('hidden')) {
           return false;
         }
         return true;
@@ -5691,6 +5750,366 @@
         return html;
       }
 
+      function onHandoverEditOverlayClick_(ev) {
+        if (ev.target !== ev.currentTarget) {
+          return;
+        }
+        closeHandoverEditModal_();
+      }
+
+      function handoverPriceInputFromRaw_(raw) {
+        var p = raw.Preco_Venda;
+        if (p === '' || p == null) {
+          return '';
+        }
+        var n = Number(p);
+        if (!Number.isNaN(n) && n >= 0) {
+          return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        return String(p);
+      }
+
+      function handoverEditFornecedorOptionsHtml_(selected) {
+        var opts = ['Não informado', 'Panpharma', 'Santa Cruz'];
+        return opts
+          .map(function (o) {
+            return (
+              '<option value="' +
+              escapeAttribute(o) +
+              '"' +
+              (o === selected ? ' selected' : '') +
+              '>' +
+              escapeHtml(o) +
+              '</option>'
+            );
+          })
+          .join('');
+      }
+
+      function handoverEditFormaOptionsHtml_(selected) {
+        var pairs = [
+          ['A combinar', 'A combinar'],
+          ['Retira na loja', 'Retira na loja'],
+          ['Entregar no endereço cadastrado', 'Entregar no endereço cadastrado'],
+        ];
+        return pairs
+          .map(function (p) {
+            return (
+              '<option value="' +
+              escapeAttribute(p[0]) +
+              '"' +
+              (p[0] === selected ? ' selected' : '') +
+              '>' +
+              escapeHtml(p[1]) +
+              '</option>'
+            );
+          })
+          .join('');
+      }
+
+      function handoverEditGeralVencToggle_() {
+        var cb = document.getElementById('ho-edit-tem-venc');
+        var box = document.getElementById('ho-edit-geral-venc-fields');
+        if (!cb || !box) {
+          return;
+        }
+        box.classList.toggle('hidden', !cb.checked);
+      }
+
+      function handoverEditFornecedorChange_() {
+        var sel = document.getElementById('ho-edit-forn');
+        var row = document.getElementById('ho-edit-codigo-row');
+        if (!sel || !row) {
+          return;
+        }
+        var v = sel.value || '';
+        var show = v === 'Panpharma' || v === 'Santa Cruz';
+        row.classList.toggle('hidden', !show);
+      }
+
+      function buildHandoverEditGeralHtml_(raw) {
+        var tv = toBooleanHandoverRaw_(raw.Tem_Vencimento);
+        var dv = raw.Data_Vencimento ? String(raw.Data_Vencimento).slice(0, 10) : '';
+        var hv = raw.Hora_Vencimento ? String(raw.Hora_Vencimento).slice(0, 5) : '';
+        var urg = String(raw.Urgencia || 'Normal').trim();
+        return (
+          '<div class="field"><label for="ho-edit-titulo">Título / Assunto</label>' +
+          '<input id="ho-edit-titulo" type="text" value="' +
+          escapeAttribute(geralQueueTitleFromItem_(raw)) +
+          '"></div>' +
+          '<div class="field"><label for="ho-edit-descricao">Descrição</label>' +
+          '<textarea id="ho-edit-descricao" rows="4">' +
+          escapeHtml(String(raw.Descricao || '')) +
+          '</textarea></div>' +
+          '<div class="field"><label for="ho-edit-urgencia">Urgência</label>' +
+          '<select id="ho-edit-urgencia">' +
+          '<option value="Normal"' +
+          (urg === 'Urgente' ? '' : ' selected') +
+          '>Normal</option>' +
+          '<option value="Urgente"' +
+          (urg === 'Urgente' ? ' selected' : '') +
+          '>Urgente</option></select></div>' +
+          '<div class="checkbox-row field">' +
+          '<input type="checkbox" id="ho-edit-tem-venc"' +
+          (tv ? ' checked' : '') +
+          ' onchange="handoverEditGeralVencToggle_()">' +
+          '<label for="ho-edit-tem-venc" style="margin:0;">Tem vencimento / prazo</label></div>' +
+          '<div id="ho-edit-geral-venc-fields"' +
+          (tv ? '' : ' class="hidden"') +
+          '>' +
+          '<div class="field"><label for="ho-edit-data-venc">Data de vencimento</label>' +
+          '<input id="ho-edit-data-venc" type="date" value="' +
+          escapeAttribute(dv) +
+          '"></div>' +
+          '<div class="field"><label for="ho-edit-hora-venc">Hora limite</label>' +
+          '<input id="ho-edit-hora-venc" type="time" value="' +
+          escapeAttribute(hv) +
+          '"></div></div>' +
+          '<p class="ho-muted" style="font-size:12px;margin:0;">ID: ' +
+          escapeHtml(raw.ID) +
+          ' · Autor original: ' +
+          escapeHtml(raw.Autor || '—') +
+          ' · Criado em: ' +
+          escapeHtml(formatDateTime(raw.Timestamp)) +
+          '</p>'
+        );
+      }
+
+      function buildHandoverEditMedicamentoHtml_(raw) {
+        var tipo = medicationTipoFromRecord_(raw);
+        var isFalta = tipo === 'falta';
+        var fr = String(raw.Forma_Recebimento || 'A combinar').trim();
+        var fn = String(raw.Fornecedor_Compra || 'Não informado').trim();
+        if (!fn || /^n[aã]o\s+informado$/i.test(fn)) {
+          fn = 'Não informado';
+        }
+        var showCod = fn === 'Panpharma' || fn === 'Santa Cruz';
+        var previsao = raw.Previsao_Entrega ? String(raw.Previsao_Entrega).slice(0, 10) : '';
+        var parts =
+          '<div class="field"><label for="ho-edit-med">Medicamento</label>' +
+          '<input id="ho-edit-med" type="text" value="' +
+          escapeAttribute(String(raw.Medicamento || '')) +
+          '"></div>' +
+          '<div class="field"><label for="ho-edit-atendente">Atendente</label>' +
+          '<input id="ho-edit-atendente" type="text" value="' +
+          escapeAttribute(String(raw.Atendente || '')) +
+          '"></div>' +
+          '<div class="field"><label for="ho-edit-obs">Observação da solicitação</label>' +
+          '<textarea id="ho-edit-obs" rows="3">' +
+          escapeHtml(String(raw.Observacao_Solicitacao || '')) +
+          '</textarea></div>';
+
+        if (!isFalta) {
+          parts +=
+            '<div class="field"><label for="ho-edit-cliente">Cliente</label>' +
+            '<input id="ho-edit-cliente" type="text" value="' +
+            escapeAttribute(String(raw.Cliente || '')) +
+            '"></div>' +
+            '<div class="field"><label for="ho-edit-tel">Telefone</label>' +
+            '<input id="ho-edit-tel" type="text" value="' +
+            escapeAttribute(String(raw.Telefone || '')) +
+            '"></div>' +
+            '<div class="field"><label for="ho-edit-preco">Preço de venda</label>' +
+            '<input id="ho-edit-preco" type="text" inputmode="decimal" value="' +
+            escapeAttribute(handoverPriceInputFromRaw_(raw)) +
+            '"></div>' +
+            '<div class="checkbox-row field">' +
+            '<input type="checkbox" id="ho-edit-prepago"' +
+            (raw.Pre_Pago ? ' checked' : '') +
+            '><label for="ho-edit-prepago" style="margin:0;">Pré-pago</label></div>' +
+            '<div class="field"><label for="ho-edit-forn">Fornecedor de compra</label>' +
+            '<select id="ho-edit-forn" onchange="handoverEditFornecedorChange_()">' +
+            handoverEditFornecedorOptionsHtml_(fn) +
+            '</select></div>' +
+            '<div class="field' +
+            (showCod ? '' : ' hidden') +
+            '" id="ho-edit-codigo-row"><label for="ho-edit-codigo">Código de compra</label>' +
+            '<input id="ho-edit-codigo" type="text" value="' +
+            escapeAttribute(String(raw.Codigo_Compra_Fornecedor || '')) +
+            '"></div>' +
+            '<div class="field"><label for="ho-edit-forma">Retirada ou entrega</label>' +
+            '<select id="ho-edit-forma">' +
+            handoverEditFormaOptionsHtml_(fr) +
+            '</select></div>';
+        } else {
+          parts +=
+            '<div class="field"><label for="ho-edit-forn">Fornecedor de compra</label>' +
+            '<select id="ho-edit-forn" onchange="handoverEditFornecedorChange_()">' +
+            handoverEditFornecedorOptionsHtml_(fn) +
+            '</select></div>' +
+            '<div class="field' +
+            (showCod ? '' : ' hidden') +
+            '" id="ho-edit-codigo-row"><label for="ho-edit-codigo">Código de compra</label>' +
+            '<input id="ho-edit-codigo" type="text" value="' +
+            escapeAttribute(String(raw.Codigo_Compra_Fornecedor || '')) +
+            '"></div>';
+        }
+
+        parts +=
+          '<div class="field"><label for="ho-edit-previsao">Previsão de entrega</label>' +
+          '<input id="ho-edit-previsao" type="date" value="' +
+          escapeAttribute(previsao) +
+          '"></div>' +
+          '<p class="ho-muted" style="font-size:12px;margin:0;">ID: ' +
+          escapeHtml(raw.ID) +
+          ' · Tipo: ' +
+          escapeHtml(String(raw.Tipo || '')) +
+          '</p>';
+
+        return parts;
+      }
+
+      function closeHandoverEditModal_() {
+        handoverEditContext_ = null;
+        var ov = document.getElementById('handover-edit-overlay');
+        if (ov) {
+          ov.classList.add('hidden');
+          ov.setAttribute('aria-hidden', 'true');
+        }
+        var body = document.getElementById('handover-edit-body');
+        if (body) {
+          body.innerHTML = '';
+        }
+        var st = document.getElementById('handover-edit-status');
+        if (st) {
+          st.textContent = '';
+          st.classList.remove('error');
+        }
+      }
+
+      function openHandoverEditModal_(id) {
+        closeAllCardMenus_();
+        if (handoverAuthState !== 'logged_in') {
+          showToast_('Faça login para editar.', true);
+          return;
+        }
+        var pack = getHandoverRawById_(id);
+        if (!pack) {
+          showToast_('Item não encontrado.', true);
+          return;
+        }
+        if (isHandoverRawExcluded_(pack.raw)) {
+          showToast_('Item excluído não pode ser editado.', true);
+          return;
+        }
+        if (pack.origem === 'Geral' && toBooleanHandoverRaw_(pack.raw.Resolvido)) {
+          showToast_('Pendência resolvida não pode ser editada aqui.', true);
+          return;
+        }
+        if (
+          pack.origem === 'Medicamentos' &&
+          String(pack.raw.Status || '')
+            .trim()
+            .toLowerCase() === 'cancelado'
+        ) {
+          showToast_('Medicamento cancelado não pode ser editado.', true);
+          return;
+        }
+        handoverEditContext_ = { id: id, origem: pack.origem };
+        var title = document.getElementById('handover-edit-title');
+        var body = document.getElementById('handover-edit-body');
+        if (title) {
+          title.textContent = pack.origem === 'Geral' ? 'Editar pendência' : 'Editar medicamento';
+        }
+        if (body) {
+          body.innerHTML =
+            pack.origem === 'Geral'
+              ? buildHandoverEditGeralHtml_(pack.raw)
+              : buildHandoverEditMedicamentoHtml_(pack.raw);
+        }
+        var st = document.getElementById('handover-edit-status');
+        if (st) {
+          st.textContent = '';
+          st.classList.remove('error');
+        }
+        var ov = document.getElementById('handover-edit-overlay');
+        if (ov) {
+          ov.classList.remove('hidden');
+          ov.setAttribute('aria-hidden', 'false');
+        }
+      }
+
+      function cardMoreEditar_(id) {
+        openHandoverEditModal_(id);
+      }
+
+      function mergeUpdatedRowIntoDashboard_(origem, row) {
+        var list = origem === 'Geral' ? dashboardData.geral : dashboardData.medicamentos;
+        if (!list || !row || !row.ID) {
+          return;
+        }
+        var idx = list.findIndex(function (x) {
+          return x.ID === row.ID;
+        });
+        if (idx >= 0) {
+          list[idx] = row;
+        }
+      }
+
+      function submitHandoverEdit_() {
+        var ctx = handoverEditContext_;
+        if (!ctx) {
+          return;
+        }
+        var st = document.getElementById('handover-edit-status');
+        var tok = ensureSessionTokenForAction_();
+        if (!tok) {
+          return;
+        }
+        var payload;
+        if (ctx.origem === 'Geral') {
+          var tvel = document.getElementById('ho-edit-tem-venc');
+          payload = {
+            titulo: (document.getElementById('ho-edit-titulo') || {}).value || '',
+            descricao: (document.getElementById('ho-edit-descricao') || {}).value || '',
+            urgencia: (document.getElementById('ho-edit-urgencia') || {}).value || 'Normal',
+            temVencimento: tvel ? tvel.checked : false,
+            dataVencimento: (document.getElementById('ho-edit-data-venc') || {}).value || '',
+            horaVencimento: (document.getElementById('ho-edit-hora-venc') || {}).value || '',
+          };
+        } else {
+          var rawRef = (dashboardData.medicamentos || []).find(function (x) {
+            return x.ID === ctx.id;
+          });
+          var tipo = rawRef ? medicationTipoFromRecord_(rawRef) : 'encomenda';
+          payload = {
+            medicamento: (document.getElementById('ho-edit-med') || {}).value || '',
+            atendente: (document.getElementById('ho-edit-atendente') || {}).value || '',
+            observacaoSolicitacao: (document.getElementById('ho-edit-obs') || {}).value || '',
+            previsaoEntrega: (document.getElementById('ho-edit-previsao') || {}).value || '',
+            fornecedorCompra: (document.getElementById('ho-edit-forn') || {}).value || 'Não informado',
+            codigoCompraFornecedor: (document.getElementById('ho-edit-codigo') || {}).value || '',
+          };
+          if (tipo !== 'falta') {
+            payload.cliente = (document.getElementById('ho-edit-cliente') || {}).value || '';
+            payload.telefone = (document.getElementById('ho-edit-tel') || {}).value || '';
+            payload.precoVenda = (document.getElementById('ho-edit-preco') || {}).value || '';
+            var ppEl = document.getElementById('ho-edit-prepago');
+            payload.prePago = ppEl ? ppEl.checked : false;
+            payload.formaRecebimento = (document.getElementById('ho-edit-forma') || {}).value || 'A combinar';
+          }
+        }
+        setStatus(st, 'Salvando...', false);
+        try {
+          getScriptRunner_()
+            .withSuccessHandler(function (res) {
+              if (res && res.itemAtualizado) {
+                mergeUpdatedRowIntoDashboard_(ctx.origem, res.itemAtualizado);
+              }
+              closeHandoverEditModal_();
+              renderAll();
+              showToast_('Alterações salvas.');
+            })
+            .withFailureHandler(function (err) {
+              setStatus(st, getErrorMessage(err), true);
+              showToast_(getErrorMessage(err), true);
+            })
+            .updateHandoverItem(ctx.id, ctx.origem, payload, tok);
+        } catch (err) {
+          setStatus(st, getErrorMessage(err), true);
+        }
+      }
+
       function cardMoreVerDetalhes_(id) {
         closeAllCardMenus_();
         var item = findQueueItemById_(id);
@@ -6344,6 +6763,62 @@
         });
       }
 
+      function getHandoverRawById_(id) {
+        var sid = String(id);
+        var g = (dashboardData.geral || []).find(function (row) {
+          return String(row.ID) === sid;
+        });
+        if (g) {
+          return { raw: g, origem: 'Geral' };
+        }
+        var m = (dashboardData.medicamentos || []).find(function (row) {
+          return String(row.ID) === sid;
+        });
+        if (m) {
+          return { raw: m, origem: 'Medicamentos' };
+        }
+        return null;
+      }
+
+      function getQueueOrHistoricoRawForAudit_(id) {
+        var h = findHistoricoRawById_(id);
+        if (h) {
+          return { raw: h, origem: String(h.Origem || '') };
+        }
+        return getHandoverRawById_(id);
+      }
+
+      function toBooleanHandoverRaw_(v) {
+        return v === true || String(v).toLowerCase() === 'true';
+      }
+
+      function isHandoverRawExcluded_(raw) {
+        return !!(raw && toBooleanHandoverRaw_(raw.Excluido));
+      }
+
+      function mergePersistentAuditRowsIntoEvents_(baseEv, rows) {
+        var out = baseEv.slice();
+        (rows || []).forEach(function (r) {
+          var campo = String(r.Campo || '').trim() || 'Campo';
+          var det =
+            (r.Valor_Anterior ? 'Antes: ' + String(r.Valor_Anterior) + ' · ' : '') +
+            'Depois: ' +
+            String(r.Valor_Novo || '—') +
+            ' · ' +
+            (r.Nome || r.Usuario || '—');
+          pushAuditEv_(out, {
+            tsRaw: r.Data_Hora,
+            sortKey: parseDateTime_(r.Data_Hora),
+            filterCat: 'edicao',
+            tone: 'purple',
+            title: 'Edição auditada: ' + campo,
+            detail: det,
+            tsLabel: r.Data_Hora ? formatDateTime(r.Data_Hora) : '',
+          });
+        });
+        return out;
+      }
+
       function historicoTipoLinha_(item) {
         if (!item) {
           return '';
@@ -6692,6 +7167,9 @@
         var raw = lastAuditRawRecord;
         var events = lastAuditTimelineEvents || [];
         var filtered = filterAuditTimelineEvents_(events, auditTimelineFilter);
+        filtered.sort(function (a, b) {
+          return Number(b.sortKey || 0) - Number(a.sortKey || 0);
+        });
         var nome =
           String(raw.Origem || '') === 'Geral'
             ? geralQueueTitleFromItem_(raw)
@@ -6788,7 +7266,7 @@
             '<div class="audit-banner">' +
             (events.length
               ? 'Nenhum evento neste filtro.'
-              : 'Trilha detalhada indisponível para este registro.') +
+              : 'Nenhum registro de auditoria para este item.') +
             '</div>';
         } else {
           tlHtml = '<div class="audit-timeline">';
@@ -6885,19 +7363,49 @@
         closeAuditDrawer_();
       }
 
-      function openAuditDrawerForId_(id) {
-        var raw = findHistoricoRawById_(id);
-        if (!raw) {
-          showToast_('Não foi possível abrir a trilha.', true);
-          return;
-        }
+      function openAuditDrawerWithMergedTrail_(raw, id, origemOpt) {
+        var origem = origemOpt || String(raw.Origem || '');
         closeAllCardMenus_();
         auditTimelineFilter = 'todos';
         lastAuditRawRecord = raw;
-        lastAuditTimelineEvents = buildHistoricoAuditEvents_(raw);
-        lastAuditTimelineBasic = lastAuditTimelineEvents.length < 2;
-        renderAuditDrawerInner_();
-        openAuditDrawerDom_();
+        var baseEv = buildHistoricoAuditEvents_(raw);
+        var tok = ensureSessionTokenForAction_();
+        if (!tok) {
+          showToast_('Sessão necessária para carregar a trilha.', true);
+          return;
+        }
+        getScriptRunner_()
+          .withSuccessHandler(function (res) {
+            var rows = res && res.rows ? res.rows : [];
+            var merged = mergePersistentAuditRowsIntoEvents_(baseEv, rows);
+            merged.sort(function (a, b) {
+              return Number(b.sortKey || 0) - Number(a.sortKey || 0);
+            });
+            lastAuditTimelineEvents = merged;
+            lastAuditTimelineBasic = !rows.length && merged.length < 2;
+            renderAuditDrawerInner_();
+            openAuditDrawerDom_();
+          })
+          .withFailureHandler(function (err) {
+            showToast_(getErrorMessage(err), true);
+            baseEv.sort(function (a, b) {
+              return Number(b.sortKey || 0) - Number(a.sortKey || 0);
+            });
+            lastAuditTimelineEvents = baseEv;
+            lastAuditTimelineBasic = baseEv.length < 2;
+            renderAuditDrawerInner_();
+            openAuditDrawerDom_();
+          })
+          .getHandoverAuditTrail(id, origem, tok);
+      }
+
+      function openAuditDrawerForId_(id) {
+        var pack = getQueueOrHistoricoRawForAudit_(id);
+        if (!pack || !pack.raw) {
+          showToast_('Não foi possível abrir a trilha.', true);
+          return;
+        }
+        openAuditDrawerWithMergedTrail_(pack.raw, id, pack.origem);
       }
 
       function openHistoricoDetailById_(id) {
@@ -7413,7 +7921,7 @@
 
         var descMain =
           item.description && String(item.description).trim()
-            ? '<div class="qk-desc">' + escapeHtml(item.description) + '</div>'
+            ? '<div class="qk-desc qk-desc--clamp">' + escapeHtml(item.description) + '</div>'
             : '';
 
         return (
@@ -7624,7 +8132,7 @@
             ? '<div class="card-inline-error">' + escapeHtml(item.syncError) + '</div>'
             : '');
         var descBlock =
-          descPlain || extras ? '<div class="qk-desc">' + descPlain + extras + '</div>' : '';
+          descPlain || extras ? '<div class="qk-desc qk-desc--clamp">' + descPlain + extras + '</div>' : '';
 
         var metaBlock = buildQueueMetaRowsHtml_(item);
 
@@ -7648,6 +8156,19 @@
             );
           })
           .join('');
+
+        var hoEditMenuBtn = '';
+        if (handoverAuthState === 'logged_in') {
+          var hoEditPack = getHandoverRawById_(item.id);
+          if (hoEditPack && !isHandoverRawExcluded_(hoEditPack.raw)) {
+            hoEditMenuBtn =
+              '<button type="button" onclick="cardMoreEditar_(\'' +
+              escapeJsSingleQuoted_(item.id) +
+              '\')"><span class="card-menu-ico" aria-hidden="true">' +
+              iconSvg_('pencil', 15) +
+              '</span>Editar</button>';
+          }
+        }
 
         return (
           '<div class="qk-card-shell">' +
@@ -7678,8 +8199,11 @@
           '\')"><span class="card-menu-ico" aria-hidden="true">' +
           iconSvg_('eye', 15) +
           '</span>Ver detalhes</button>' +
-          '<button type="button" disabled title="A trilha completa fica na aba Histórico (arquivo)."><span class="card-menu-ico" aria-hidden="true">' +
-          iconSvg_('clock', 15) +
+          hoEditMenuBtn +
+          '<button type="button" onclick="cardMoreVerTrilha_(\'' +
+          escapeJsSingleQuoted_(item.id) +
+          '\')"><span class="card-menu-ico" aria-hidden="true">' +
+          iconSvg_('layers', 15) +
           '</span>Ver trilha de auditoria</button>' +
           '<button type="button" onclick="cardMoreCopiar_(\'' +
           escapeJsSingleQuoted_(item.id) +
@@ -10045,6 +10569,12 @@
             );
           case 'minus':
             return '<svg' + a + '><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>';
+          case 'pencil':
+            return (
+              '<svg' +
+              a +
+              '><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>'
+            );
           default:
             return '';
         }
