@@ -245,6 +245,7 @@ const HEADERS = {
     'Data',
     'Turno',
     'Horario_Referencia',
+    'Item_ID',
     'Categoria',
     'Item',
     'Descricao',
@@ -1963,124 +1964,84 @@ function handleComprasMedicamentosStatusEdit_(sheet, rowNumber, newValue, oldVal
   processarStatusCompraPorIdHandover_(handoverId);
 }
 
-function getChecklistTemplate_() {
-  return [
-    {
-      categoria: 'Estrutura e Ambiente',
-      item: 'Climatização',
-      descricao: 'Ligar ar-condicionado e cortina de ar',
-    },
-    {
-      categoria: 'Estrutura e Ambiente',
-      item: 'Iluminação',
-      descricao: 'Acender luzes do salão, fachada e tótens',
-    },
-    {
-      categoria: 'Estrutura e Ambiente',
-      item: 'Som ambiente',
-      descricao: 'Ligar rádio interna em volume agradável',
-    },
-    {
-      categoria: 'Estrutura e Ambiente',
-      item: 'Fachada',
-      descricao: 'Verificar limpeza da calçada e se há obstruções na entrada',
-    },
-    {
-      categoria: 'Sistemas e Operação',
-      item: 'Servidor',
-      descricao: 'Ligar e verificar se o banco de dados carregou corretamente',
-    },
-    {
-      categoria: 'Sistemas e Operação',
-      item: 'PDVs e Balcão',
-      descricao: 'Ligar computadores, monitores e impressoras térmicas',
-    },
-    {
-      categoria: 'Sistemas e Operação',
-      item: 'Troco',
-      descricao: 'Conferir o kit de troco',
-    },
-    {
-      categoria: 'Sistemas e Operação',
-      item: 'Caixa',
-      descricao: 'Abrir e conferir',
-    },
-    {
-      categoria: 'Sistemas e Operação',
-      item: 'Handover',
-      descricao:
-        'Checar mensagens do turno anterior, limpar o que foi resolvido e programar entregas do dia de medicamentos encomendados',
-    },
-    {
-      categoria: 'Sistemas e Operação',
-      item: 'Internet e TEF',
-      descricao: 'Testar conexão e máquinas de cartão',
-    },
-    {
-      categoria: 'Sistemas e Operação',
-      item: 'Telefones/WhatsApp',
-      descricao: 'Verificar bateria, conexão e mensagens recebidas enquanto a loja estava fechada',
-    },
-    {
-      categoria: 'Higiene e Organização',
-      item: 'Pisos e Prateleiras',
-      descricao: 'Conferir limpeza geral, sem pó ou manchas',
-    },
-    {
-      categoria: 'Higiene e Organização',
-      item: 'Lixeiras',
-      descricao: 'Verificar se todas estão com sacos novos',
-    },
-    {
-      categoria: 'Higiene e Organização',
-      item: 'Banheiros e Pias',
-      descricao: 'Repor sabonete líquido e papel toalha',
-    },
-    {
-      categoria: 'Higiene e Organização',
-      item: 'Álcool em gel',
-      descricao: 'Verificar disponibilidade no balcão',
-    },
-    {
-      categoria: 'Logística de Entrega',
-      item: 'Moto',
-      descricao: 'Usar sistema para conferir condições da moto junto com entregador',
-    },
-    {
-      categoria: 'Logística de Entrega',
-      item: 'Baú/Mochila',
-      descricao: 'Verificar limpeza interna e se está seco',
-    },
-    {
-      categoria: 'Logística de Entrega',
-      item: 'Maquineta móvel',
-      descricao: 'Checar bateria da máquina de cartão de rua',
-    },
-    {
-      categoria: 'Balcão e Medicamentos',
-      item: 'Termolábeis',
-      descricao: 'Conferir e anotar temperatura da geladeira de vacinas/insulinas',
-    },
-    {
-      categoria: 'Balcão e Medicamentos',
-      item: 'Psicotrópicos',
-      descricao: 'Verificar se armário controlado está fechado e chave acessível',
-    },
-    {
-      categoria: 'Balcão e Medicamentos',
-      item: 'Reposição',
-      descricao: 'Verificar buracos nas prateleiras de curva A para abastecimento imediato',
-    },
+function checklistTemplateItem_(itemId, categoria, item, descricao) {
+  return {
+    itemId: itemId,
+    categoria: categoria,
+    item: item,
+    descricao: descricao,
+  };
+}
+
+function getChecklistTemplatesByTurno_() {
+  var manha = [
+    checklistTemplateItem_('manha_climatizacao', 'Estrutura e Ambiente', 'Climatização', 'Ligar ar-condicionado e cortina de ar.'),
+    checklistTemplateItem_('manha_iluminacao', 'Estrutura e Ambiente', 'Iluminação', 'Acender luzes do salão, fachada e letreiros.'),
+    checklistTemplateItem_('manha_fachada_entrada', 'Estrutura e Ambiente', 'Fachada e entrada', 'Conferir calçada, porta, tapetes e obstruções na entrada.'),
+    checklistTemplateItem_('manha_som_ambiente', 'Estrutura e Ambiente', 'Som ambiente', 'Ligar rádio interna em volume adequado.'),
+    checklistTemplateItem_('manha_servidor_sistemas', 'Sistemas e Operação', 'Servidor e sistema', 'Ligar servidor e conferir se o banco de dados abriu corretamente.'),
+    checklistTemplateItem_('manha_pdvs_impressoras', 'Sistemas e Operação', 'PDVs e impressoras', 'Ligar computadores, monitores, SAT/ECF e impressoras térmicas.'),
+    checklistTemplateItem_('manha_tef_internet', 'Sistemas e Operação', 'Internet e TEF', 'Testar conexão, TEF e maquininhas antes do atendimento.'),
+    checklistTemplateItem_('manha_troco_caixa', 'Sistemas e Operação', 'Troco e caixa', 'Conferir kit de troco e abrir caixa conforme rotina.'),
+    checklistTemplateItem_('manha_handover_pendencias', 'Sistemas e Operação', 'Handover da abertura', 'Ler pendências do turno anterior, priorizar urgentes e limpar resolvidos.'),
+    checklistTemplateItem_('manha_whatsapp_telefone', 'Sistemas e Operação', 'Telefones e WhatsApp', 'Conferir bateria, conexão e mensagens recebidas com a loja fechada.'),
+    checklistTemplateItem_('manha_pisos_prateleiras', 'Higiene e Organização', 'Pisos e prateleiras', 'Conferir limpeza geral, sem pó, manchas ou produtos fora do lugar.'),
+    checklistTemplateItem_('manha_lixeiras_banheiros', 'Higiene e Organização', 'Lixeiras e banheiros', 'Verificar sacos, papel toalha, sabonete e condições de uso.'),
+    checklistTemplateItem_('manha_alcool_balcao', 'Higiene e Organização', 'Álcool e balcão', 'Conferir álcool em gel, balcão limpo e materiais de atendimento.'),
+    checklistTemplateItem_('manha_moto_entrega', 'Logística de Entrega', 'Moto e entrega', 'Conferir moto, baú/mochila e maquineta móvel com entregador.'),
+    checklistTemplateItem_('manha_termolabeis', 'Balcão e Medicamentos', 'Termolábeis', 'Conferir temperatura da geladeira e registrar qualquer desvio.'),
+    checklistTemplateItem_('manha_controlados', 'Balcão e Medicamentos', 'Controlados', 'Verificar armário controlado fechado e chave no local correto.'),
+    checklistTemplateItem_('manha_reposicao_curva_a', 'Balcão e Medicamentos', 'Reposição curva A', 'Identificar buracos nas prateleiras e repor itens críticos.'),
   ];
+
+  var tarde = [
+    checklistTemplateItem_('tarde_ler_handover', 'Passagem de Turno', 'Ler Handover', 'Revisar pendências, urgentes, resolvidos parciais e registros sem responsável.'),
+    checklistTemplateItem_('tarde_prioridades_turno', 'Passagem de Turno', 'Definir prioridades', 'Selecionar o que precisa ser feito antes do fim da tarde.'),
+    checklistTemplateItem_('tarde_limpeza_inteligente', 'Loja e Organização', 'Limpeza inteligente', 'Fazer ronda rápida em balcão, chão, gôndolas e áreas de maior movimento.'),
+    checklistTemplateItem_('tarde_balcao_materiais', 'Loja e Organização', 'Balcão e materiais', 'Organizar materiais soltos, sacolas, bobinas e área de atendimento.'),
+    checklistTemplateItem_('tarde_medicamentos_pendentes', 'Medicamentos', 'Faltas e encomendas', 'Revisar medicamentos pendentes, comprados sem aviso e clientes aguardando retorno.'),
+    checklistTemplateItem_('tarde_compras_fornecedores', 'Medicamentos', 'Compras com fornecedores', 'Checar itens que precisam de compra, código/fornecedor e previsão.'),
+    checklistTemplateItem_('tarde_entregas_rota', 'Entregas', 'Entregas e rota', 'Conferir pedidos de entrega, endereços, prioridade e pagamento.'),
+    checklistTemplateItem_('tarde_caixa_sistema', 'Caixa e Sistema', 'Caixa e sistema', 'Conferir funcionamento do caixa, TEF, impressoras e possíveis travamentos.'),
+    checklistTemplateItem_('tarde_whatsapp_clientes', 'WhatsApp e Clientes', 'WhatsApp de clientes', 'Responder mensagens acumuladas e avisar clientes de medicamentos comprados.'),
+    checklistTemplateItem_('tarde_ronda_geral', 'Ronda Geral', 'Ronda da loja', 'Passar por vitrine, salão, estoque rápido, banheiro e entrada.'),
+    checklistTemplateItem_('tarde_registrar_pendencias', 'Ronda Geral', 'Registrar pendências', 'Registrar no Handover o que ficará para o próximo responsável.'),
+  ];
+
+  var noite = [
+    checklistTemplateItem_('noite_fechamento_caixa', 'Caixa e Financeiro', 'Fechamento de caixa', 'Conferir caixa, dinheiro, comprovantes, TEF e divergências.'),
+    checklistTemplateItem_('noite_sangria_documentos', 'Caixa e Financeiro', 'Sangria e documentos', 'Organizar sangria, comprovantes e documentos financeiros do dia.'),
+    checklistTemplateItem_('noite_handover_final', 'Handover Final', 'Handover do fim do dia', 'Registrar pendências, responsáveis, prioridades e itens para abertura.'),
+    checklistTemplateItem_('noite_resolver_pendencias', 'Handover Final', 'Pendências operacionais', 'Resolver ou classificar o que ficou aberto no painel.'),
+    checklistTemplateItem_('noite_medicamentos_status', 'Medicamentos', 'Medicamentos do dia', 'Revisar encomendas compradas, canceladas, não encontradas e sem aviso.'),
+    checklistTemplateItem_('noite_entregas_final', 'Entregas', 'Entregas finais', 'Confirmar entregas concluídas, pendentes e ocorrências de rota.'),
+    checklistTemplateItem_('noite_clientes_whatsapp', 'Clientes e WhatsApp', 'Clientes e WhatsApp', 'Responder mensagens finais e registrar retornos que ficarão para amanhã.'),
+    checklistTemplateItem_('noite_loja_higiene', 'Loja e Higiene', 'Loja e higiene', 'Organizar balcão, recolher lixo, conferir banheiros e deixar loja pronta para abertura.'),
+    checklistTemplateItem_('noite_equipamentos', 'Equipamentos', 'Equipamentos', 'Desligar ou conferir computadores, impressoras, ar-condicionado, som e luzes conforme rotina.'),
+    checklistTemplateItem_('noite_termolabeis_controlados', 'Medicamentos', 'Termolábeis e controlados', 'Conferir geladeira, armário controlado e segurança dos medicamentos sensíveis.'),
+    checklistTemplateItem_('noite_seguranca_alarme', 'Segurança', 'Segurança e alarme', 'Conferir portas, grades, alarme, câmeras e fechamento seguro da loja.'),
+    checklistTemplateItem_('noite_validacao_final', 'Validação Final', 'Validação final', 'Confirmar que caixa, loja, Handover e segurança foram finalizados.'),
+  ];
+
+  var templates = {};
+  templates[CHECKLIST_TURNO_MANHA] = manha;
+  templates[CHECKLIST_TURNO_TARDE] = tarde;
+  templates[CHECKLIST_TURNO_NOITE] = noite;
+  return templates;
+}
+
+function getChecklistTemplate_(turno) {
+  var t = sanitizeChecklistTurno_(turno);
+  return getChecklistTemplatesByTurno_()[t] || getChecklistTemplatesByTurno_()[CHECKLIST_TURNO_MANHA];
 }
 
 function getChecklistDateKey_(date) {
   return Utilities.formatDate(date || new Date(), HANDOVER_TIMEZONE, 'yyyy-MM-dd');
 }
 
-function getChecklistTemplateOrderMap_() {
-  return getChecklistTemplate_().reduce(function (orderMap, checklistItem, index) {
-    orderMap[buildChecklistIdentityKey_(checklistItem.item)] = index;
+function getChecklistTemplateOrderMap_(turno) {
+  return getChecklistTemplate_(turno).reduce(function (orderMap, checklistItem, index) {
+    orderMap[buildChecklistIdentityKey_(checklistItem.itemId || checklistItem.item)] = index;
     return orderMap;
   }, {});
 }
@@ -2137,9 +2098,9 @@ function ensureTodayChecklistForTurno_(turnoParam) {
   const sheet = getSheetOrThrow_(ss, SHEET_NAMES.CHECKLIST);
   const lastCol = Math.max(sheet.getLastColumn(), 1);
   const headerCells = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  const template = getChecklistTemplate_();
   const dateKey = getChecklistDateKey_();
   const turno = sanitizeChecklistTurno_(turnoParam);
+  const template = getChecklistTemplate_(turno);
   const horarioRef = horarioReferenciaForTurno_(turno);
   const identityPrefix = buildChecklistIdentityKey_(dateKey) + '|' + buildChecklistIdentityKey_(turno);
 
@@ -2151,42 +2112,47 @@ function ensureTodayChecklistForTurno_(turnoParam) {
       const rowObject = rowCellsToObject_(headerCells, row);
       const rowDate = normalizeDateKeyCell_(rowObject.Data);
       const rowTurno = sanitizeText_(rowObject.Turno);
+      const rowItemId = sanitizeText_(rowObject.Item_ID);
       const rowItem = sanitizeText_(rowObject.Item);
       if (!rowDate || !rowTurno || !rowItem) {
         return;
       }
 
-      const rowKey =
-        buildChecklistIdentityKey_(rowDate) +
-        '|' +
-        buildChecklistIdentityKey_(rowTurno) +
-        '|' +
-        buildChecklistIdentityKey_(rowItem);
-      existingKeys.add(rowKey);
+      const rowPrefix =
+        buildChecklistIdentityKey_(rowDate) + '|' + buildChecklistIdentityKey_(rowTurno) + '|';
+      if (rowItemId) {
+        existingKeys.add(rowPrefix + buildChecklistIdentityKey_(rowItemId));
+      }
+      existingKeys.add(rowPrefix + buildChecklistIdentityKey_(rowItem));
     });
   }
 
   const rowsToInsert = [];
   template.forEach(function (templateItem) {
-    const itemKey =
+    const itemId = sanitizeText_(templateItem.itemId || templateItem.item);
+    const itemKey = identityPrefix + '|' + buildChecklistIdentityKey_(itemId);
+    const legacyItemKey =
       identityPrefix + '|' + buildChecklistIdentityKey_(sanitizeText_(templateItem.item));
-    if (existingKeys.has(itemKey)) {
+    if (existingKeys.has(itemKey) || existingKeys.has(legacyItemKey)) {
       return;
     }
 
-    rowsToInsert.push([
-      Utilities.getUuid(),
-      dateKey,
-      turno,
-      horarioRef,
-      sanitizeText_(templateItem.categoria),
-      sanitizeText_(templateItem.item),
-      sanitizeText_(templateItem.descricao),
-      CHECKLIST_STATUS.PENDENTE,
-      '',
-      '',
-      '',
-    ]);
+    rowsToInsert.push(
+      buildAppendRowValuesFromNamedMap_(sheet, {
+        ID: Utilities.getUuid(),
+        Data: dateKey,
+        Turno: turno,
+        Horario_Referencia: horarioRef,
+        Item_ID: itemId,
+        Categoria: sanitizeText_(templateItem.categoria),
+        Item: sanitizeText_(templateItem.item),
+        Descricao: sanitizeText_(templateItem.descricao),
+        Status: CHECKLIST_STATUS.PENDENTE,
+        Responsavel: '',
+        Data_Hora_Check: '',
+        Observacao: '',
+      })
+    );
   });
 
   if (rowsToInsert.length > 0) {
@@ -2200,7 +2166,9 @@ function ensureTodayChecklistForTurno_(turnoParam) {
         return extended;
       });
     }
-    sheet.getRange(sheet.getLastRow() + 1, 1, rowsToInsert.length, lastCol).setValues(rowsToInsert);
+    sheet
+      .getRange(sheet.getLastRow() + 1, 1, rowsToInsert.length, rowsToInsert[0].length)
+      .setValues(rowsToInsert);
   }
 
   return {
@@ -2223,7 +2191,7 @@ function fetchChecklistItems_(dateKey, turno) {
   }
 
   const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, lastCol).getValues();
-  const orderMap = getChecklistTemplateOrderMap_();
+  const orderMap = getChecklistTemplateOrderMap_(filterTurno);
 
   return values
     .map(function (row) {
@@ -2235,8 +2203,8 @@ function fetchChecklistItems_(dateKey, turno) {
       return item.Data === filterDateKey && item.Turno === filterTurno;
     })
     .sort(function (a, b) {
-      const orderA = orderMap[buildChecklistIdentityKey_(a.Item)];
-      const orderB = orderMap[buildChecklistIdentityKey_(b.Item)];
+      const orderA = orderMap[buildChecklistIdentityKey_(a.Item_ID || a.Item)];
+      const orderB = orderMap[buildChecklistIdentityKey_(b.Item_ID || b.Item)];
       const safeA = typeof orderA === 'number' ? orderA : Number.MAX_SAFE_INTEGER;
       const safeB = typeof orderB === 'number' ? orderB : Number.MAX_SAFE_INTEGER;
       if (safeA !== safeB) {
@@ -3556,6 +3524,7 @@ function normalizeChecklistItemForClient_(item) {
   item.Data = normalizeDateKeyCell_(item.Data);
   item.Turno = sanitizeText_(item.Turno) || CHECKLIST_TURNO_MANHA;
   item.Horario_Referencia = sanitizeText_(item.Horario_Referencia) || CHECKLIST_HORARIO_REFERENCIA;
+  item.Item_ID = sanitizeText_(item.Item_ID);
   item.Categoria = sanitizeText_(item.Categoria);
   item.Item = sanitizeText_(item.Item);
   item.Descricao = sanitizeText_(item.Descricao);
