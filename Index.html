@@ -5293,6 +5293,10 @@
               var label = pair[1];
               var active = activeQueueFilter === key ? ' active' : '';
               var count = filterQueueItemsByKey_(mergedBase, key).length;
+              var hintTitle =
+                key === 'comprados_sem_aviso'
+                  ? ' title="' + escapeAttribute('Cliente ainda não avisado') + '"'
+                  : '';
               var badge =
                 '<span class="filter-count-badge' +
                 (count === 0 ? ' filter-count-badge--zero' : '') +
@@ -5304,6 +5308,8 @@
                 active +
                 '" data-filter="' +
                 escapeAttribute(key) +
+                '"' +
+                hintTitle +
                 "\" onclick=\"setQueueFilter('" +
                 escapeAttribute(key) +
                 "')\">" +
@@ -8841,6 +8847,14 @@
         }
         if (normalized === 'não aplicável' || normalized === 'nao aplicavel' || normalized === 'n/a') {
           return 'Não aplicável';
+        }
+        if (
+          normalized === 'sem marcação' ||
+          normalized === 'sem marcacao' ||
+          normalized === 'sem marcação.' ||
+          normalized === 'sem marcacao.'
+        ) {
+          return 'Pendente';
         }
         return 'Pendente';
       }

@@ -1504,7 +1504,7 @@ function selfTestEspelhoComprasRecebimento_() {
   if (santa.Forma_Recebimento !== FORMAS_RECEBIMENTO.RETIRA_LOJA) {
     failures.push('Forma Retira na loja nao preservada');
   }
-  if (entrega.Fornecedor_Compra !== 'NÃ£o informado' || entrega.Codigo_Compra_Fornecedor !== '') {
+  if (entrega.Fornecedor_Compra !== 'Não informado' || entrega.Codigo_Compra_Fornecedor !== '') {
     failures.push('Codigo nao foi limpo para fornecedor Nao informado');
   }
   if (entrega.Forma_Recebimento !== FORMAS_RECEBIMENTO.ENTREGA_ENDERECO) {
@@ -2000,7 +2000,7 @@ function getChecklistTemplatesByTurno_() {
     checklistTemplateItem_('tarde_prioridades_turno', 'Passagem de Turno', 'Definir prioridades', 'Selecionar o que precisa ser feito antes do fim da tarde.'),
     checklistTemplateItem_('tarde_limpeza_inteligente', 'Loja e Organização', 'Limpeza inteligente', 'Fazer ronda rápida em balcão, chão, gôndolas e áreas de maior movimento.'),
     checklistTemplateItem_('tarde_balcao_materiais', 'Loja e Organização', 'Balcão e materiais', 'Organizar materiais soltos, sacolas, bobinas e área de atendimento.'),
-    checklistTemplateItem_('tarde_medicamentos_pendentes', 'Medicamentos', 'Faltas e encomendas', 'Revisar medicamentos pendentes, comprados sem aviso e clientes aguardando retorno.'),
+    checklistTemplateItem_('tarde_medicamentos_pendentes', 'Medicamentos', 'Faltas e encomendas', 'Revisar medicamentos pendentes, itens aguardando aviso ao cliente e retornos pendentes.'),
     checklistTemplateItem_('tarde_compras_fornecedores', 'Medicamentos', 'Compras com fornecedores', 'Checar itens que precisam de compra, código/fornecedor e previsão.'),
     checklistTemplateItem_('tarde_entregas_rota', 'Entregas', 'Entregas e rota', 'Conferir pedidos de entrega, endereços, prioridade e pagamento.'),
     checklistTemplateItem_('tarde_caixa_sistema', 'Caixa e Sistema', 'Caixa e sistema', 'Conferir funcionamento do caixa, TEF, impressoras e possíveis travamentos.'),
@@ -2014,7 +2014,7 @@ function getChecklistTemplatesByTurno_() {
     checklistTemplateItem_('noite_sangria_documentos', 'Caixa e Financeiro', 'Sangria e documentos', 'Organizar sangria, comprovantes e documentos financeiros do dia.'),
     checklistTemplateItem_('noite_handover_final', 'Handover Final', 'Handover do fim do dia', 'Registrar pendências, responsáveis, prioridades e itens para abertura.'),
     checklistTemplateItem_('noite_resolver_pendencias', 'Handover Final', 'Pendências operacionais', 'Resolver ou classificar o que ficou aberto no painel.'),
-    checklistTemplateItem_('noite_medicamentos_status', 'Medicamentos', 'Medicamentos do dia', 'Revisar encomendas compradas, canceladas, não encontradas e sem aviso.'),
+    checklistTemplateItem_('noite_medicamentos_status', 'Medicamentos', 'Medicamentos do dia', 'Revisar encomendas compradas, canceladas, não encontradas e aguardando aviso ao cliente.'),
     checklistTemplateItem_('noite_entregas_final', 'Entregas', 'Entregas finais', 'Confirmar entregas concluídas, pendentes e ocorrências de rota.'),
     checklistTemplateItem_('noite_clientes_whatsapp', 'Clientes e WhatsApp', 'Clientes e WhatsApp', 'Responder mensagens finais e registrar retornos que ficarão para amanhã.'),
     checklistTemplateItem_('noite_loja_higiene', 'Loja e Higiene', 'Loja e higiene', 'Organizar balcão, recolher lixo, conferir banheiros e deixar loja pronta para abertura.'),
