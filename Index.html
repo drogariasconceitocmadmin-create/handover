@@ -199,6 +199,28 @@
         color: var(--text);
       }
 
+      .brand-lockup {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .brand-lockup-mark {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .brand-tagline {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        line-height: 1.3;
+        padding-left: 1px;
+      }
+
       .brand-sep {
         width: 1px;
         height: 28px;
@@ -259,6 +281,29 @@
         padding-left: 10px;
       }
 
+      .operador-pill--session {
+        position: relative;
+      }
+
+      .operador-pill-text {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        min-width: 0;
+      }
+
+      .header-operador-sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
       .operador-avatar {
         width: 30px;
         height: 30px;
@@ -311,6 +356,22 @@
       .btn-header-secondary:hover {
         background: rgba(0, 75, 199, 0.05) !important;
         border-color: rgba(0, 87, 255, 0.28) !important;
+      }
+
+      .btn-header-logout {
+        border: 0 !important;
+        background: transparent !important;
+        color: var(--muted) !important;
+        box-shadow: none !important;
+        font-weight: 600 !important;
+        font-size: 11px !important;
+        padding: 6px 8px !important;
+      }
+
+      .btn-header-logout:hover {
+        color: var(--brand-blue) !important;
+        background: rgba(0, 75, 199, 0.06) !important;
+        border-color: transparent !important;
       }
 
       .btn-primary-header {
@@ -498,6 +559,17 @@
         color: var(--text);
       }
 
+      .kpi-card[data-kpi-value='0'] .value {
+        opacity: 0.4;
+        font-weight: 700;
+        font-size: 24px;
+        color: var(--muted);
+      }
+
+      .kpi-card[data-kpi-value='0'] .kpi-ico {
+        opacity: 0.65;
+      }
+
       .kpi-card .sub {
         font-size: 11px;
         color: var(--muted);
@@ -582,13 +654,35 @@
       }
 
       .tab-badge-muted {
-        background: #e8eef8;
-        color: var(--muted);
+        background: #eef2f7;
+        color: #94a3b8;
+        font-weight: 700;
       }
 
       .main-tab.active .tab-badge-muted {
         background: #64748b;
         color: #fff;
+      }
+
+      .tab-badge.tab-badge-soft {
+        background: #eef2f7;
+        color: #94a3b8;
+        font-weight: 700;
+      }
+
+      .main-tab.active .tab-badge.tab-badge-soft:not(.tab-badge-green):not(.tab-badge-muted) {
+        background: #e2e8f0;
+        color: #7c8c9e;
+      }
+
+      .main-tab.active .tab-badge-green.tab-badge-soft {
+        background: rgba(22, 163, 74, 0.14);
+        color: #6fb38a;
+      }
+
+      .main-tab.active .tab-badge-muted.tab-badge-soft {
+        background: #cbd5e1;
+        color: #f8fafc;
       }
 
       .dropdown-dd-item > span:last-child {
@@ -1697,9 +1791,20 @@
         vertical-align: middle;
       }
 
+      .filter-count-badge.filter-count-badge--zero {
+        background: #eef2f7;
+        color: #94a3b8;
+        font-weight: 700;
+      }
+
       #queue-filters-host .filter-button.active .filter-count-badge {
         background: var(--brand-blue);
         color: #fff;
+      }
+
+      #queue-filters-host .filter-button.active .filter-count-badge.filter-count-badge--zero {
+        background: rgba(255, 255, 255, 0.65);
+        color: #7c8c9e;
       }
 
       button.light {
@@ -2506,6 +2611,86 @@
         padding: 6px 10px;
       }
 
+      .queue-empty-host:not(.hidden) {
+        margin-top: 14px;
+      }
+
+      .ho-empty-premium {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        padding: 18px 20px;
+        border-radius: var(--radius-sm);
+        border: 1px dashed rgba(148, 163, 184, 0.52);
+        background: linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, #ffffff 55%);
+        max-width: 540px;
+        min-height: 108px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.035);
+      }
+
+      .ho-empty-premium--loading {
+        align-items: center;
+        min-height: 96px;
+      }
+
+      .ho-empty-premium--sidebar {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px 14px;
+        min-height: 0;
+        max-width: none;
+      }
+
+      .ho-empty-svg {
+        color: #94a3b8;
+        flex-shrink: 0;
+        margin-top: 1px;
+        opacity: 0.88;
+      }
+
+      .ho-empty-body {
+        min-width: 0;
+      }
+
+      .ho-empty-title {
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--text);
+        margin: 0 0 6px;
+      }
+
+      .ho-empty-title--plain {
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+
+      .ho-empty-desc {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.45;
+        color: var(--muted);
+      }
+
+      .ho-empty-hint {
+        margin: 10px 0 0;
+        font-size: 12px;
+        line-height: 1.45;
+        color: var(--muted);
+      }
+
+      .ho-empty-hint strong {
+        color: var(--brand-blue);
+        font-weight: 750;
+      }
+
+      .sidebar-check-turn {
+        font-size: 13px;
+        font-weight: 750;
+        color: var(--text);
+        margin: 0;
+      }
+
       .empty-box {
         color: var(--muted);
         border: 1px dashed var(--border);
@@ -2573,6 +2758,7 @@
             <img id="handover-login-logo" class="brand-logo-img hidden" alt="Drogarias Conceito">
           </div>
           <span id="handover-login-brand-text" class="brand-mark">Drogarias Conceito</span>
+          <span class="brand-tagline ho-muted">Qualidade e confiança · rede própria</span>
           <span class="ho-muted" style="font-size:13px;line-height:1.35;">Handover — acesso com PIN</span>
         </div>
         <h1 id="handover-login-title" class="handover-login-title">Entrar</h1>
@@ -2594,33 +2780,37 @@
     <main class="page">
       <header class="app-header">
         <div class="app-header-left">
-          <img id="handover-brand-logo" class="brand-logo-img hidden" alt="Drogarias Conceito">
-          <span id="handover-brand-text" class="brand-mark">Drogarias Conceito</span>
+          <div class="brand-lockup">
+            <div class="brand-lockup-mark">
+              <img id="handover-brand-logo" class="brand-logo-img hidden" alt="Drogarias Conceito">
+              <span id="handover-brand-text" class="brand-mark">Drogarias Conceito</span>
+            </div>
+            <span class="brand-tagline ho-muted">Qualidade e confiança · rede própria</span>
+          </div>
           <span class="brand-sep" aria-hidden="true"></span>
           <span class="brand-product">Handover</span>
         </div>
         <div class="app-header-right">
-          <div class="header-pill operador-pill">
+          <div class="header-pill operador-pill operador-pill--session" title="Sessão atual">
             <span class="operador-avatar" id="operador-avatar-char" aria-hidden="true">?</span>
-            <label class="field">
-              <span class="header-pill-label">Operador atual</span>
-              <input
-                id="operador-atual"
-                type="text"
-                name="operador-atual"
-                autocomplete="name"
-                readonly
-                tabindex="-1"
-                title="Derivado da sessão (login)"
-                placeholder="—"
-              >
-            </label>
+            <div class="operador-pill-text">
+              <span class="header-pill-label">Logado como</span>
+              <span id="handover-session-profile" class="header-pill-value">—</span>
+            </div>
+            <input
+              id="operador-atual"
+              class="header-operador-sr-only"
+              type="text"
+              name="operador-atual"
+              autocomplete="name"
+              readonly
+              tabindex="-1"
+              title="Derivado da sessão (login)"
+              aria-label="Operador atual (espelho da sessão)"
+              placeholder="—"
+            >
           </div>
-          <div class="header-pill" title="Sessão atual">
-            <span class="header-pill-label">Nome · perfil</span>
-            <span id="handover-session-profile" class="header-pill-value">—</span>
-          </div>
-          <button type="button" id="handover-logout-btn" class="btn-header-secondary">Sair</button>
+          <button type="button" id="handover-logout-btn" class="btn-header-logout">Sair</button>
           <div class="header-pill">
             <span class="header-pill-label">Última atualização</span>
             <span id="last-sync-label" class="header-pill-value">—</span>
@@ -2697,7 +2887,7 @@
               <div id="queue-filters-host"></div>
               <div id="historico-filters-panel" class="historico-filters hidden"></div>
               <div id="queue-list" class="queue-list"></div>
-              <div id="queue-empty" class="empty-box hidden">Nenhum item para o filtro selecionado.</div>
+              <div id="queue-empty" class="queue-empty-host hidden" role="status" aria-live="polite"></div>
               <div id="queue-status" class="status" aria-live="polite"></div>
             </section>
           </div>
@@ -2708,7 +2898,7 @@
               <button type="button" class="btn-sidebar" onclick="setMainTab('checklist')">Abrir checklist</button>
             </div>
             <div class="sidebar-card">
-              <h3>Histórico / Resolvidos</h3>
+              <h3>Histórico</h3>
               <div id="sidebar-historico-body"></div>
               <button type="button" class="btn-sidebar" onclick="setMainTab('historico')">Abrir histórico</button>
             </div>
@@ -4927,7 +5117,12 @@
               var label = pair[1];
               var active = activeQueueFilter === key ? ' active' : '';
               var count = filterQueueItemsByKey_(mergedBase, key).length;
-              var badge = '<span class="filter-count-badge">' + count + '</span>';
+              var badge =
+                '<span class="filter-count-badge' +
+                (count === 0 ? ' filter-count-badge--zero' : '') +
+                '">' +
+                count +
+                '</span>';
               return (
                 '<button type="button" class="filter-button' +
                 active +
@@ -5412,31 +5607,42 @@
         var summary = checklist.summary || buildChecklistSummary_(items);
         var pct = Number(summary.percentualConcluido || 0);
         var pctClamped = Math.min(100, Math.max(0, pct));
+        var totalItens = Number(summary.totalItens || 0);
 
-        clBody.innerHTML =
-          '<div class="sidebar-stat-grid">' +
-          '<div>Turno<strong>' +
-          escapeHtml(checklist.turno || '-') +
-          '</strong></div>' +
-          '<div>Total<strong>' +
-          escapeHtml(String(Number(summary.totalItens || 0))) +
-          '</strong></div>' +
-          '<div>Pendentes<strong>' +
-          escapeHtml(String(Number(summary.itensPendentes || 0))) +
-          '</strong></div>' +
-          '<div>Feitos<strong>' +
-          escapeHtml(String(Number(summary.itensFeitos || 0))) +
-          '</strong></div>' +
-          '<div>N/A<strong>' +
-          escapeHtml(String(Number(summary.itensNaoAplicaveis || 0))) +
-          '</strong></div>' +
-          '<div>Progresso<strong>' +
-          escapeHtml(String(pct)) +
-          '%</strong></div>' +
-          '</div>' +
-          '<div class="sidebar-progress" aria-hidden="true"><span style="width:' +
-          escapeAttribute(String(pctClamped)) +
-          '%"></span></div>';
+        if (totalItens === 0) {
+          clBody.innerHTML =
+            '<div class="ho-empty-premium ho-empty-premium--sidebar" role="status">' +
+            '<p class="sidebar-check-turn">' +
+            escapeHtml(checklist.turno || 'Manhã') +
+            '</p>' +
+            '<p class="ho-empty-desc" style="margin:0;">Nenhum item gerado para este turno.</p>' +
+            '</div>';
+        } else {
+          clBody.innerHTML =
+            '<div class="sidebar-stat-grid">' +
+            '<div>Turno<strong>' +
+            escapeHtml(checklist.turno || '-') +
+            '</strong></div>' +
+            '<div>Total<strong>' +
+            escapeHtml(String(totalItens)) +
+            '</strong></div>' +
+            '<div>Pendentes<strong>' +
+            escapeHtml(String(Number(summary.itensPendentes || 0))) +
+            '</strong></div>' +
+            '<div>Feitos<strong>' +
+            escapeHtml(String(Number(summary.itensFeitos || 0))) +
+            '</strong></div>' +
+            '<div>N/A<strong>' +
+            escapeHtml(String(Number(summary.itensNaoAplicaveis || 0))) +
+            '</strong></div>' +
+            '<div>Progresso<strong>' +
+            escapeHtml(String(pct)) +
+            '%</strong></div>' +
+            '</div>' +
+            '<div class="sidebar-progress" aria-hidden="true"><span style="width:' +
+            escapeAttribute(String(pctClamped)) +
+            '%"></span></div>';
+        }
 
         if (historicoLoadState === 'ready' && historicoResolvidos && historicoResolvidos.length) {
           var sorted = historicoResolvidos.slice().sort(function (a, b) {
@@ -5473,7 +5679,11 @@
             '</div>';
         } else {
           hiBody.innerHTML =
-            '<p class="ho-muted" style="margin:0 0 10px;font-size:12px;line-height:1.45;">Carrega sob demanda ao abrir a aba Histórico.</p>';
+            '<div class="ho-empty-premium ho-empty-premium--sidebar" role="status">' +
+            '<div class="ho-empty-body">' +
+            '<div class="ho-empty-title" style="font-size:13px;margin-bottom:4px;">Histórico disponível sob demanda</div>' +
+            '<p class="ho-empty-desc">Abra para consultar resolvidos, reabertos e auditoria.</p>' +
+            '</div></div>';
         }
       }
 
@@ -5482,6 +5692,12 @@
           var el = document.getElementById(id);
           if (el) {
             el.textContent = txt;
+          }
+        }
+        function flagSoft(id, isSoft) {
+          var el = document.getElementById(id);
+          if (el) {
+            el.classList.toggle('tab-badge-soft', !!isSoft);
           }
         }
         var all = buildWorkQueueItems(dashboardData);
@@ -5498,10 +5714,16 @@
         setText('tab-badge-pendencias', String(pend));
         setText('tab-badge-medicamentos', String(med));
         setText('tab-badge-checklist', String(ck));
+        flagSoft('tab-badge-pendencias', pend === 0);
+        flagSoft('tab-badge-medicamentos', med === 0);
+        flagSoft('tab-badge-checklist', ck === 0);
         if (historicoLoadState === 'ready') {
-          setText('tab-badge-historico', String(Math.min(999, historicoResolvidos.length)));
+          var hn = Math.min(999, historicoResolvidos.length);
+          setText('tab-badge-historico', String(hn));
+          flagSoft('tab-badge-historico', hn === 0);
         } else {
           setText('tab-badge-historico', '–');
+          flagSoft('tab-badge-historico', true);
         }
       }
 
@@ -5573,6 +5795,8 @@
           escapeAttribute(kpiClass) +
           '" tabindex="0" role="button" data-summary-card="' +
           escapeAttribute(kind) +
+          '" data-kpi-value="' +
+          escapeAttribute(value) +
           '">' +
           '<div class="kpi-ico" aria-hidden="true">' +
           iconSvg_(iconKind, 20) +
@@ -6771,6 +6995,45 @@
         return sortQueueItemsLikeLegacy_(merged);
       }
 
+      function hoEmptyTraySvg_() {
+        return (
+          '<svg class="ho-empty-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7.7 12 12l8.7-4.3M12 22V12"/></svg>'
+        );
+      }
+
+      function getQueueEmptyPanelHtml_() {
+        if (activeMainTab === 'historico') {
+          return (
+            '<div class="ho-empty-premium" role="status">' +
+            hoEmptyTraySvg_() +
+            '<div class="ho-empty-body">' +
+            '<div class="ho-empty-title">Nenhum registro encontrado</div>' +
+            '<p class="ho-empty-desc">Tente ajustar filtros ou o período na aba Histórico.</p>' +
+            '</div></div>'
+          );
+        }
+        if (activeMainTab === 'medicamentos') {
+          return (
+            '<div class="ho-empty-premium" role="status">' +
+            hoEmptyTraySvg_() +
+            '<div class="ho-empty-body">' +
+            '<div class="ho-empty-title">Nenhum medicamento solicitado</div>' +
+            '<p class="ho-empty-desc">Registre uma falta ou encomenda quando um cliente procurar um produto.</p>' +
+            '<p class="ho-empty-hint">Use <strong>Novo registro</strong> → Medicamento solicitado.</p>' +
+            '</div></div>'
+          );
+        }
+        return (
+          '<div class="ho-empty-premium" role="status">' +
+          hoEmptyTraySvg_() +
+          '<div class="ho-empty-body">' +
+          '<div class="ho-empty-title">Nenhuma pendência aberta</div>' +
+          '<p class="ho-empty-desc">A operação está limpa neste filtro.</p>' +
+          '<p class="ho-empty-hint">Use <strong>Novo registro</strong> para criar uma pendência.</p>' +
+          '</div></div>'
+        );
+      }
+
       function renderQueue() {
         renderHistoricoFiltersPanel_();
 
@@ -6778,7 +7041,12 @@
           if (historicoLoadState === 'loading') {
             lastRenderedQueueItems = [];
             queueList.innerHTML = '';
-            queueEmpty.textContent = 'Carregando histórico...';
+            queueEmpty.innerHTML =
+              '<div class="ho-empty-premium ho-empty-premium--loading" role="status">' +
+              '<div class="ho-empty-body">' +
+              '<div class="ho-empty-title ho-empty-title--plain">Carregando histórico…</div>' +
+              '<p class="ho-empty-desc">Aguarde enquanto os registros são preparados.</p>' +
+              '</div></div>';
             queueEmpty.classList.remove('hidden');
             queueSubtitle.textContent = 'Carregando histórico...';
             return;
@@ -6786,7 +7054,7 @@
           if (historicoLoadError) {
             lastRenderedQueueItems = [];
             queueList.innerHTML = '';
-            queueEmpty.textContent = '';
+            queueEmpty.innerHTML = '';
             queueEmpty.classList.add('hidden');
             queueSubtitle.textContent = 'Histórico — utilize Tentar novamente nos filtros.';
             return;
@@ -6796,6 +7064,9 @@
         const queueItems = buildQueueItemsForRender_();
         lastRenderedQueueItems = queueItems.slice();
         queueList.innerHTML = '';
+        if (queueItems.length !== 0) {
+          queueEmpty.innerHTML = '';
+        }
         queueEmpty.classList.toggle('hidden', queueItems.length !== 0);
         queueSubtitle.textContent =
           humanizeMainTabLabel_(activeMainTab) +
@@ -6806,10 +7077,7 @@
           ' registro(s)';
 
         if (queueItems.length === 0) {
-          queueEmpty.textContent =
-            activeMainTab === 'historico'
-              ? 'Nenhum registro encontrado com esses filtros.'
-              : 'Nenhum item para o filtro selecionado.';
+          queueEmpty.innerHTML = getQueueEmptyPanelHtml_();
           return;
         }
 
