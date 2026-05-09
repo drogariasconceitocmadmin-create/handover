@@ -1,110 +1,74 @@
 {
   "projeto": "Handover - Drogarias Conceito",
-  "status_geral": "FALHA",
-  "branch_publicada": "release/handover-v54-checklist-clean",
-  "commit_publicado": "f248a9a",
-  "versao_publicada": 54,
-  "versao_ativa_apos_acao": 51,
-  "rollback_feito": true,
-  "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
+  "status_geral": "FALHA_CRITICA_P0",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
+  "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
+  "versao_ativa_antes": 51,
+  "rollback_feito": true,
+  "versao_ativa_depois": 48,
+  "producao_protegida": false,
   "pop_tocado": false,
-  "preflight": {
-    "resultado": "OK",
-    "branch_correta": true,
-    "head_f248a9a": true,
-    "feat_handover_auth_pin_v41_recebimento_publicada": false,
-    "d12ccd6_incluido": false,
-    "auditoria_handover_incluida": false,
-    "updateHandoverItem_incluido": false,
-    "getHandoverAuditTrail_incluido": false,
-    "botao_editar_incluido": false,
-    "modal_edicao_incluido": false,
-    "clasp_handover": true,
-    "pop_ausente": true,
-    "sheet_clear_novo": false,
-    "deleteRow_novo": false,
-    "templates": {
-      "manha": 17,
-      "tarde": 11,
-      "noite": 12
+  "testes": {
+    "v51": {
+      "registro": "TESTE_BASE_V51_MED",
+      "login_carlos_admin": true,
+      "modal_fechou_apos_salvar": true,
+      "apareceu_ui": true,
+      "apareceu_apos_atualizar": true,
+      "persistiu_apos_logout_login": false,
+      "medicamentos_planilha": false,
+      "compras_medicamentos_planilha": false,
+      "resultado": "FALHA"
     },
-    "item_id_total": 40,
-    "item_id_unicos": 40,
-    "checklist_turnos_ensureHeadersLegacyAdditive": true,
-    "texto_operacao_deste_periodo_sem_mojibake": true,
-    "diff_contra_feb9351": [
-      "Code.gs",
-      "Index.html"
-    ]
+    "v50": {
+      "registro": "TESTE_ROLLBACK_V50_MED",
+      "rollback_executado": true,
+      "login_carlos_admin": true,
+      "modal_fechou_apos_salvar": true,
+      "apareceu_ui": true,
+      "apareceu_apos_atualizar": true,
+      "persistiu_apos_logout_login": false,
+      "medicamentos_planilha": false,
+      "compras_medicamentos_planilha": false,
+      "resultado": "FALHA"
+    },
+    "v48": {
+      "registro": "TESTE_ROLLBACK_V48_MED",
+      "rollback_executado": true,
+      "login_carlos_admin": true,
+      "modal_fechou_apos_salvar": true,
+      "apareceu_ui": true,
+      "apareceu_apos_atualizar": true,
+      "persistiu_apos_logout_login": false,
+      "medicamentos_planilha": false,
+      "compras_medicamentos_planilha": false,
+      "resultado": "FALHA"
+    }
   },
-  "publicacao": {
-    "clasp_status": "OK",
-    "clasp_push": "OK",
-    "versao_criada": 54,
-    "deployment_atualizado": true,
-    "novo_deployment_criado": false,
-    "url_mantida": true
+  "planilha_oficial": {
+    "spreadsheet_id": "1tHDX3I5yVx2UioNki695UIoNxHjXxpxCuKZwv2l7Dv8",
+    "url": "https://docs.google.com/spreadsheets/d/1tHDX3I5yVx2UioNki695UIoNxHjXxpxCuKZwv2l7Dv8/edit",
+    "registros_encontrados": []
   },
-  "login_pin": {
-    "resultado": "OK",
-    "login_obrigatorio": true,
-    "pin_errado_bloqueado": true,
-    "login_carlos_admin": true,
-    "header_carlos_admin": true
-  },
-  "medicamentos": {
-    "resultado": "FALHA",
-    "registro_teste": "CODEX_V54_MED_OK",
-    "modal_fechou_apos_salvar": true,
-    "apareceu_temporariamente_na_ui": true,
-    "apareceu_apos_atualizar_agora": true,
-    "apareceu_apos_logout_login": false,
-    "persistiu_em_medicamentos": false
-  },
-  "compras_medicamentos": {
-    "resultado": "FALHA",
-    "registro_teste": "CODEX_V54_MED_OK",
-    "espelhou": false,
-    "fornecedor_compra": "NAO VALIDADO - registro nao persistiu",
-    "codigo_compra_fornecedor": "NAO VALIDADO - registro nao persistiu",
-    "forma_recebimento": "NAO VALIDADO - registro nao persistiu",
-    "observacao_solicitacao": "NAO VALIDADO - registro nao persistiu"
-  },
-  "whatsapp": "NAO VALIDADO - registro nao persistiu",
-  "checklist": {
-    "resultado": "NAO EXECUTADO",
-    "motivo": "Rollback imediato exigido por falha P0 de persistencia em Medicamentos/Compras"
-  },
-  "regressao_curta": {
-    "menu": "NAO EXECUTADO",
-    "historico": "NAO EXECUTADO",
-    "atualizar_agora": "PARCIAL - funcionou antes do rollback, mas item nao persistiu",
-    "logout": "OK"
-  },
-  "rollback": {
-    "executado": true,
-    "versao_destino": 51,
-    "comando": "clasp.cmd deploy --deploymentId AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw --versionNumber 51 --description \"Rollback v51 apos falha persistencia v54 release limpa checklist\"",
-    "pos_rollback_login_overlay": true
-  },
-  "limpeza": {
-    "registros_criados": [
-      "CODEX_V54_MED_OK"
-    ],
-    "registros_removidos": [],
-    "observacao": "O registro de teste nao persistiu na planilha; nada foi removido."
-  },
+  "handover_spreadsheet_id": "NAO_CONFIRMADO_EM_RUNTIME",
+  "apps_script_executions": "NAO_CONSULTADO",
+  "causa_raiz_encontrada": false,
+  "patch_feito": false,
+  "branch_commit": null,
+  "deploy_feito": "SOMENTE_ROLLBACKS_DE_CONTENCAO",
+  "rollback_final": 48,
   "falhas": {
     "criticas": [
-      "v54 nao persistiu a nova Encomenda criada pelo Web App em Medicamentos.",
-      "v54 nao espelhou a nova Encomenda em Compras_Medicamentos.",
-      "O item apareceu apenas como estado otimista/local e desapareceu apos nova sessao."
+      "v51 nao persiste Medicamentos.",
+      "v50 nao persiste Medicamentos.",
+      "v48 nao persiste Medicamentos.",
+      "Nenhuma versao estavel foi identificada pela sequencia de rollback indicada."
     ],
     "medias": [
-      "Checklist v54 nao foi testado no Web App publicado porque o P0 de Medicamentos falhou antes."
+      "HANDOVER_SPREADSHEET_ID runtime nao confirmado.",
+      "Apps Script Executions nao consultado nesta rodada."
     ],
     "leves": []
   },
-  "decisao_final": "Rollback aplicado para v51. Release limpa v54 bloqueada por falha critica de persistencia Medicamentos/Compras."
+  "decisao_final": "Parar. Producao permanece em @48, mas nao pode ser considerada protegida para criacao de Medicamentos."
 }
