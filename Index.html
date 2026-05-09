@@ -2212,10 +2212,36 @@
       }
 
       .checklist-summary {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .checklist-summary-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .checklist-summary-title {
+        display: grid;
+        gap: 2px;
+      }
+
+      .checklist-summary-title strong {
+        font-size: 14px;
+      }
+
+      .checklist-summary-title span {
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .checklist-chip-row {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
-        margin-bottom: 8px;
       }
 
       .checklist-chip {
@@ -2244,6 +2270,13 @@
         background: rgba(239, 68, 68, 0.09);
         border: 1px solid rgba(239, 68, 68, 0.16);
         color: #991b1b;
+      }
+
+      .checklist-turn-shortcuts .active {
+        background: var(--brand-blue) !important;
+        border-color: var(--brand-blue) !important;
+        color: #fff !important;
+        box-shadow: 0 8px 18px rgba(0, 87, 255, 0.18);
       }
 
       .checklist-hint {
@@ -3287,6 +3320,12 @@
         dashboardData.checklistTurno && dashboardData.checklistTurno.turno
           ? dashboardData.checklistTurno.turno
           : 'Manhã';
+      let checklistByTurno = Object.create(null);
+      let checklistTurnoLoading = Object.create(null);
+      let checklistTurnoRequested = Object.create(null);
+      let checklistOptimisticSnapshots = Object.create(null);
+      cacheChecklistTurno_(dashboardData.checklistTurno, { loaded: true });
+      setActiveChecklistDataFromCache_();
       let pendingReopenHistoricoId = null;
       let historicoFilterState = {
         criados: 'todos',
@@ -4222,6 +4261,12 @@
         if (hasChecklistObservationDrafts_()) {
           return false;
         }
+        if (checklistPendingItemId) {
+          return false;
+        }
+        if (checklistTurnoLoading && checklistTurnoLoading[activeChecklistTurno]) {
+          return false;
+        }
         if (isUserTypingInApp_()) {
           return false;
         }
@@ -4333,10 +4378,10 @@
             dashboardData.medicamentos.unshift(row);
           }
         });
-        dashboardData.checklistTurno = normalizeChecklistData_(bundle.checklistTurno);
-        if (bundle.bundleTurno) {
-          activeChecklistTurno = bundle.bundleTurno;
+        if (bundle.checklistTurno) {
+          cacheChecklistTurno_(bundle.checklistTurno, { loaded: true });
         }
+        setActiveChecklistDataFromCache_();
         updateLastActionLabel_();
       }
 
@@ -4450,6 +4495,7 @@
       }
 
       function initChecklistTurnoUi_() {
+        activeChecklistTurno = sanitizeChecklistTurnoClient_(activeChecklistTurno);
         if (checklistTurnSelect) {
           checklistTurnSelect.value = activeChecklistTurno;
         }
@@ -4468,15 +4514,24 @@
       }
 
       function onChecklistTurnoChange_(value) {
-        activeChecklistTurno = value || 'Manhã';
         captureObservationDraftsFromDom_();
+        activeChecklistTurno = sanitizeChecklistTurnoClient_(value);
+        setActiveChecklistDataFromCache_();
         updateChecklistTurnTitle_();
         initChecklistTurnoUi_();
-        refreshChecklistForTurno_(false);
+        updateMainTabBadges_();
+        renderDeskSidebar_();
+        renderChecklistSection();
+        renderSummary();
+        var localChecklist = getChecklistTurnoModel_(activeChecklistTurno);
+        if (localChecklist.needsLoad && !checklistTurnoLoading[activeChecklistTurno]) {
+          refreshChecklistForTurno_(true, activeChecklistTurno);
+        }
       }
 
-      function refreshChecklistForTurno_(silent) {
+      function refreshChecklistForTurno_(silent, turnoOpt) {
         var started = Date.now();
+        var turno = sanitizeChecklistTurnoClient_(turnoOpt || activeChecklistTurno);
         var tok = ensureSessionTokenForAction_();
         if (!tok) {
           if (!silent) {
@@ -4484,30 +4539,67 @@
           }
           return;
         }
+        checklistTurnoLoading[turno] = true;
+        checklistTurnoRequested[turno] = true;
+        cacheChecklistTurno_(Object.assign({}, getChecklistTurnoModel_(turno), { isLoading: true }), {
+          loaded: false,
+        });
+        if (turno === activeChecklistTurno) {
+          setActiveChecklistDataFromCache_();
+          renderDeskSidebar_();
+          renderChecklistSection();
+        }
         try {
           getScriptRunner_()
             .withSuccessHandler(function (response) {
+              checklistTurnoLoading[turno] = false;
               perfLog_('generateChecklistForTurno', started);
               if (response.checklistTurno) {
-                dashboardData.checklistTurno = normalizeChecklistData_(response.checklistTurno);
+                cacheChecklistTurno_(response.checklistTurno, { loaded: true });
+              } else {
+                cacheChecklistTurno_(
+                  Object.assign({}, getChecklistTurnoModel_(turno), { isLoading: false, needsLoad: false }),
+                  { loaded: true }
+                );
               }
               touchLastSyncTime_();
-              updateMainTabBadges_();
-              renderDeskSidebar_();
-              renderChecklistSection();
-              renderSummary();
+              if (turno === activeChecklistTurno) {
+                setActiveChecklistDataFromCache_();
+                updateMainTabBadges_();
+                renderDeskSidebar_();
+                renderChecklistSection();
+                renderSummary();
+              }
               if (!silent) {
                 showToast_('Checklist do turno carregado');
               }
             })
             .withFailureHandler(function (error) {
+              checklistTurnoLoading[turno] = false;
+              cacheChecklistTurno_(Object.assign({}, getChecklistTurnoModel_(turno), { isLoading: false }), {
+                loaded: false,
+              });
+              if (turno === activeChecklistTurno) {
+                setActiveChecklistDataFromCache_();
+                renderDeskSidebar_();
+                renderChecklistSection();
+              }
               perfLog_('generateChecklistForTurno_fail', started);
               if (!silent) {
                 showToast_(getErrorMessage(error), true);
               }
             })
-            .generateChecklistForTurno(activeChecklistTurno, tok);
+            .generateChecklistForTurno(turno, tok);
         } catch (error) {
+          checklistTurnoLoading[turno] = false;
+          cacheChecklistTurno_(Object.assign({}, getChecklistTurnoModel_(turno), { isLoading: false }), {
+            loaded: false,
+          });
+          if (turno === activeChecklistTurno) {
+            setActiveChecklistDataFromCache_();
+            renderDeskSidebar_();
+            renderChecklistSection();
+          }
           if (!silent) {
             showToast_(error.message, true);
           }
@@ -4805,21 +4897,33 @@
         if (!patch || !patch.checklistItem || !patch.checklistItem.ID) {
           return;
         }
-        var items = dashboardData.checklistTurno.items || [];
+        var turno = sanitizeChecklistTurnoClient_(patch.checklistItem.Turno || activeChecklistTurno);
+        var checklist = getChecklistTurnoModel_(turno);
+        var items = (checklist.items || []).slice();
         var idx = items.findIndex(function (i) {
           return checklistDraftKey_(i.ID) === checklistDraftKey_(patch.checklistItem.ID);
         });
         if (idx >= 0) {
           items[idx] = patch.checklistItem;
+        } else {
+          items.unshift(patch.checklistItem);
         }
-        if (patch.checklistSummary && typeof patch.checklistSummary === 'object') {
-          dashboardData.checklistTurno.summary = {
-            totalItens: Number(patch.checklistSummary.totalItens || 0),
-            itensFeitos: Number(patch.checklistSummary.itensFeitos || 0),
-            itensNaoAplicaveis: Number(patch.checklistSummary.itensNaoAplicaveis || 0),
-            itensPendentes: Number(patch.checklistSummary.itensPendentes || 0),
-            percentualConcluido: Number(patch.checklistSummary.percentualConcluido || 0),
-          };
+        checklist.items = items;
+        checklist.summary =
+          patch.checklistSummary && typeof patch.checklistSummary === 'object'
+            ? {
+                totalItens: Number(patch.checklistSummary.totalItens || 0),
+                itensFeitos: Number(patch.checklistSummary.itensFeitos || 0),
+                itensNaoAplicaveis: Number(patch.checklistSummary.itensNaoAplicaveis || 0),
+                itensPendentes: Number(patch.checklistSummary.itensPendentes || 0),
+                percentualConcluido: Number(patch.checklistSummary.percentualConcluido || 0),
+              }
+            : buildChecklistSummary_(items);
+        checklist.isLoading = false;
+        checklist.needsLoad = false;
+        cacheChecklistTurno_(checklist, { loaded: true });
+        if (turno === activeChecklistTurno) {
+          setActiveChecklistDataFromCache_();
         }
       }
 
@@ -5843,6 +5947,7 @@
       }
 
       function renderAll() {
+        setActiveChecklistDataFromCache_();
         updateLastActionLabel_();
         updateMainTabBadges_();
         renderDeskSidebar_();
@@ -8053,29 +8158,40 @@
       }
 
       function renderChecklistSummaryBarAndHints_() {
+        setActiveChecklistDataFromCache_();
         const checklist = dashboardData.checklistTurno;
         const items = checklist.items || [];
         const summary = checklist.summary || buildChecklistSummary_(items);
         const hasLateAlert = checklist.isAfterDeadline && summary.itensPendentes > 0;
 
         checklistSummary.innerHTML = [
-          '<span class="checklist-chip">Turno: ' + escapeHtml(checklist.turno || 'Manhã') + '</span>',
-          '<span class="checklist-chip">Data: ' + escapeHtml(checklist.data || '-') + '</span>',
-          '<span class="checklist-chip">Itens: ' + escapeHtml(summary.totalItens) + '</span>',
+          '<div class="checklist-summary-head">',
+          '<div class="checklist-summary-title"><strong>Checklist do turno</strong><span>',
+          escapeHtml(checklist.turno || activeChecklistTurno || 'Manhã'),
+          ' · ',
+          escapeHtml(checklist.data || 'hoje'),
+          '</span></div>',
+          checklist.isLoading ? '<span class="checklist-chip">Carregando...</span>' : '',
+          '</div>',
+          '<div class="checklist-chip-row">',
+          '<span class="checklist-chip">Total: ' + escapeHtml(summary.totalItens) + '</span>',
           '<span class="checklist-chip">Feitos: ' + escapeHtml(summary.itensFeitos) + '</span>',
           '<span class="checklist-chip">Pendentes: ' + escapeHtml(summary.itensPendentes) + '</span>',
-          '<span class="checklist-chip">Concluído: ' + escapeHtml(summary.percentualConcluido) + '%</span>',
-          hasLateAlert
-            ? '<span class="checklist-chip alert">Pendências após 07:30</span>'
-            : '',
+          '<span class="checklist-chip">N/A: ' + escapeHtml(summary.itensNaoAplicaveis) + '</span>',
+          '<span class="checklist-chip">Progresso: ' + escapeHtml(summary.percentualConcluido) + '%</span>',
+          hasLateAlert ? '<span class="checklist-chip alert">Pendências após 07:30</span>' : '',
+          '</div>',
         ].join('');
 
         if (items.length > 0) {
           checklistHint.textContent = 'Checklist de hoje já gerado.';
           checklistGenerateBtn.textContent = 'Atualizar checklist';
+        } else if (checklist.isLoading) {
+          checklistHint.textContent = 'Carregando checklist da ' + (checklist.turno || activeChecklistTurno) + '...';
+          checklistGenerateBtn.textContent = 'Atualizar checklist';
         } else {
-          checklistHint.textContent = 'Checklist ainda não gerado.';
-          checklistGenerateBtn.textContent = 'Gerar checklist de hoje';
+          checklistHint.textContent = 'Checklist ainda não gerado para este turno.';
+          checklistGenerateBtn.textContent = 'Gerar checklist da ' + (checklist.turno || activeChecklistTurno);
         }
 
         checklistContent.classList.toggle('hidden', !isChecklistExpanded);
@@ -8084,6 +8200,7 @@
 
       function renderChecklistSection() {
         captureObservationDraftsFromDom_();
+        setActiveChecklistDataFromCache_();
         renderChecklistSummaryBarAndHints_();
 
         const checklist = dashboardData.checklistTurno;
@@ -8091,6 +8208,14 @@
 
         if (!isChecklistExpanded) {
           checklistCategories.innerHTML = '';
+          return;
+        }
+
+        if (items.length === 0 && checklist.isLoading) {
+          checklistCategories.innerHTML =
+            '<div class="empty-box"><strong>Carregando checklist da ' +
+            escapeHtml(checklist.turno || activeChecklistTurno || 'Manhã') +
+            '...</strong><br>A troca de turno já foi aplicada na tela.</div>';
           return;
         }
 
@@ -8297,7 +8422,8 @@
       }
 
       function optimisticChecklistPatch_(id, uiStatusLabel) {
-        var items = dashboardData.checklistTurno.items || [];
+        var checklist = getChecklistTurnoModel_(activeChecklistTurno);
+        var items = (checklist.items || []).slice();
         var idx = items.findIndex(function (i) {
           return checklistDraftKey_(i.ID) === checklistDraftKey_(id);
         });
@@ -8305,7 +8431,8 @@
           return;
         }
         var serverStatus = mapUiChecklistStatusToServer_(uiStatusLabel);
-        var item = items[idx];
+        var item = Object.assign({}, items[idx]);
+        checklistOptimisticSnapshots[checklistDraftKey_(id)] = Object.assign({}, items[idx]);
         var op = getOperadorAtual_();
         item.Status = serverStatus;
         if (serverStatus === 'Pendente') {
@@ -8315,11 +8442,44 @@
           item.Responsavel = op;
           item.Data_Hora_Check = formatNowLocalIso_();
         }
-        dashboardData.checklistTurno.summary = buildChecklistSummary_(items);
+        items[idx] = item;
+        checklist.items = items;
+        checklist.summary = buildChecklistSummary_(items);
+        checklist.isLoading = false;
+        checklist.needsLoad = false;
+        cacheChecklistTurno_(checklist, { loaded: true });
+        setActiveChecklistDataFromCache_();
+      }
+
+      function restoreChecklistOptimisticPatch_(id) {
+        var key = checklistDraftKey_(id);
+        var snapshot = checklistOptimisticSnapshots[key];
+        if (!snapshot) {
+          return false;
+        }
+        delete checklistOptimisticSnapshots[key];
+        var turno = sanitizeChecklistTurnoClient_(snapshot.Turno || activeChecklistTurno);
+        var checklist = getChecklistTurnoModel_(turno);
+        var items = (checklist.items || []).slice();
+        var idx = items.findIndex(function (i) {
+          return checklistDraftKey_(i.ID) === key;
+        });
+        if (idx < 0) {
+          return false;
+        }
+        items[idx] = snapshot;
+        checklist.items = items;
+        checklist.summary = buildChecklistSummary_(items);
+        cacheChecklistTurno_(checklist, { loaded: true });
+        if (turno === activeChecklistTurno) {
+          setActiveChecklistDataFromCache_();
+        }
+        return true;
       }
 
       function resyncChecklistFromServer_() {
         var started = Date.now();
+        var turno = sanitizeChecklistTurnoClient_(activeChecklistTurno);
         var tok = ensureSessionTokenForAction_();
         if (!tok) {
           return;
@@ -8327,7 +8487,12 @@
         try {
           getScriptRunner_()
             .withSuccessHandler(function (response) {
-              dashboardData.checklistTurno = normalizeChecklistData_(response.checklistTurno);
+              if (response.checklistTurno) {
+                cacheChecklistTurno_(response.checklistTurno, { loaded: true });
+              }
+              if (turno === activeChecklistTurno) {
+                setActiveChecklistDataFromCache_();
+              }
               perfLog_('generateChecklistForTurno', started);
               renderChecklistSection();
               renderSummary();
@@ -8335,7 +8500,7 @@
             .withFailureHandler(function (error) {
               setStatus(checklistStatus, getErrorMessage(error), true);
             })
-            .generateChecklistForTurno(activeChecklistTurno, tok);
+            .generateChecklistForTurno(turno, tok);
         } catch (error) {
           setStatus(checklistStatus, error.message, true);
         }
@@ -8524,6 +8689,7 @@
             getScriptRunner_()
               .withSuccessHandler(function (response) {
                 checklistPendingItemId = null;
+                delete checklistOptimisticSnapshots[checklistDraftKey_(id)];
                 applyChecklistPatch_(response);
                 perfLog_('updateChecklistItemStatus', started);
                 if (!patchChecklistItemArticle_(id)) {
@@ -8535,6 +8701,7 @@
               .withFailureHandler(function (error) {
                 checklistPendingItemId = null;
                 perfLog_('updateChecklistItemStatus_fail', started);
+                restoreChecklistOptimisticPatch_(id);
                 resyncChecklistFromServer_();
                 showToast_(getErrorMessage(error), true);
                 setStatus(checklistStatus, getErrorMessage(error), true);
@@ -8542,6 +8709,7 @@
               .updateChecklistItemStatus(id, status, tok);
           } catch (error) {
             checklistPendingItemId = null;
+            restoreChecklistOptimisticPatch_(id);
             resyncChecklistFromServer_();
             setStatus(checklistStatus, error.message, true);
             showToast_(error.message, true);
@@ -8610,6 +8778,7 @@
         setChecklistButtonsDisabled(true);
 
         var started = Date.now();
+        var turno = sanitizeChecklistTurnoClient_(activeChecklistTurno);
         var tok = ensureSessionTokenForAction_();
         if (!tok) {
           setChecklistButtonsDisabled(false);
@@ -8618,7 +8787,12 @@
         try {
           getScriptRunner_()
             .withSuccessHandler(function (response) {
-              dashboardData.checklistTurno = normalizeChecklistData_(response.checklistTurno);
+              if (response.checklistTurno) {
+                cacheChecklistTurno_(response.checklistTurno, { loaded: true });
+              }
+              if (turno === activeChecklistTurno) {
+                setActiveChecklistDataFromCache_();
+              }
               perfLog_('generateChecklistForTurno', started);
               renderAll();
               setStatus(checklistStatus, 'Checklist atualizado.');
@@ -8630,7 +8804,7 @@
               setChecklistButtonsDisabled(false);
               showToast_(getErrorMessage(error), true);
             })
-            .generateChecklistForTurno(activeChecklistTurno, tok);
+            .generateChecklistForTurno(turno, tok);
         } catch (error) {
           setStatus(checklistStatus, error.message, true);
           setChecklistButtonsDisabled(false);
@@ -9575,16 +9749,28 @@
         };
       }
 
+      function sanitizeChecklistTurnoClient_(turno) {
+        var raw = String(turno || '').trim().toLowerCase();
+        if (raw === 'tarde') {
+          return 'Tarde';
+        }
+        if (raw === 'noite') {
+          return 'Noite';
+        }
+        return 'Manhã';
+      }
+
       function normalizeChecklistData_(checklist) {
         const items = Array.isArray(checklist && checklist.items) ? checklist.items : [];
         const summary =
           checklist && checklist.summary && typeof checklist.summary === 'object'
             ? checklist.summary
             : buildChecklistSummary_(items);
+        const turno = sanitizeChecklistTurnoClient_(checklist && checklist.turno ? checklist.turno : 'Manhã');
 
         return {
           data: checklist && checklist.data ? checklist.data : '',
-          turno: checklist && checklist.turno ? checklist.turno : 'Manhã',
+          turno: turno,
           horarioReferencia:
             checklist && checklist.horarioReferencia ? checklist.horarioReferencia : '07:00',
           isAfterDeadline: Boolean(checklist && checklist.isAfterDeadline),
@@ -9596,7 +9782,52 @@
             itensPendentes: Number(summary.itensPendentes || 0),
             percentualConcluido: Number(summary.percentualConcluido || 0),
           },
+          isLoading: Boolean(checklist && checklist.isLoading),
+          needsLoad: Boolean(checklist && checklist.needsLoad),
         };
+      }
+
+      function emptyChecklistTurnoModel_(turno, opts) {
+        opts = opts || {};
+        var model = {
+          data: '',
+          turno: sanitizeChecklistTurnoClient_(turno),
+          horarioReferencia: '07:00',
+          isAfterDeadline: false,
+          items: [],
+          summary: buildChecklistSummary_([]),
+          isLoading: Boolean(opts.isLoading),
+          needsLoad: opts.needsLoad !== false,
+        };
+        return model;
+      }
+
+      function cacheChecklistTurno_(checklist, opts) {
+        opts = opts || {};
+        var normalized = normalizeChecklistData_(checklist);
+        var turno = sanitizeChecklistTurnoClient_(normalized.turno);
+        normalized.turno = turno;
+        normalized.isLoading = Boolean(normalized.isLoading);
+        normalized.needsLoad = opts.loaded ? false : Boolean(normalized.needsLoad);
+        checklistByTurno[turno] = normalized;
+        return normalized;
+      }
+
+      function getChecklistTurnoModel_(turno) {
+        var safeTurno = sanitizeChecklistTurnoClient_(turno);
+        if (!checklistByTurno[safeTurno]) {
+          checklistByTurno[safeTurno] = emptyChecklistTurnoModel_(safeTurno, {
+            isLoading: Boolean(checklistTurnoLoading[safeTurno]),
+            needsLoad: true,
+          });
+        }
+        checklistByTurno[safeTurno].isLoading = Boolean(checklistTurnoLoading[safeTurno]);
+        return checklistByTurno[safeTurno];
+      }
+
+      function setActiveChecklistDataFromCache_() {
+        activeChecklistTurno = sanitizeChecklistTurnoClient_(activeChecklistTurno);
+        dashboardData.checklistTurno = getChecklistTurnoModel_(activeChecklistTurno);
       }
 
       function getScriptRunner_() {
