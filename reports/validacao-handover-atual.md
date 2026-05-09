@@ -1,92 +1,52 @@
-# Incidente P0 - Diagnostico e hotfix persistencia Medicamentos
+# Validacao Handover v56 - Cancelamento Falta/Encomenda em Compras
 
 Projeto: Handover - Drogarias Conceito
 
-URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec`
+Branch publicada: `hotfix/handover-p0-save-medicamentos`
+
+Commit publicado: `4fbe8d6 - fix(handover): espelha cancelamento Falta/Encomenda em Compras_Medicamentos`
 
 Deployment oficial: `AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw`
+
+URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec`
 
 ## Resultado
 
 Status geral: OK COM RESSALVA
 
-Versao ativa inicial: 48.
+Versao publicada: 56.
 
-Versao ativa final: 55.
-
-Producao protegida: SIM para criacao/persistencia de Medicamentos e espelho Compras.
+Rollback feito: NAO.
 
 POP tocado: NAO.
 
-## Diagnostico
+## Preflight
 
-Teste controlado:
-
-- `TESTE_P0_SAVE_LOG_2`
-
-Evidencia capturada no Web App:
-
-- Modal fechava antes da confirmacao real do backend.
-- Item ficava visivel como estado otimista.
-- Apos aproximadamente 10 segundos, o front recebia erro de backend.
-- Erro exato exibido:
-
-`Error: Estrutura de cabecalho incompativel na aba "Checklist_Turnos". Ajuste manualmente os cabecalhos para: ID, Data, Turno, Horario_Referencia, Categoria, Item, Descricao, Status, Responsavel, Data_Hora_Check, Observacao.`
-
-Console do navegador:
-
-- `[Handover] saveData_fail ms= 10232`
-- `[Handover] refreshDashboardBundle_fail ms= 9280`
-
-Conclusao:
-
-- `saveData` chegava ao backend.
-- A falha nao era em Medicamentos diretamente.
-- `saveData` chamava `setupSpreadsheet()`.
-- `setupSpreadsheet()` validava `Checklist_Turnos` com cabecalho rigido via `ensureHeaders_`.
-- A aba `Checklist_Turnos` ja tinha estrutura diferente/aditiva.
-- A validacao rigida de Checklist derrubava o salvamento de Medicamentos antes do append.
-- O front mascarava o problema ao fechar o modal e exibir item otimista antes do sucesso real.
-
-## Patch
-
-Branch: `hotfix/handover-p0-save-medicamentos`
-
-Commit: `228e109 - fix(handover): corrige persistencia real de medicamentos`
-
-Arquivos alterados:
-
-- `Code.gs`
-- `Index.html`
-
-Alteracoes:
-
-- `Code.gs`: `Checklist_Turnos` passou a usar `ensureHeadersLegacyAdditive_` em `setupSpreadsheet()`.
-- `Index.html`: modal de Novo Registro so fecha apos resposta de sucesso real.
-- `Index.html`: se o backend falhar ou nao retornar `record.ID`, o placeholder otimista e removido e o erro aparece no modal.
-
-Nao houve:
-
-- alteracao de Checklist UX/templates;
-- alteracao de layout;
-- alteracao de POP;
-- `sheet.clear()`;
-- `deleteRow` novo.
+- Branch `hotfix/handover-p0-save-medicamentos`: OK.
+- HEAD `4fbe8d6`: OK.
+- `.clasp.json` do Handover oficial: OK.
+- POP ausente: OK.
+- `sheet.clear()` novo: ausente.
+- `deleteRow` novo: ausente; ocorrencia existente e legada nao entrou neste hotfix.
+- Hotfix de codigo alterou somente `Code.gs`: OK.
+- Checklist/Login/PIN/WhatsApp/layout nao foram alterados neste commit: OK.
+- Base funcional v55 preservada: OK.
 
 ## Publicacao
 
 - `clasp.cmd status`: OK.
 - `clasp.cmd push`: OK.
-- Versao criada: 55.
-- Deployment oficial atualizado para v55.
+- Versao criada: 56.
+- Deployment oficial atualizado para v56.
+- Novo deployment nao foi criado.
 
-## Smoke do hotfix
+## Smoke P0 - Criacao ainda funciona
 
 ### Encomenda
 
 Registro:
 
-- `TESTE_P0_SAVE_REAL`
+- `TESTE_V56_ENCOMENDA_OK`
 
 Resultado:
 
@@ -94,94 +54,114 @@ Resultado:
 - Criacao pelo Web App: OK.
 - Gravou em `Medicamentos`: OK.
 - Espelhou em `Compras_Medicamentos`: OK.
-- Persistiu apos logout/login: OK.
-- Visivel na UI apos reload: OK.
-- Fornecedor: `Panpharma`.
-- Codigo: `P0REAL`.
-- Forma de recebimento: `A combinar`.
+- Persistencia apos refresh/reload confirmada por backend/planilha: OK.
+- Campos conferidos:
+  - Fornecedor_Compra: `Panpharma`.
+  - Codigo_Compra_Fornecedor: `V56ENC`.
+  - Forma_Recebimento: `A combinar`.
 
 ### Falta
 
 Registro:
 
-- `TESTE_P0_FALTA_REAL`
+- `TESTE_V56_FALTA_CANCEL`
 
 Resultado:
 
 - Criacao pelo Web App: OK.
 - Gravou em `Medicamentos`: OK.
 - Espelhou em `Compras_Medicamentos`: OK.
-- Persistiu apos Atualizar agora/reload: OK.
 
-### Comprado / WhatsApp / Cancelamento
+## Smoke P1 - Cancelamento de Encomenda
 
-Registro usado:
+Registro:
 
-- `TESTE_P0_SAVE_REAL`
+- `TESTE_V56_ENCOMENDA_OK`
+
+Resultado em `Medicamentos`:
+
+- Status = `Cancelado`.
+- Cancelado_Por = `Carlos`.
+- Data_Cancelamento preenchida.
+- Motivo_Cancelamento = `limpeza teste v56`.
+
+Resultado em `Compras_Medicamentos`:
+
+- Status_Compra = `Cancelado`.
+- Status_Handover = `Cancelado`.
+- Cancelado_Por = `Carlos`.
+- Data_Cancelamento preenchida.
+- Comprado_Por vazio.
+- Data_Compra vazia.
+
+## Smoke P2 - Cancelamento de Falta
+
+Registro:
+
+- `TESTE_V56_FALTA_CANCEL`
+
+Resultado em `Medicamentos`:
+
+- Status = `Cancelado`.
+- Cancelado_Por = `Carlos`.
+- Data_Cancelamento preenchida.
+- Motivo_Cancelamento = `limpeza teste v56`.
+
+Resultado em `Compras_Medicamentos`:
+
+- Status_Compra = `Cancelado`.
+- Status_Handover = `Cancelado`.
+- Cancelado_Por = `Carlos`.
+- Data_Cancelamento preenchida.
+- Nao permaneceu `Pendente de compra`.
+
+## Regressao curta
+
+Registro adicional:
+
+- `TESTE_V56_WHATSAPP_OK`
 
 Resultado:
 
-- Marcar como Comprado: OK.
-- `Medicamentos.Status = Comprado`: OK.
-- `Compras_Medicamentos.Status_Compra = Comprado`: OK.
-- WhatsApp abriu sem envio real: OK.
-- URL WhatsApp sem mojibake:
-  `Olá, Teste Real! ... Você ... está ... você`
-- Cancelar Encomenda pelo Handover: OK.
-- `Medicamentos.Status = Cancelado`: OK.
-- `Compras_Medicamentos.Status_Compra = Cancelado`: OK.
-- `Cancelado_Por = Carlos`: OK.
-- `Motivo_Cancelamento = limpeza teste p0`: OK.
+- Criacao de Encomenda simples: OK.
+- Persistencia em `Medicamentos`: OK.
+- Espelho em `Compras_Medicamentos`: OK.
+- Cancelamento logico: OK.
+- Espelho Cancelado em Compras: OK.
+- Menu sem `Imprimir`: OK.
+- Login/logout: OK.
+- Atualizar agora: parcial/inconclusivo na automacao final, mas operou durante o fluxo principal de criacao/cancelamento.
+- WhatsApp: inconclusivo; a automacao nao conseguiu abrir a janela antes do cancelamento do item.
 
-## Falha residual
+## Limpeza
 
-Ao cancelar `TESTE_P0_FALTA_REAL` pelo Handover:
+Registros criados nesta rodada:
 
-- `Medicamentos.Status = Cancelado`: OK.
-- `Compras_Medicamentos` continuou com `Status_Compra = Pendente de compra`.
+- `TESTE_V56_ENCOMENDA_OK`
+- `TESTE_V56_FALTA_CANCEL`
+- `TESTE_V56_WHATSAPP_OK`
 
-Classificacao: falha media, porque o P0 de persistencia foi corrigido e o cancelamento da Encomenda validou o espelho principal.
+Limpeza realizada:
 
-## HANDOVER_SPREADSHEET_ID
-
-Nao foi possivel consultar `clasp run getSpreadsheetIdForDebug` porque o script nao esta publicado como API executable.
-
-Evidencia indireta:
-
-- Os registros criados pelo Web App v55 apareceram na planilha oficial esperada:
-  `1tHDX3I5yVx2UioNki695UIoNxHjXxpxCuKZwv2l7Dv8`.
-
-## Apps Script Executions
-
-`clasp logs --json` falhou porque o GCP project ID nao esta configurado no ambiente.
-
-Evidencia usada:
-
-- Console do navegador.
-- Mensagem de erro visivel no Web App.
-- Busca direta na planilha oficial.
-- Retorno visual do Web App apos reload/login.
-
-## Versao ativa final
-
-Deployment oficial ativo em v55.
+- Os tres registros foram cancelados logicamente pelo Handover.
+- Nenhuma linha foi apagada fisicamente.
+- Usuarios, cabecalhos e abas nao foram alterados manualmente.
 
 ## Falhas
 
 Criticas:
 
-- Nenhuma apos hotfix v55.
+- Nenhuma.
 
 Medias:
 
-- Cancelamento de Falta nao refletiu `Status_Compra = Cancelado` em `Compras_Medicamentos`.
-- `clasp logs` indisponivel sem GCP project ID.
-- `clasp run` indisponivel porque o script nao esta publicado como API executable.
+- Nenhuma.
 
 Leves:
 
-- Testes de limpeza foram feitos por cancelamento logico, nao por remocao fisica.
+- WhatsApp ficou inconclusivo na automacao desta rodada.
+- Atualizar agora ficou parcial/inconclusivo na automacao final, apesar de o fluxo principal ter atualizado dados e planilha corretamente.
 
 ## Veredito
 
-P0 de persistencia de Medicamentos corrigido em v55. Producao protegida para criacao de Medicamentos e espelho principal em Compras_Medicamentos.
+v56 publicada e aprovada com ressalva leve. O objetivo principal foi atendido: cancelamento de Falta e Encomenda agora espelha `Cancelado` em `Compras_Medicamentos`.

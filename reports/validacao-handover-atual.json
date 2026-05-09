@@ -1,108 +1,102 @@
 {
   "projeto": "Handover - Drogarias Conceito",
   "status_geral": "OK_COM_RESSALVA",
-  "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
+  "branch_publicada": "hotfix/handover-p0-save-medicamentos",
+  "commit_publicado": "4fbe8d6",
+  "versao_publicada": 56,
+  "rollback_feito": false,
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
-  "versao_ativa_inicial": 48,
-  "versao_ativa_final": 55,
-  "producao_protegida": true,
+  "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
   "pop_tocado": false,
-  "diagnostico": {
-    "teste_controlado": "TESTE_P0_SAVE_LOG_2",
-    "saveData_chegou_ao_backend": true,
-    "erro_exato": "Error: Estrutura de cabecalho incompativel na aba \"Checklist_Turnos\". Ajuste manualmente os cabecalhos para: ID, Data, Turno, Horario_Referencia, Categoria, Item, Descricao, Status, Responsavel, Data_Hora_Check, Observacao.",
-    "console": [
-      "[Handover] saveData_fail ms= 10232",
-      "[Handover] refreshDashboardBundle_fail ms= 9280"
-    ],
-    "causa_raiz": "setupSpreadsheet validava Checklist_Turnos com ensureHeaders_ rigido; a aba tinha estrutura aditiva/diferente, derrubando saveData antes do append de Medicamentos. O front fechava o modal antes do sucesso real e deixava item otimista visivel."
-  },
-  "patch": {
-    "feito": true,
-    "branch": "hotfix/handover-p0-save-medicamentos",
-    "commit": "228e109",
-    "mensagem": "fix(handover): corrige persistencia real de medicamentos",
-    "arquivos": [
-      "Code.gs",
-      "Index.html"
-    ],
-    "mudancas": [
-      "Checklist_Turnos passou a usar ensureHeadersLegacyAdditive_ em setupSpreadsheet.",
-      "Modal de Novo Registro fecha somente apos sucesso real.",
-      "Falha de saveData remove placeholder otimista e mostra erro no modal."
-    ]
+  "preflight": {
+    "branch_correta": true,
+    "head_4fbe8d6": true,
+    "clasp_handover": true,
+    "pop_ausente": true,
+    "sheet_clear_novo": false,
+    "deleteRow_novo": false,
+    "codigo_alterado_somente_code_gs": true,
+    "checklist_login_whatsapp_layout_alterados": false,
+    "base_v55_preservada": true
   },
   "publicacao": {
     "clasp_status": "OK",
     "clasp_push": "OK",
-    "versao_criada": 55,
-    "deployment_atualizado": true
+    "versao_criada": 56,
+    "deployment_atualizado": true,
+    "novo_deployment_criado": false
   },
-  "smoke": {
+  "login_pin": {
     "login_carlos_admin": true,
-    "encomenda": {
-      "registro": "TESTE_P0_SAVE_REAL",
-      "criou_pelo_webapp": true,
-      "medicamentos_planilha": true,
-      "compras_medicamentos_planilha": true,
-      "persistiu_apos_logout_login": true,
-      "visivel_ui_reload": true,
-      "fornecedor_compra": "Panpharma",
-      "codigo_compra_fornecedor": "P0REAL",
-      "forma_recebimento": "A combinar"
-    },
-    "falta": {
-      "registro": "TESTE_P0_FALTA_REAL",
-      "criou_pelo_webapp": true,
-      "medicamentos_planilha": true,
-      "compras_medicamentos_planilha": true,
-      "persistiu": true
-    },
-    "comprado": {
-      "registro": "TESTE_P0_SAVE_REAL",
-      "medicamentos_status": "Comprado",
-      "compras_status_compra": "Comprado",
-      "ok": true
-    },
-    "whatsapp": {
-      "abriu_sem_envio": true,
-      "url_sem_mojibake": true,
-      "texto_validado": "Ola/Teste Real/Voce/esta/voce"
-    },
-    "cancelamento_encomenda": {
-      "registro": "TESTE_P0_SAVE_REAL",
-      "medicamentos_status": "Cancelado",
-      "compras_status_compra": "Cancelado",
-      "cancelado_por": "Carlos",
-      "motivo": "limpeza teste p0",
-      "ok": true
-    },
-    "cancelamento_falta": {
-      "registro": "TESTE_P0_FALTA_REAL",
-      "medicamentos_status": "Cancelado",
-      "compras_status_compra": "Pendente de compra",
-      "ok": false
-    }
+    "logout_login_testado": true
   },
-  "handover_spreadsheet_id": {
-    "confirmado_via_clasp_run": false,
-    "motivo": "Script function not found. Script nao esta publicado como API executable.",
-    "evidencia_indireta": "Registros criados pelo Web App apareceram na planilha oficial 1tHDX3I5yVx2UioNki695UIoNxHjXxpxCuKZwv2l7Dv8."
+  "criacao_encomenda": {
+    "registro": "TESTE_V56_ENCOMENDA_OK",
+    "webapp": true,
+    "medicamentos": true,
+    "compras_medicamentos": true,
+    "fornecedor_compra": "Panpharma",
+    "codigo_compra_fornecedor": "V56ENC",
+    "forma_recebimento": "A combinar"
   },
-  "apps_script_executions": {
-    "consultado": false,
-    "motivo": "clasp logs --json falhou porque GCP project ID nao esta configurado."
+  "criacao_falta": {
+    "registro": "TESTE_V56_FALTA_CANCEL",
+    "webapp": true,
+    "medicamentos": true,
+    "compras_medicamentos": true
+  },
+  "cancelamento_encomenda": {
+    "registro": "TESTE_V56_ENCOMENDA_OK",
+    "medicamentos_status": "Cancelado",
+    "medicamentos_cancelado_por": "Carlos",
+    "medicamentos_data_cancelamento": true,
+    "compras_status_compra": "Cancelado",
+    "compras_status_handover": "Cancelado",
+    "compras_cancelado_por": "Carlos",
+    "compras_data_cancelamento": true,
+    "comprado_por_vazio_ou_coerente": true,
+    "data_compra_vazia_ou_coerente": true,
+    "ok": true
+  },
+  "cancelamento_falta": {
+    "registro": "TESTE_V56_FALTA_CANCEL",
+    "medicamentos_status": "Cancelado",
+    "medicamentos_cancelado_por": "Carlos",
+    "medicamentos_data_cancelamento": true,
+    "compras_status_compra": "Cancelado",
+    "compras_status_handover": "Cancelado",
+    "compras_cancelado_por": "Carlos",
+    "compras_data_cancelamento": true,
+    "nao_permaneceu_pendente_de_compra": true,
+    "ok": true
+  },
+  "regressao_curta": {
+    "registro": "TESTE_V56_WHATSAPP_OK",
+    "criacao_encomenda_simples": true,
+    "persistencia_medicamentos": true,
+    "espelho_compras": true,
+    "cancelamento_logico": true,
+    "menu_sem_imprimir": true,
+    "whatsapp": "INCONCLUSIVO - automacao nao abriu a janela antes do cancelamento",
+    "atualizar_agora": "PARCIAL/INCONCLUSIVO na automacao final"
+  },
+  "limpeza": {
+    "registros_criados": [
+      "TESTE_V56_ENCOMENDA_OK",
+      "TESTE_V56_FALTA_CANCEL",
+      "TESTE_V56_WHATSAPP_OK"
+    ],
+    "registros_removidos": [],
+    "modo": "cancelamento logico pelo Handover",
+    "delete_fisico": false
   },
   "falhas": {
     "criticas": [],
-    "medias": [
-      "Cancelamento de Falta nao refletiu Status_Compra = Cancelado em Compras_Medicamentos.",
-      "clasp logs indisponivel sem GCP project ID.",
-      "clasp run indisponivel porque script nao esta publicado como API executable."
-    ],
+    "medias": [],
     "leves": [
-      "Testes de limpeza foram feitos por cancelamento logico, nao por remocao fisica."
+      "WhatsApp inconclusivo na automacao desta rodada.",
+      "Atualizar agora parcial/inconclusivo na automacao final."
     ]
   },
-  "veredito": "P0 de persistencia de Medicamentos corrigido em v55. Producao protegida para criacao de Medicamentos e espelho principal em Compras_Medicamentos."
+  "veredito": "v56 publicada e aprovada com ressalva leve. Cancelamento de Falta e Encomenda espelha Cancelado em Compras_Medicamentos."
 }
