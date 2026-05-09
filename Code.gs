@@ -1352,6 +1352,24 @@ function getEditorEmailForSheetHook_() {
   }
 }
 
+/**
+ * Quando Medicamentos está Cancelado, Compras_Medicamentos deve refletir cancelamento completo
+ * (Status_Compra, Status_Handover, auditoria), sem manter Comprado_Por/Data_Compra do estado anterior.
+ */
+function applyMedicamentoCancelamentoEspelhoComprasNamed_(medItem, named) {
+  if (sanitizeText_(medItem.Status).toLowerCase() !== 'cancelado') {
+    return;
+  }
+  named.Status_Compra = COMPRAS_STATUS_COMPRA.CANCELADO;
+  named.Status_Handover = 'Cancelado';
+  named.Comprado_Por = '';
+  named.Data_Compra = '';
+  named.Cancelado_Por = sanitizeText_(medItem.Cancelado_Por || named.Cancelado_Por);
+  named.Data_Cancelamento = medItem.Data_Cancelamento || named.Data_Cancelamento;
+  named.Motivo_Cancelamento = sanitizeText_(medItem.Motivo_Cancelamento || named.Motivo_Cancelamento);
+  named.Ultima_Atualizacao = new Date();
+}
+
 function computeStatusCompraMirrorFromMedicamento_(medItem, currentStatusCompra) {
   var st = sanitizeText_(medItem.Status).toLowerCase();
   if (st === 'cancelado') {
@@ -1507,6 +1525,15 @@ function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId, opt) {
   }
   var medItem = rowToObjectFromSheetRow_(medLoc.sheet, medLoc.rowNumber);
   normalizeItemForClient_(medItem);
+  try {
+    var medStatusCol = getColumnIndex_(medLoc.sheet, 'Status');
+    var statusLive = String(medLoc.sheet.getRange(medLoc.rowNumber, medStatusCol).getValue() || '').trim();
+    if (statusLive) {
+      medItem.Status = statusLive;
+    }
+  } catch (stLiveErr) {
+    Logger.log('mirrorComprasMedicamentosRowForMedicamentoId_ statusLive: ' + stLiveErr);
+  }
 
   var cSheet = getComprasMedicamentosSheet_();
   var existingRow = findComprasRowByHandoverId_(cSheet, id);
@@ -1529,7 +1556,10 @@ function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId, opt) {
       named.Comprado_Por = '';
       named.Ultima_Atualizacao = new Date();
     } else {
-      if (normalizeComprasStatusCompraInput_(existingStatus) === COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO) {
+      if (
+        normalizeComprasStatusCompraInput_(existingStatus) === COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO &&
+        sanitizeText_(medItem.Status).toLowerCase() !== 'cancelado'
+      ) {
         named.Status_Compra = COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO;
         if (!named.Mensagem_Cliente) {
           named.Mensagem_Cliente = buildMensagemClienteNaoEncontrado_(named.Cliente, named.Medicamento);
@@ -1561,6 +1591,9 @@ function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId, opt) {
     ) {
       named.Comprado_Por = sanitizeText_(opt.compradoPorHandover);
     }
+    if (!opt.fromRevertToPending) {
+      applyMedicamentoCancelamentoEspelhoComprasNamed_(medItem, named);
+    }
     var rowVals = buildAppendRowValuesFromNamedMap_(cSheet, named);
     for (var i = 0; i < rowVals.length; i++) {
       cSheet.getRange(existingRow, i + 1).setValue(rowVals[i]);
@@ -1576,6 +1609,9 @@ function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId, opt) {
       if (opt.compradoPorHandover) {
         named.Comprado_Por = sanitizeText_(opt.compradoPorHandover);
       }
+    }
+    if (!opt.fromRevertToPending) {
+      applyMedicamentoCancelamentoEspelhoComprasNamed_(medItem, named);
     }
     cSheet.appendRow(buildAppendRowValuesFromNamedMap_(cSheet, named));
   }
@@ -2801,6 +2837,7 @@ function cancelMedicationRequest(id, sessionToken, motivo) {
 
   // Espelhar em Compras_Medicamentos preservando Observacao_Compra/Mensagem_Cliente.
   try {
+    SpreadsheetApp.flush();
     mirrorComprasMedicamentosRowForMedicamentoId_(id);
   } catch (ce) {
     Logger.log('cancelMedicationRequest mirror compras: ' + ce);
