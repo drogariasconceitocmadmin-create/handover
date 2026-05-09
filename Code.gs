@@ -363,6 +363,7 @@ function setupSpreadsheet() {
       sheetName === SHEET_NAMES.GERAL ||
       sheetName === SHEET_NAMES.ARQUIVO ||
       sheetName === SHEET_NAMES.MEDICAMENTOS ||
+      sheetName === SHEET_NAMES.CHECKLIST ||
       sheetName === SHEET_NAMES.COMPRAS_MEDICAMENTOS
     ) {
       ensureHeadersLegacyAdditive_(sheet, HEADERS[sheetName]);
@@ -2033,6 +2034,50 @@ function getChecklistTemplatesByTurno_() {
 function getChecklistTemplate_(turno) {
   var t = sanitizeChecklistTurno_(turno);
   return getChecklistTemplatesByTurno_()[t] || getChecklistTemplatesByTurno_()[CHECKLIST_TURNO_MANHA];
+}
+
+function selfTestChecklistTurnosSchema_() {
+  var ss = getSpreadsheet_();
+  var sheet = getSheetOrThrow_(ss, SHEET_NAMES.CHECKLIST);
+  ensureHeadersLegacyAdditive_(sheet, HEADERS.Checklist_Turnos);
+
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function (h) {
+    return sanitizeText_(h);
+  });
+  var required = ['ID', 'Data', 'Turno', 'Item_ID', 'Item', 'Status', 'Observacao'];
+  var missing = computeMissingExpectedHeaders_(headers, required);
+  if (missing.length) {
+    throw new Error('selfTestChecklistTurnosSchema_: faltando ' + missing.join(', '));
+  }
+
+  var templates = getChecklistTemplatesByTurno_();
+  var allIds = [];
+  var counts = {};
+  [CHECKLIST_TURNO_MANHA, CHECKLIST_TURNO_TARDE, CHECKLIST_TURNO_NOITE].forEach(function (turno) {
+    counts[turno] = templates[turno].length;
+    templates[turno].forEach(function (item) {
+      allIds.push(item.itemId);
+    });
+  });
+  var unique = {};
+  allIds.forEach(function (id) {
+    unique[id] = true;
+  });
+  if (counts[CHECKLIST_TURNO_MANHA] !== 17 || counts[CHECKLIST_TURNO_TARDE] !== 11 || counts[CHECKLIST_TURNO_NOITE] !== 12) {
+    throw new Error('selfTestChecklistTurnosSchema_: contagens invalidas ' + JSON.stringify(counts));
+  }
+  if (Object.keys(unique).length !== allIds.length) {
+    throw new Error('selfTestChecklistTurnosSchema_: Item_ID duplicado');
+  }
+
+  Logger.log('selfTestChecklistTurnosSchema_: OK');
+  return {
+    success: true,
+    itemIdTotal: allIds.length,
+    itemIdUnicos: Object.keys(unique).length,
+    templates: counts,
+  };
 }
 
 function getChecklistDateKey_(date) {
