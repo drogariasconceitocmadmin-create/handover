@@ -3,137 +3,112 @@
   "status_geral": "PARCIAL",
   "pasta": "C:\\Users\\Marco\\Desktop\\Sis Drogaria\\Handover",
   "branch": "feat/handover-auth-pin-v41-recebimento",
-  "commit_validado": "e6c2380",
+  "commit_minimo_validado": "5d4e161",
   "scriptId": "1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd",
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
   "spreadsheetId": "1tHDX3I5yVx2UioNki695UIoNxHjXxpxCuKZwv2l7Dv8",
-  "versao_publicada": 48,
+  "versao_publicada": 49,
   "rollback_feito": false,
-  "versao_ativa_apos_acao": 48,
+  "versao_ativa_apos_acao": 49,
   "pop_tocado": false,
   "preflight": {
     "resultado": "OK",
-    "branch": "feat/handover-auth-pin-v41-recebimento",
-    "head": "e6c2380",
+    "branch_correta": true,
+    "commit_5d4e161_presente": true,
     "scriptId_handover": true,
-    "pop_referenciado": false,
-    "sheet_clear_novo_no_diff": false,
-    "deleteRow_novo_no_diff": false,
+    "pop_ausente": true,
+    "sheet_clear_novo": false,
+    "deleteRow_novo": false,
     "login_pin_presente": true,
+    "pin_novo_temporario_presente": true,
+    "aplicar_pins_temporarios_presente": true,
     "compras_medicamentos_presente": true,
-    "formatNomeClienteMensagem_index": true,
-    "buildWhatsAppMessageClient_sem_mojibake": true,
+    "ver_detalhes_medicamentos_por_secoes": true,
     "sintaxe_code_gs": "OK",
     "sintaxe_index_scripts": "OK"
   },
   "publicacao": {
     "clasp_status": "OK",
     "clasp_push": "OK",
-    "clasp_version": 48,
-    "clasp_deploy": "OK",
-    "deployment_oficial_mantido": true,
-    "url_oficial_mantida": true
+    "versao_criada": 49,
+    "deployment_atualizado": true,
+    "url_mantida": true
   },
-  "smoke": {
-    "login_pin": {
-      "resultado": "OK",
-      "overlay_login": true,
-      "pin_errado_sem_liberacao": true,
-      "login_carlos_admin": true,
-      "logout": true
+  "login_pin": {
+    "resultado": "OK",
+    "dashboard_bloqueado_sem_login": true,
+    "login_carlos_admin": true,
+    "logout_volta_login": true
+  },
+  "usuarios_oficiais": {
+    "resultado": "OK",
+    "usuarios": [
+      {"nome": "Ainale", "usuario": "ainale", "perfil": "operador", "ativo": true, "pin_hash_presente": true, "pin_novo_temporario_vazio": true},
+      {"nome": "Marco", "usuario": "marco", "perfil": "admin", "ativo": true, "pin_hash_presente": true, "pin_novo_temporario_vazio": true},
+      {"nome": "Carlos", "usuario": "carlos", "perfil": "admin", "ativo": true, "pin_hash_presente": true, "pin_novo_temporario_vazio": true},
+      {"nome": "Jelcinei", "usuario": "jelcinei", "perfil": "gerente", "ativo": true, "pin_hash_presente": true, "pin_novo_temporario_vazio": true},
+      {"nome": "Priscila", "usuario": "priscila", "perfil": "operador", "ativo": true, "pin_hash_presente": true, "pin_novo_temporario_vazio": true},
+      {"nome": "Marcelo", "usuario": "marcelo", "perfil": "operador", "ativo": true, "pin_hash_presente": true, "pin_novo_temporario_vazio": true}
+    ],
+    "pin_texto_puro_identificado": false
+  },
+  "limpeza": {
+    "resultado": "OK",
+    "modo": "deleteDimension por linhas candidatas, de baixo para cima",
+    "sheet_clear_usado": false,
+    "abas_deletadas": false,
+    "cabecalhos_preservados": true,
+    "criterios": ["CODEX", "CODEX_", "TESTE", "TESTE_", "SELFTEST", "V46", "V47", "V48", "P0TESTE", "V48PAN", "V48SC", "V48ENT", "CODEX_RECEB", "CODEX_V48", "TESTE_V46", "CODEX_P0"],
+    "removidos_por_aba": {
+      "Geral": 1,
+      "Medicamentos": 34,
+      "Compras_Medicamentos": 18,
+      "Arquivo_Resolvidos": 20,
+      "Checklist_Turnos": 0,
+      "Usuarios_Handover": 0
     },
-    "nova_encomenda": {
-      "resultado": "OK",
-      "registros": [
-        "CODEX_V48_ENCOMENDA",
-        "CODEX_V48_RETIRA",
-        "CODEX_V48_ENTREGA"
-      ],
-      "apareceu_handover": true,
-      "apareceu_medicamentos_sheet": true,
-      "apareceu_compras_medicamentos": true
+    "total_removido": 73
+  },
+  "smoke_pos_limpeza": {
+    "resultado": "PARCIAL",
+    "registro_final_criado": "TESTE_FINAL_LIMPEZA",
+    "registro_final_removido_apos_teste": true,
+    "login_obrigatorio": true,
+    "login_carlos_admin": true,
+    "nova_encomenda_salva": true,
+    "apareceu_handover_apos_atualizar": true,
+    "medicamentos_sheet": {
+      "fornecedor_compra": "Panpharma",
+      "codigo_compra_fornecedor": "FINAL01",
+      "forma_recebimento": "A combinar"
     },
     "compras_medicamentos": {
-      "resultado": "OK",
-      "fornecedor_codigo_forma": true,
-      "status_compra_inicial": "Pendente de compra"
+      "espelho_criado": true,
+      "fornecedor_compra": "Panpharma",
+      "codigo_compra_fornecedor": "FINAL01",
+      "forma_recebimento": "A combinar"
     },
-    "whatsapp": {
-      "resultado": "OK",
-      "capitalizacao": [
-        "Maria Clara",
-        "Ana Paula",
-        "Joao da Silva"
-      ],
-      "acentuacao": true,
-      "sem_mojibake": true,
-      "formas": {
-        "A combinar": "OK",
-        "Retira na loja": "OK",
-        "Entregar no endereço cadastrado": "OK"
-      }
-    },
-    "reversao_cancelado_planilha": {
-      "resultado": "NAO_VALIDADO_POR_LIMITACAO_TECNICA",
-      "motivo": "Edicao por API nao dispara onEdit; UI Sheets exigiu login.",
-      "validacao_estatica": true
-    },
-    "cancelamento_handover": {
-      "resultado": "OK",
-      "registro": "CODEX_V48_CANCELAR",
-      "status_compra": "Cancelado",
-      "status_handover": "Cancelado",
-      "cancelado_por": "Carlos",
-      "data_cancelamento_preenchida": true,
-      "motivo": "Smoke v48 cancelamento"
-    },
-    "filtros": {
-      "resultado": "OK_COM_RESSALVA",
-      "testados": [
-        "Todos",
-        "Pendentes",
-        "Faltas",
-        "Encomendas",
-        "Comprados",
-        "Comprados sem aviso",
-        "Entregues",
-        "Cancelados",
-        "Vencidos/Hoje",
-        "Resolvidos parcialmente"
-      ],
-      "contador_positivo_lista_vazia": false
-    },
-    "atualizar_agora": {
-      "resultado": "OK_COM_RESSALVA",
-      "durante": "Atualizando...",
-      "depois": "Atualizar agora",
-      "tempo_segundos": 26
-    },
-    "menu": {
-      "resultado": "OK",
-      "medicamentos_sem_corte": true,
-      "imprimir_ausente": true
-    },
-    "checklist": "OK",
-    "historico": "PARCIAL"
+    "marcar_comprado": true,
+    "cancelamento_handover": true,
+    "cancelamento_espelhado_compras": true,
+    "cancelado_por": "Carlos",
+    "whatsapp_url_capturada": false,
+    "ver_detalhes_validado_parcialmente": true,
+    "checklist": true,
+    "historico": true,
+    "menu_imprimir_ausente": true,
+    "logout": true
   },
-  "registros_criados": [
-    "CODEX_V48_ENCOMENDA",
-    "CODEX_V48_RETIRA",
-    "CODEX_V48_ENTREGA",
-    "CODEX_V48_CANCELAR"
-  ],
   "falhas": {
     "criticas": [],
     "medias": [
-      "Reversao Cancelado pela planilha nao foi validada por limitacao tecnica do ambiente.",
-      "Historico nao foi validado completamente."
+      "WhatsApp do registro final nao teve URL capturada pela automacao nesta rodada."
     ],
     "leves": [
-      "Atualizar agora levou cerca de 26 segundos.",
-      "Automacao por texto pode confundir chips Comprados e Comprados sem aviso."
+      "clasp.cmd run nao executou self-tests de auth por configuracao de API executable.",
+      "Registro final precisou de Atualizar agora para confirmacao visual na aba Medicamentos."
     ]
   },
-  "veredito": "Publicado e aprovado com ressalvas operacionais. v48 mantida publicada."
+  "decisao_final": "Manter v49 publicada; resultado PARCIAL apenas pela captura automatica do WhatsApp no smoke final."
 }
