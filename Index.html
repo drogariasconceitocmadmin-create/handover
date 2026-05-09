@@ -2356,6 +2356,15 @@
         font-weight: 700;
       }
 
+      .check-item-kicker {
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0;
+        margin-bottom: 3px;
+        text-transform: uppercase;
+      }
+
       .check-item-title .badge {
         margin-left: 6px;
         vertical-align: middle;
@@ -8564,6 +8573,9 @@
           '" data-check-item-id="' +
           escapeAttribute(item.ID) +
           '">' +
+          '<div class="check-item-kicker">' +
+          escapeHtml(item.Categoria || 'Checklist') +
+          '</div>' +
           '<div class="check-item-title">' +
           escapeHtml(item.Item) +
           ' <span class="badge ' +
