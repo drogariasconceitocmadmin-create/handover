@@ -1,177 +1,187 @@
-# Validacao Handover - hotfix v46 cancel refresh status whatsapp
+# Incidente P0 - Diagnostico e hotfix persistencia Medicamentos
 
 Projeto: Handover - Drogarias Conceito
 
-Pasta: `C:\Users\Marco\Desktop\Sis Drogaria\Handover`
-
-Branch publicada: `feat/handover-auth-pin-v41-recebimento`
-
-Commit validado: `15682e8 - fix(handover): cancel UX, refresh feedback, planilha reverte Cancelado, nome cliente msgs`
-
-ScriptId: `1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd`
+URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec`
 
 Deployment oficial: `AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw`
 
-URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec`
-
 ## Resultado
 
-Status geral: PARCIAL
+Status geral: OK COM RESSALVA
 
-Versao publicada: 47.
+Versao ativa inicial: 48.
 
-Rollback feito: NAO.
+Versao ativa final: 55.
 
-Versao ativa apos acao: 47.
+Producao protegida: SIM para criacao/persistencia de Medicamentos e espelho Compras.
 
 POP tocado: NAO.
 
-## Pre-deploy
+## Diagnostico
 
-- Branch atual confirmada: `feat/handover-auth-pin-v41-recebimento`.
-- `HEAD`: `15682e8`.
-- `.clasp.json`: scriptId oficial do Handover.
-- POP proibido: ausente no diff.
-- `sheet.clear()` novo no diff: ausente.
-- `deleteRow` novo no diff: ausente.
-- Login/PIN: presente.
-- `Compras_Medicamentos`: presente.
-- `processarStatusCompraPorIdHandover_`: presente e com regras para `Pendente de compra`, `Comprado`, `Nao encontrado` e `Cancelado`.
-- `formatNomeClienteMensagem_`: presente.
-- Sintaxe de `Code.gs`: OK.
-- Sintaxe dos scripts de `Index.html`: OK.
+Teste controlado:
+
+- `TESTE_P0_SAVE_LOG_2`
+
+Evidencia capturada no Web App:
+
+- Modal fechava antes da confirmacao real do backend.
+- Item ficava visivel como estado otimista.
+- Apos aproximadamente 10 segundos, o front recebia erro de backend.
+- Erro exato exibido:
+
+`Error: Estrutura de cabecalho incompativel na aba "Checklist_Turnos". Ajuste manualmente os cabecalhos para: ID, Data, Turno, Horario_Referencia, Categoria, Item, Descricao, Status, Responsavel, Data_Hora_Check, Observacao.`
+
+Console do navegador:
+
+- `[Handover] saveData_fail ms= 10232`
+- `[Handover] refreshDashboardBundle_fail ms= 9280`
+
+Conclusao:
+
+- `saveData` chegava ao backend.
+- A falha nao era em Medicamentos diretamente.
+- `saveData` chamava `setupSpreadsheet()`.
+- `setupSpreadsheet()` validava `Checklist_Turnos` com cabecalho rigido via `ensureHeaders_`.
+- A aba `Checklist_Turnos` ja tinha estrutura diferente/aditiva.
+- A validacao rigida de Checklist derrubava o salvamento de Medicamentos antes do append.
+- O front mascarava o problema ao fechar o modal e exibir item otimista antes do sucesso real.
+
+## Patch
+
+Branch: `hotfix/handover-p0-save-medicamentos`
+
+Commit: `228e109 - fix(handover): corrige persistencia real de medicamentos`
+
+Arquivos alterados:
+
+- `Code.gs`
+- `Index.html`
+
+Alteracoes:
+
+- `Code.gs`: `Checklist_Turnos` passou a usar `ensureHeadersLegacyAdditive_` em `setupSpreadsheet()`.
+- `Index.html`: modal de Novo Registro so fecha apos resposta de sucesso real.
+- `Index.html`: se o backend falhar ou nao retornar `record.ID`, o placeholder otimista e removido e o erro aparece no modal.
+
+Nao houve:
+
+- alteracao de Checklist UX/templates;
+- alteracao de layout;
+- alteracao de POP;
+- `sheet.clear()`;
+- `deleteRow` novo.
 
 ## Publicacao
 
 - `clasp.cmd status`: OK.
 - `clasp.cmd push`: OK.
-- `clasp.cmd version`: criada versao 47.
-- `clasp.cmd deploy`: deployment oficial atualizado para versao 47.
-- URL oficial mantida.
+- Versao criada: 55.
+- Deployment oficial atualizado para v55.
 
-## Smoke real
+## Smoke do hotfix
 
-### Login/PIN
+### Encomenda
 
-Resultado: OK.
+Registro:
 
-- Web App abriu.
-- Login Carlos/admin funcionou.
-- PIN errado foi testado em rodada anterior da mesma URL e nao liberou.
+- `TESTE_P0_SAVE_REAL`
 
-### Atualizar agora
+Resultado:
 
-Resultado: OK com observacao.
+- Login Carlos/admin: OK.
+- Criacao pelo Web App: OK.
+- Gravou em `Medicamentos`: OK.
+- Espelhou em `Compras_Medicamentos`: OK.
+- Persistiu apos logout/login: OK.
+- Visivel na UI apos reload: OK.
+- Fornecedor: `Panpharma`.
+- Codigo: `P0REAL`.
+- Forma de recebimento: `A combinar`.
 
-- Botao mudou para `Atualizando...`.
-- Botao voltou para `Atualizar agora`.
-- Tempo observado: cerca de 15 a 20 segundos.
-- Nao travou permanentemente.
+### Falta
 
-### Nova Encomenda
+Registro:
 
-Resultado: OK.
+- `TESTE_P0_FALTA_REAL`
 
-Registro criado:
+Resultado:
 
-- Medicamento: `TESTE_V46_WHATSAPP_1778281012098`
-- Cliente: `maria clara`
-- Telefone: `21999999999`
-- Fornecedor_Compra: `Panpharma`
-- Codigo_Compra_Fornecedor: `V46COD`
-- Forma_Recebimento: `A combinar`
+- Criacao pelo Web App: OK.
+- Gravou em `Medicamentos`: OK.
+- Espelhou em `Compras_Medicamentos`: OK.
+- Persistiu apos Atualizar agora/reload: OK.
 
-Validacao:
+### Comprado / WhatsApp / Cancelamento
 
-- Apareceu no front apos refresh.
-- Apareceu em `Medicamentos`.
-- Apareceu em `Compras_Medicamentos`.
-- Espelho em `Compras_Medicamentos` preservou ID, cliente, telefone, fornecedor, codigo e forma de recebimento.
+Registro usado:
 
-### WhatsApp/capitalizacao
+- `TESTE_P0_SAVE_REAL`
 
-Resultado: FALHA MEDIA.
+Resultado:
 
-- Botao `Avisar no WhatsApp` abriu URL sem envio real.
-- Texto nao apresentou mojibake: `Olá`, `já`, `está`, `você`, `Você` apareceram corretos na URL decodificada.
-- Falha: nome do cliente continuou em minusculo: `Olá, maria clara!`.
-- Esperado: `Olá, Maria Clara!`.
+- Marcar como Comprado: OK.
+- `Medicamentos.Status = Comprado`: OK.
+- `Compras_Medicamentos.Status_Compra = Comprado`: OK.
+- WhatsApp abriu sem envio real: OK.
+- URL WhatsApp sem mojibake:
+  `Olá, Teste Real! ... Você ... está ... você`
+- Cancelar Encomenda pelo Handover: OK.
+- `Medicamentos.Status = Cancelado`: OK.
+- `Compras_Medicamentos.Status_Compra = Cancelado`: OK.
+- `Cancelado_Por = Carlos`: OK.
+- `Motivo_Cancelamento = limpeza teste p0`: OK.
 
-URL decodificada observada continha:
+## Falha residual
 
-`Olá, maria clara! Passando para avisar que o medicamento TESTE_V46_WHATSAPP_1778281012098 já chegou aqui na Drogarias Conceito e está separado para você.`
+Ao cancelar `TESTE_P0_FALTA_REAL` pelo Handover:
 
-### Reversao Cancelado pela planilha
+- `Medicamentos.Status = Cancelado`: OK.
+- `Compras_Medicamentos` continuou com `Status_Compra = Pendente de compra`.
 
-Resultado: NAO VALIDADO POR PERMISSAO DE AMBIENTE.
+Classificacao: falha media, porque o P0 de persistencia foi corrigido e o cancelamento da Encomenda validou o espelho principal.
 
-- Tentativa de escrita via Google Sheets API retornou HTTP 403.
-- Abrir Google Sheets no Playwright exigiu login Google.
-- Foi feita validacao estatica da funcao `processarStatusCompraPorIdHandover_`, que contempla:
-  - `Pendente de compra` -> Medicamentos `Pendente`.
-  - `Comprado` -> Medicamentos `Comprado`.
-  - `Cancelado` -> Medicamentos `Cancelado`.
-- Nao foi possivel confirmar gatilho real pela planilha neste ambiente.
+## HANDOVER_SPREADSHEET_ID
 
-### Cancelamento pelo Handover
+Nao foi possivel consultar `clasp run getSpreadsheetIdForDebug` porque o script nao esta publicado como API executable.
 
-Resultado: NAO VALIDADO COMPLETO.
+Evidencia indireta:
 
-- O registro testado foi marcado como Comprado.
-- O filtro/busca ficou em `Comprados sem aviso` em uma tentativa de automacao, e o card nao foi localizado para acionar cancelamento.
-- Cancelamento nao foi concluido pelo smoke automatizado.
+- Os registros criados pelo Web App v55 apareceram na planilha oficial esperada:
+  `1tHDX3I5yVx2UioNki695UIoNxHjXxpxCuKZwv2l7Dv8`.
 
-### Filtros
+## Apps Script Executions
 
-Resultado: PARCIAL.
+`clasp logs --json` falhou porque o GCP project ID nao esta configurado no ambiente.
 
-- Medicamento criado apareceu ao buscar pelo nome.
-- `Comprados` exibiu o registro apos marcar como comprado.
-- Observacao: com busca ativa, o cabecalho indicou `1 registro(s)` enquanto chips de contagem mostravam zeros em alguns filtros. Nao houve caso de contador cheio com lista vazia para o item criado, mas a contagem por chip ainda merece revisao.
+Evidencia usada:
 
-### Menu tres pontos
+- Console do navegador.
+- Mensagem de erro visivel no Web App.
+- Busca direta na planilha oficial.
+- Retorno visual do Web App apos reload/login.
 
-Resultado: OK.
+## Versao ativa final
 
-- Card apresentou menu contextual com `overflow: visible`.
-- Opcoes observadas: `Ver detalhes`, `Ver trilha de auditoria`, `Copiar informacoes`, `Cancelar pedido`.
-- `Imprimir` nao apareceu.
-
-### Checklist
-
-Resultado: OK.
-
-- Aba/area de Checklist abriu.
-
-### Historico
-
-Resultado: PARCIAL.
-
-- Tentativa por texto acentuado falhou na automacao; nao houve evidencia de quebra do Web App.
+Deployment oficial ativo em v55.
 
 ## Falhas
 
-### Criticas
+Criticas:
 
-- Nenhuma falha critica observada que exigisse rollback automatico.
+- Nenhuma apos hotfix v55.
 
-### Medias
+Medias:
 
-1. Capitalizacao do nome no WhatsApp nao funcionou.
-   - Evidencia: `Olá, maria clara!`.
-   - Esperado: `Olá, Maria Clara!`.
+- Cancelamento de Falta nao refletiu `Status_Compra = Cancelado` em `Compras_Medicamentos`.
+- `clasp logs` indisponivel sem GCP project ID.
+- `clasp run` indisponivel porque o script nao esta publicado como API executable.
 
-2. Reversao de Cancelado pela planilha nao foi validada em smoke real.
-   - Motivo: API retornou 403 e UI do Sheets exigiu login.
-   - Validacao estatica da funcao foi feita.
+Leves:
 
-3. Cancelamento pelo Handover nao foi concluido pela automacao.
-
-### Leves
-
-- Botao `Atualizar agora` levou cerca de 15 a 20 segundos para voltar, mas voltou.
-- Chips de filtro podem ficar desalinhados com busca ativa.
+- Testes de limpeza foram feitos por cancelamento logico, nao por remocao fisica.
 
 ## Veredito
 
-Publicado com ressalvas. Versao 47 mantida porque login, criacao de Encomenda, espelho em `Compras_Medicamentos`, abertura do WhatsApp sem mojibake, menu e Checklist passaram. Proxima correcao recomendada: aplicar capitalizacao no fluxo client-side do WhatsApp e validar manualmente a reversao de `Cancelado` na planilha.
+P0 de persistencia de Medicamentos corrigido em v55. Producao protegida para criacao de Medicamentos e espelho principal em Compras_Medicamentos.

@@ -1,98 +1,108 @@
 {
   "projeto": "Handover - Drogarias Conceito",
-  "status_geral": "PARCIAL",
-  "pasta": "C:\\Users\\Marco\\Desktop\\Sis Drogaria\\Handover",
-  "branch": "feat/handover-auth-pin-v41-recebimento",
-  "commit_validado": "15682e8",
-  "scriptId": "1U-1UOlud99m4NHPdaSUoL9yz4GNV193NW9mhw2t8aB-ypx9AcvfsbNSd",
-  "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
+  "status_geral": "OK_COM_RESSALVA",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
-  "versao_publicada": 47,
-  "rollback_feito": false,
-  "versao_ativa_apos_acao": 47,
+  "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
+  "versao_ativa_inicial": 48,
+  "versao_ativa_final": 55,
+  "producao_protegida": true,
   "pop_tocado": false,
-  "pre_deploy": {
-    "resultado": "OK",
-    "branch": "feat/handover-auth-pin-v41-recebimento",
-    "head": "15682e8",
-    "scriptId_handover": true,
-    "pop_referenciado": false,
-    "sheet_clear_novo_no_diff": false,
-    "deleteRow_novo_no_diff": false,
-    "login_pin_presente": true,
-    "compras_medicamentos_presente": true,
-    "processarStatusCompraPorIdHandover_": true,
-    "formatNomeClienteMensagem_": true,
-    "sintaxe_code_gs": "OK",
-    "sintaxe_index_scripts": "OK"
+  "diagnostico": {
+    "teste_controlado": "TESTE_P0_SAVE_LOG_2",
+    "saveData_chegou_ao_backend": true,
+    "erro_exato": "Error: Estrutura de cabecalho incompativel na aba \"Checklist_Turnos\". Ajuste manualmente os cabecalhos para: ID, Data, Turno, Horario_Referencia, Categoria, Item, Descricao, Status, Responsavel, Data_Hora_Check, Observacao.",
+    "console": [
+      "[Handover] saveData_fail ms= 10232",
+      "[Handover] refreshDashboardBundle_fail ms= 9280"
+    ],
+    "causa_raiz": "setupSpreadsheet validava Checklist_Turnos com ensureHeaders_ rigido; a aba tinha estrutura aditiva/diferente, derrubando saveData antes do append de Medicamentos. O front fechava o modal antes do sucesso real e deixava item otimista visivel."
+  },
+  "patch": {
+    "feito": true,
+    "branch": "hotfix/handover-p0-save-medicamentos",
+    "commit": "228e109",
+    "mensagem": "fix(handover): corrige persistencia real de medicamentos",
+    "arquivos": [
+      "Code.gs",
+      "Index.html"
+    ],
+    "mudancas": [
+      "Checklist_Turnos passou a usar ensureHeadersLegacyAdditive_ em setupSpreadsheet.",
+      "Modal de Novo Registro fecha somente apos sucesso real.",
+      "Falha de saveData remove placeholder otimista e mostra erro no modal."
+    ]
   },
   "publicacao": {
     "clasp_status": "OK",
     "clasp_push": "OK",
-    "clasp_version": 47,
-    "clasp_deploy": "OK",
-    "deployment_oficial_mantido": true,
-    "url_oficial_mantida": true
+    "versao_criada": 55,
+    "deployment_atualizado": true
   },
   "smoke": {
-    "login_pin": "OK",
-    "atualizar_agora": {
-      "resultado": "OK_COM_OBSERVACAO",
-      "durante": "Atualizando...",
-      "depois": "Atualizar agora",
-      "tempo_aproximado_segundos": "15-20"
+    "login_carlos_admin": true,
+    "encomenda": {
+      "registro": "TESTE_P0_SAVE_REAL",
+      "criou_pelo_webapp": true,
+      "medicamentos_planilha": true,
+      "compras_medicamentos_planilha": true,
+      "persistiu_apos_logout_login": true,
+      "visivel_ui_reload": true,
+      "fornecedor_compra": "Panpharma",
+      "codigo_compra_fornecedor": "P0REAL",
+      "forma_recebimento": "A combinar"
     },
-    "nova_encomenda": {
-      "resultado": "OK",
-      "medicamento": "TESTE_V46_WHATSAPP_1778281012098",
-      "cliente": "maria clara",
-      "fornecedor": "Panpharma",
-      "codigo": "V46COD",
-      "forma_recebimento": "A combinar",
-      "apareceu_no_front": true,
-      "medicamentos_sheet": true,
-      "compras_medicamentos_sheet": true
+    "falta": {
+      "registro": "TESTE_P0_FALTA_REAL",
+      "criou_pelo_webapp": true,
+      "medicamentos_planilha": true,
+      "compras_medicamentos_planilha": true,
+      "persistiu": true
     },
-    "whatsapp_capitalizacao": {
-      "resultado": "FALHA_MEDIA",
-      "sem_mojibake": true,
-      "observado": "Olá, maria clara!",
-      "esperado": "Olá, Maria Clara!"
+    "comprado": {
+      "registro": "TESTE_P0_SAVE_REAL",
+      "medicamentos_status": "Comprado",
+      "compras_status_compra": "Comprado",
+      "ok": true
     },
-    "reversao_cancelado_planilha": {
-      "resultado": "NAO_VALIDADO_POR_PERMISSAO",
-      "api_sheets": "HTTP 403",
-      "ui_sheets": "exigiu login",
-      "validacao_estatica": true
+    "whatsapp": {
+      "abriu_sem_envio": true,
+      "url_sem_mojibake": true,
+      "texto_validado": "Ola/Teste Real/Voce/esta/voce"
     },
-    "cancelamento_handover": {
-      "resultado": "NAO_VALIDADO_COMPLETO",
-      "motivo": "Automacao nao localizou o card no filtro correto para concluir cancelamento."
+    "cancelamento_encomenda": {
+      "registro": "TESTE_P0_SAVE_REAL",
+      "medicamentos_status": "Cancelado",
+      "compras_status_compra": "Cancelado",
+      "cancelado_por": "Carlos",
+      "motivo": "limpeza teste p0",
+      "ok": true
     },
-    "filtros": {
-      "resultado": "PARCIAL",
-      "comprados_exibiu_item": true,
-      "observacao": "Chips de contagem podem ficar desalinhados com busca ativa."
-    },
-    "menu": {
-      "resultado": "OK",
-      "overflow_visible": true,
-      "imprimir_ausente": true
-    },
-    "checklist": "OK",
-    "historico": "PARCIAL"
+    "cancelamento_falta": {
+      "registro": "TESTE_P0_FALTA_REAL",
+      "medicamentos_status": "Cancelado",
+      "compras_status_compra": "Pendente de compra",
+      "ok": false
+    }
+  },
+  "handover_spreadsheet_id": {
+    "confirmado_via_clasp_run": false,
+    "motivo": "Script function not found. Script nao esta publicado como API executable.",
+    "evidencia_indireta": "Registros criados pelo Web App apareceram na planilha oficial 1tHDX3I5yVx2UioNki695UIoNxHjXxpxCuKZwv2l7Dv8."
+  },
+  "apps_script_executions": {
+    "consultado": false,
+    "motivo": "clasp logs --json falhou porque GCP project ID nao esta configurado."
   },
   "falhas": {
     "criticas": [],
     "medias": [
-      "Capitalizacao do nome no WhatsApp nao funcionou: saiu 'maria clara'.",
-      "Reversao de Cancelado pela planilha nao foi validada por falta de permissao de escrita/login Sheets no ambiente.",
-      "Cancelamento pelo Handover nao foi concluido pela automacao."
+      "Cancelamento de Falta nao refletiu Status_Compra = Cancelado em Compras_Medicamentos.",
+      "clasp logs indisponivel sem GCP project ID.",
+      "clasp run indisponivel porque script nao esta publicado como API executable."
     ],
     "leves": [
-      "Atualizar agora voltou ao estado normal, mas levou cerca de 15 a 20 segundos.",
-      "Chips de filtro podem ficar desalinhados com busca ativa."
+      "Testes de limpeza foram feitos por cancelamento logico, nao por remocao fisica."
     ]
   },
-  "veredito": "Publicado com ressalvas. Versao 47 mantida; proxima correcao deve ajustar capitalizacao client-side do WhatsApp e validar reversao pela planilha manualmente."
+  "veredito": "P0 de persistencia de Medicamentos corrigido em v55. Producao protegida para criacao de Medicamentos e espelho principal em Compras_Medicamentos."
 }
