@@ -350,7 +350,8 @@ function setupSpreadsheet() {
       sheetName === SHEET_NAMES.GERAL ||
       sheetName === SHEET_NAMES.ARQUIVO ||
       sheetName === SHEET_NAMES.MEDICAMENTOS ||
-      sheetName === SHEET_NAMES.COMPRAS_MEDICAMENTOS
+      sheetName === SHEET_NAMES.COMPRAS_MEDICAMENTOS ||
+      sheetName === SHEET_NAMES.CHECKLIST
     ) {
       ensureHeadersLegacyAdditive_(sheet, HEADERS[sheetName]);
     } else {

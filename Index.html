@@ -8181,16 +8181,28 @@
             postMainTabDomSync_();
           }
 
-          closeFormModal_();
-          setFormLoading_(false);
-          saveButton.textContent = 'Salvar';
-
+          setFormLoading_(true);
+          saveButton.textContent = 'Salvando...';
           renderAll();
 
           var started = Date.now();
+          function handleSaveFailure_(error) {
+            removeOptimisticPlaceholder_(optimisticId, tab);
+            perfLog_('saveData_fail', started);
+            renderAll();
+            setFormLoading_(false);
+            saveButton.textContent = 'Salvar';
+            setStatus(formStatus, getErrorMessage(error), true);
+            showToast_('Erro ao salvar', true);
+          }
+
           try {
             getScriptRunner_()
               .withSuccessHandler(function (response) {
+                if (!response || response.success === false || !response.record || !response.record.ID) {
+                  handleSaveFailure_(response && response.message ? { message: response.message } : { message: 'O servidor não confirmou o salvamento.' });
+                  return;
+                }
                 removeOptimisticPlaceholder_(optimisticId, tab);
                 if (tab === 'Geral') {
                   upsertGeral_(response.record);
@@ -8198,34 +8210,18 @@
                   upsertMedicamento_(response.record);
                 }
                 perfLog_('saveData', started);
+                closeFormModal_();
+                setFormLoading_(false);
+                saveButton.textContent = 'Salvar';
                 renderAll();
                 showToast_('Salvo');
               })
               .withFailureHandler(function (error) {
-                var list = tab === 'Geral' ? dashboardData.geral : dashboardData.medicamentos;
-                var row = (list || []).find(function (item) {
-                  return item.ID === optimisticId;
-                });
-                if (row) {
-                  row.__syncState = 'error';
-                  row.__syncError = getErrorMessage(error);
-                }
-                perfLog_('saveData_fail', started);
-                renderAll();
-                showToast_('Erro ao salvar', true);
+                handleSaveFailure_(error);
               })
               .saveData(tab, payload, tok);
           } catch (error) {
-            var list2 = tab === 'Geral' ? dashboardData.geral : dashboardData.medicamentos;
-            var row2 = (list2 || []).find(function (item) {
-              return item.ID === optimisticId;
-            });
-            if (row2) {
-              row2.__syncState = 'error';
-              row2.__syncError = error.message;
-            }
-            renderAll();
-            showToast_(error.message, true);
+            handleSaveFailure_(error);
           }
         });
       }
