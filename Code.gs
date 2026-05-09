@@ -132,6 +132,11 @@ const HEADERS = {
     'Tem_Vencimento',
     'Data_Vencimento',
     'Hora_Vencimento',
+    'Excluido',
+    'Excluido_Por',
+    'Excluido_Usuario',
+    'Data_Exclusao',
+    'Motivo_Exclusao',
   ],
   Medicamentos: [
     'ID',
@@ -162,6 +167,11 @@ const HEADERS = {
     'Codigo_Compra_Fornecedor',
     'Forma_Recebimento',
     'Observacao_Solicitacao',
+    'Excluido',
+    'Excluido_Por',
+    'Excluido_Usuario',
+    'Data_Exclusao',
+    'Motivo_Exclusao',
   ],
   Compras_Medicamentos: [
     'ID_Handover',
@@ -811,6 +821,11 @@ function getSessionPerfil_(sess) {
 function isAdminOrGerenteHandover_(sess) {
   var p = getSessionPerfil_(sess);
   return p === 'admin' || p === 'gerente';
+}
+
+function canDeleteHandoverItem_(sess) {
+  var u = normalizeUsuarioHandover_(sess && sess.usuario);
+  return u === 'carlos' || u === 'marco';
 }
 
 function logoutHandover(sessionToken) {
@@ -2347,9 +2362,11 @@ function refreshDashboardBundle(checklistTurnoOpt, sessionToken) {
   var turno = sanitizeChecklistTurno_(checklistTurnoOpt || inferDefaultChecklistTurno_());
   return {
     geral: fetchSheetItems_(SHEET_NAMES.GERAL).filter(function (item) {
-      return !item.Resolvido;
+      return !item.Resolvido && !item.Excluido;
     }),
-    medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS),
+    medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS).filter(function (item) {
+      return !item.Excluido;
+    }),
     checklistTurno: buildChecklistTurnoPayload_(turno),
     bundleTurno: turno,
   };
@@ -2378,6 +2395,46 @@ function saveData(tab, data, sessionToken) {
   const sess = requireSessionHandover_(sessionToken);
   const authorLabel = getSessionDisplayName_(sess);
   return appendHandoverRecord_(tab, data, authorLabel);
+}
+
+function deleteHandoverItem(id, origem, sessionToken, motivo) {
+  setupSpreadsheet();
+  var sess = requireSessionHandover_(sessionToken);
+  if (!canDeleteHandoverItem_(sess)) {
+    throw new Error('Apenas Carlos e Marco podem deletar itens do Handover.');
+  }
+
+  var sheetName = sanitizeText_(origem);
+  if (sheetName !== SHEET_NAMES.GERAL && sheetName !== SHEET_NAMES.MEDICAMENTOS) {
+    throw new Error('Origem invalida para delecao: ' + sheetName);
+  }
+
+  var location = findRowById_(sheetName, id);
+  if (!location) {
+    throw new Error('Item nao encontrado para delecao.');
+  }
+
+  var sheet = location.sheet;
+  var rowNumber = location.rowNumber;
+  sheet.getRange(rowNumber, getColumnIndex_(sheet, 'Excluido')).setValue(true);
+  sheet.getRange(rowNumber, getColumnIndex_(sheet, 'Excluido_Por')).setValue(getSessionDisplayName_(sess));
+  sheet.getRange(rowNumber, getColumnIndex_(sheet, 'Excluido_Usuario')).setValue(sess.usuario);
+  sheet.getRange(rowNumber, getColumnIndex_(sheet, 'Data_Exclusao')).setValue(new Date());
+  sheet.getRange(rowNumber, getColumnIndex_(sheet, 'Motivo_Exclusao')).setValue(sanitizeText_(motivo || ''));
+
+  if (sheetName === SHEET_NAMES.MEDICAMENTOS) {
+    try {
+      mirrorComprasMedicamentosRowForMedicamentoId_(id);
+    } catch (mirrorErr) {
+      Logger.log('deleteHandoverItem mirror compras: ' + mirrorErr);
+    }
+  }
+
+  return {
+    success: true,
+    id: sanitizeText_(id),
+    origem: sheetName,
+  };
 }
 
 /**
@@ -2566,9 +2623,11 @@ function fetchData() {
 
   return {
     geral: fetchSheetItems_(SHEET_NAMES.GERAL).filter(function (item) {
-      return !item.Resolvido;
+      return !item.Resolvido && !item.Excluido;
     }),
-    medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS),
+    medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS).filter(function (item) {
+      return !item.Excluido;
+    }),
     checklistTurno: buildChecklistTurnoPayload_(inferDefaultChecklistTurno_()),
   };
 }
@@ -3172,6 +3231,8 @@ function fetchSheetItems_(sheetName) {
     item.Origem = sheetName;
     normalizeItemForClient_(item);
     return item;
+  }).filter(function (item) {
+    return !toBoolean_(item.Excluido);
   });
 }
 
@@ -3443,6 +3504,7 @@ function normalizeItemForClient_(item) {
   item.Resolvido = toBoolean_(item.Resolvido);
   item.Entregue = toBoolean_(item.Entregue);
   item.Tem_Vencimento = toBoolean_(item.Tem_Vencimento);
+  item.Excluido = toBoolean_(item.Excluido);
   item.Telefone = sanitizeText_(item.Telefone);
   item.Observacao_Solicitacao = sanitizeText_(item.Observacao_Solicitacao);
   item.Status = sanitizeText_(item.Status) || deriveMedicationStatus_(item);

@@ -208,6 +208,11 @@
         flex-shrink: 0;
       }
 
+      #observacaoSolicitacao {
+        min-height: 72px;
+        resize: vertical;
+      }
+
       .brand-mark {
         font-weight: 800;
         font-size: 16px;
@@ -2932,6 +2937,11 @@
                 <option value="Tarde">Tarde</option>
                 <option value="Noite">Noite</option>
               </select>
+              <div class="date-shortcuts checklist-turn-shortcuts">
+                <button type="button" class="light" data-checklist-turno-btn="Manhã" onclick="onChecklistTurnoChange_('Manhã')">Manhã</button>
+                <button type="button" class="light" data-checklist-turno-btn="Tarde" onclick="onChecklistTurnoChange_('Tarde')">Tarde</button>
+                <button type="button" class="light" data-checklist-turno-btn="Noite" onclick="onChecklistTurnoChange_('Noite')">Noite</button>
+              </div>
             </div>
             <button id="checklist-toggle-btn" type="button" class="light" onclick="toggleChecklistPanel()">
               Abrir checklist
@@ -3054,6 +3064,12 @@
               <div class="field">
                 <label for="geral-data-vencimento">Data de vencimento</label>
                 <input id="geral-data-vencimento" name="geralDataVencimento" type="date">
+                <div class="date-shortcuts">
+                  <button type="button" class="light" onclick="setGeralVencimentoOffsetDays(0)">Hoje</button>
+                  <button type="button" class="light" onclick="setGeralVencimentoOffsetDays(1)">Amanhã</button>
+                  <button type="button" class="light" onclick="setGeralVencimentoOffsetDays(2)">Depois de amanhã</button>
+                  <button type="button" class="light" onclick="setGeralVencimentoOffsetDays(7)">Semana que vem</button>
+                </div>
               </div>
               <div class="field">
                 <label for="geral-hora-vencimento">Hora limite (opcional)</label>
@@ -3096,6 +3112,7 @@
                 name="observacaoSolicitacao"
                 rows="3"
                 maxlength="2000"
+                oninput="autoGrowTextarea_(this)"
                 placeholder="Ex.: cliente aceita similar, urgência, laboratório específico, combinar entrega..."
               ></textarea>
             </div>
@@ -3521,6 +3538,11 @@
         } catch (e) {
           return '';
         }
+      }
+
+      function canCurrentSessionDeleteItems_() {
+        var u = handoverSession && handoverSession.usuario ? String(handoverSession.usuario).toLowerCase() : '';
+        return u === 'carlos' || u === 'marco';
       }
 
       function ensureSessionTokenForAction_() {
@@ -4431,6 +4453,11 @@
         if (checklistTurnSelect) {
           checklistTurnSelect.value = activeChecklistTurno;
         }
+        document.querySelectorAll('[data-checklist-turno-btn]').forEach(function (btn) {
+          var isActive = btn.getAttribute('data-checklist-turno-btn') === activeChecklistTurno;
+          btn.classList.toggle('active', isActive);
+          btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
         updateChecklistTurnTitle_();
       }
 
@@ -4442,7 +4469,9 @@
 
       function onChecklistTurnoChange_(value) {
         activeChecklistTurno = value || 'Manhã';
+        captureObservationDraftsFromDom_();
         updateChecklistTurnTitle_();
+        initChecklistTurnoUi_();
         refreshChecklistForTurno_(false);
       }
 
@@ -5595,6 +5624,59 @@
           );
         } else {
           showToast_('Copiar indisponível neste navegador.', true);
+        }
+      }
+
+      function deleteHandoverItemFromMenu_(id, origem) {
+        closeAllCardMenus_();
+        if (!canCurrentSessionDeleteItems_()) {
+          showToast_('Apenas Carlos e Marco podem deletar itens.', true);
+          return;
+        }
+        var msg =
+          'Tem certeza que deseja deletar este item?\n\n' +
+          'Ele serÃ¡ removido da visualizaÃ§Ã£o operacional, mas ficarÃ¡ registrado para auditoria.';
+        if (!window.confirm(msg)) {
+          return;
+        }
+        var motivo = '';
+        try {
+          var m = window.prompt('Motivo da deleÃ§Ã£o (opcional):', '');
+          motivo = m == null ? '' : String(m || '');
+        } catch (ePrompt) {}
+        var tok = ensureSessionTokenForAction_();
+        if (!tok) {
+          return;
+        }
+        var list = origem === 'Medicamentos' ? dashboardData.medicamentos : dashboardData.geral;
+        var idx = (list || []).findIndex(function (row) {
+          return row.ID === id;
+        });
+        var removed = idx >= 0 ? list[idx] : null;
+        if (idx >= 0) {
+          list.splice(idx, 1);
+        }
+        renderAll();
+        try {
+          getScriptRunner_()
+            .withSuccessHandler(function () {
+              showToast_('Item deletado da visualizaÃ§Ã£o operacional.');
+              refreshDashboardNow_(true);
+            })
+            .withFailureHandler(function (error) {
+              if (removed) {
+                list.splice(idx < 0 ? 0 : idx, 0, removed);
+              }
+              renderAll();
+              showToast_(getErrorMessage(error), true);
+            })
+            .deleteHandoverItem(id, origem, tok, motivo);
+        } catch (error) {
+          if (removed) {
+            list.splice(idx < 0 ? 0 : idx, 0, removed);
+          }
+          renderAll();
+          showToast_(error.message, true);
         }
       }
 
@@ -7476,6 +7558,15 @@
           '\')"><span class="card-menu-ico" aria-hidden="true">' +
           iconSvg_('copy', 15) +
           '</span>Copiar informações</button>' +
+          (canCurrentSessionDeleteItems_()
+            ? '<button type="button" onclick="deleteHandoverItemFromMenu_(\'' +
+              escapeJsSingleQuoted_(item.id) +
+              "', '" +
+              escapeJsSingleQuoted_(item.type === 'medicamento' ? 'Medicamentos' : 'Geral') +
+              '\')"><span class="card-menu-ico" aria-hidden="true">' +
+              iconSvg_('minus', 15) +
+              '</span>Deletar</button>'
+            : '') +
           (item.type === 'medicamento' && item.statusKey !== 'cancelado'
             ? '<button type="button" onclick="cancelMedicationRequest_(\'' +
               escapeJsSingleQuoted_(item.id) +
@@ -8005,7 +8096,9 @@
 
         if (items.length === 0) {
           checklistCategories.innerHTML =
-            '<div class="empty-box">Sem itens para o turno. Clique em "Gerar checklist de hoje".</div>';
+            '<div class="empty-box"><strong>Nenhum checklist gerado para este turno</strong><br>Gere o checklist da ' +
+            escapeHtml(checklist.turno || activeChecklistTurno || 'ManhÃ£') +
+            ' para acompanhar a operaÃ§Ã£o deste perÃ­odo.</div>';
           return;
         }
 
@@ -8675,6 +8768,27 @@
         el.value = y + '-' + m + '-' + day;
       }
 
+      function setGeralVencimentoOffsetDays(days) {
+        var el = document.getElementById('geral-data-vencimento');
+        if (!el) {
+          return;
+        }
+        var d = new Date();
+        d.setDate(d.getDate() + Number(days || 0));
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        el.value = y + '-' + m + '-' + day;
+      }
+
+      function autoGrowTextarea_(el) {
+        if (!el) {
+          return;
+        }
+        el.style.height = 'auto';
+        el.style.height = Math.max(72, Math.min(el.scrollHeight, 180)) + 'px';
+      }
+
       function updateVisibleFields() {
         const isMedication = categorySelect.value === 'Medicamentos';
         generalFields.classList.toggle('hidden', isMedication);
@@ -8683,6 +8797,12 @@
         updateMedicinePriceVisibility_();
         if (isMedication) {
           syncMedicamentoAtendenteFromOperador_();
+          var obs = document.getElementById('observacaoSolicitacao');
+          var obsField = obs && obs.closest ? obs.closest('.field') : null;
+          if (obsField && medicineFields && obsField.parentElement === medicineFields) {
+            medicineFields.appendChild(obsField);
+          }
+          autoGrowTextarea_(obs);
         }
       }
 
