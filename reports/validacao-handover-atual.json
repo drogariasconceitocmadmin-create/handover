@@ -2,8 +2,9 @@
   "projeto": "Handover - Drogarias Conceito",
   "status_geral": "FALHA",
   "branch": "feat/handover-auth-pin-v41-recebimento",
-  "commit_validado": "e9745ff",
-  "versao_publicada": 52,
+  "commit_obrigatorio_validado": "4a26376",
+  "head_publicado": "2ee9388",
+  "versao_publicada": 53,
   "versao_ativa_apos_acao": 51,
   "rollback_feito": true,
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
@@ -12,11 +13,14 @@
   "preflight": {
     "resultado": "OK",
     "branch_correta": true,
-    "commit_e9745ff_presente": true,
+    "commit_4a26376_presente": true,
     "clasp_handover": true,
     "pop_ausente": true,
     "sheet_clear_novo": false,
     "deleteRow_novo": false,
+    "checklist_turnos_ensureHeadersLegacyAdditive": true,
+    "item_id_aditivo": true,
+    "selfTestChecklistTurnosSchema_presente": true,
     "item_id_total": 40,
     "item_id_unicos": 40,
     "templates": {
@@ -24,48 +28,83 @@
       "tarde": 11,
       "noite": 12
     },
+    "texto_operacao_deste_periodo_sem_mojibake": true,
     "login_pin_presente": true,
     "compras_medicamentos_presente": true
   },
   "publicacao": {
     "clasp_status": "OK",
     "clasp_push": "OK",
-    "versao_criada": 52,
+    "versao_criada": 53,
     "deployment_atualizado": true,
     "url_mantida": true
   },
   "login_pin": {
     "resultado": "OK",
     "dashboard_bloqueado_sem_login": true,
-    "pin_errado_bloqueado": true,
-    "login_carlos_admin": true
+    "login_carlos_admin": true,
+    "header_carlos_admin": true
   },
   "checklist": {
-    "resultado": "FALHA",
+    "resultado": "OK",
+    "erro_cabecalho": false,
+    "manha": "OK - itens de abertura da loja",
+    "tarde": "OK - itens de passagem/continuidade",
+    "noite": "OK - itens de fechamento",
+    "itens_diferentes_por_turno": true,
     "troca_visual_rapida": true,
-    "tempo_troca_ms_aproximado": "280-300",
-    "manha": "FALHA - vazio por erro de cabecalho",
-    "tarde": "FALHA - vazio por erro de cabecalho",
-    "noite": "FALHA - vazio por erro de cabecalho",
-    "erro": "Estrutura de cabecalho incompativel na aba Checklist_Turnos exigindo Item_ID entre Horario_Referencia e Categoria",
-    "status_otimista_validado": false,
-    "observacao_preservada_validada": false,
-    "auto_sync_preserva_turno_validado": false,
-    "sidebar_resumo": "PARCIAL - acompanha turno, mas sem itens"
+    "tempo_troca_ms_aproximado": "340-365",
+    "status_feito_na_tarde": "OK",
+    "manha_nao_alterada_por_status_tarde": true,
+    "observacao_preservada": true,
+    "auto_sync_preserva_turno": true,
+    "sidebar_resumo_por_turno": true,
+    "texto_sem_mojibake": true
+  },
+  "planilha_checklist_turnos": {
+    "resultado": "OK",
+    "item_id_aditivo_validado_por_smoke": true,
+    "cabecalhos_antigos_sem_reordenacao_manual": true,
+    "linhas_novas_com_item_id_por_turno": true
   },
   "regressao": {
-    "medicamentos": "NAO EXECUTADO - rollback exigido por falha critica do Checklist",
-    "compras_medicamentos": "NAO EXECUTADO - rollback exigido por falha critica do Checklist",
-    "whatsapp": "NAO EXECUTADO - rollback exigido por falha critica do Checklist",
-    "menu": "NAO EXECUTADO - rollback exigido por falha critica do Checklist",
-    "atualizar_agora": "NAO EXECUTADO - rollback exigido por falha critica do Checklist"
+    "resultado": "FALHA",
+    "medicamentos": {
+      "resultado": "FALHA",
+      "registro_teste": "CODEX_V53_REG_1778337287369",
+      "apareceu_placeholder_ui": true,
+      "persistiu_em_medicamentos": false,
+      "apareceu_em_nova_sessao": false
+    },
+    "compras_medicamentos": {
+      "resultado": "FALHA",
+      "registro_teste": "CODEX_V53_REG_1778337287369",
+      "espelhou": false
+    },
+    "whatsapp": "NAO VALIDADO - dependia do item persistido",
+    "menu": "NAO CONCLUSIVO - rollback exigido por falha critica",
+    "ver_detalhes": "NAO CONCLUSIVO - rollback exigido por falha critica",
+    "atualizar_agora": "OK",
+    "logout": "OK"
+  },
+  "rollback": {
+    "executado": true,
+    "versao_destino": 51,
+    "comando": "clasp.cmd deploy --deploymentId AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw --versionNumber 51 --description \"Rollback v51 apos falha regressao v53 checklist\"",
+    "pos_rollback_login_overlay": true
   },
   "falhas": {
     "criticas": [
-      "v52 bloqueia geracao do Checklist por incompatibilidade de cabecalho em Checklist_Turnos ao exigir Item_ID."
+      "v53 nao persistiu nova Encomenda criada pelo Web App na aba Medicamentos.",
+      "v53 nao espelhou a nova Encomenda em Compras_Medicamentos.",
+      "A UI exibiu item otimista que desapareceu em nova sessao."
     ],
-    "medias": [],
-    "leves": []
+    "medias": [
+      "Menu/Ver detalhes/WhatsApp nao foram concluidos apos a falha critica de persistencia."
+    ],
+    "leves": [
+      "Publicacao saiu do HEAD atual da branch 2ee9388, com 4a26376 presente no historico, nao do hash 4a26376 como HEAD exato."
+    ]
   },
-  "decisao_final": "Rollback aplicado para v51. Corrigir Item_ID de forma aditiva/tolerante antes de republicar."
+  "decisao_final": "Rollback aplicado para v51. Checklist v53 corrigiu Item_ID, mas regressao de persistencia Medicamentos/Compras bloqueia aprovacao."
 }
