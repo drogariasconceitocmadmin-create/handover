@@ -1001,13 +1001,14 @@
       }
 
       .queue-card--historico .qk-title {
-        font-size: 15px;
+        font-size: 18px;
       }
 
       .queue-card--historico .qk-desc {
-        margin-top: 4px;
-        font-size: 12px;
-        line-height: 1.35;
+        margin-top: 6px;
+        font-size: 18px;
+        font-weight: 400;
+        line-height: 1.42;
       }
 
       .queue-card--historico .hist-meta-bar {
@@ -1831,7 +1832,7 @@
       }
 
       .qk-title {
-        font-size: 19px;
+        font-size: 18px;
         font-weight: 800;
         letter-spacing: 0;
         color: var(--text);
@@ -1845,9 +1846,10 @@
 
       .qk-desc {
         margin-top: 6px;
-        font-size: 15px;
+        font-size: 18px;
+        font-weight: 400;
         color: var(--muted);
-        line-height: 1.5;
+        line-height: 1.42;
         max-width: 78ch;
         overflow: hidden;
         display: -webkit-box;
@@ -2554,10 +2556,6 @@
               >
             </label>
           </div>
-          <div class="header-pill" title="Sessão atual">
-            <span class="header-pill-label">Nome · perfil</span>
-            <span id="handover-session-profile" class="header-pill-value">—</span>
-          </div>
           <button type="button" id="handover-logout-btn" class="btn-header-secondary">Sair</button>
           <div class="header-pill">
             <span class="header-pill-label">Última atualização</span>
@@ -2881,6 +2879,17 @@
                 </div>
               </div>
             </div>
+
+            <div class="field">
+              <label for="observacaoSolicitacao">Observação da solicitação</label>
+              <textarea
+                id="observacaoSolicitacao"
+                name="observacaoSolicitacao"
+                rows="3"
+                style="min-height:72px;resize:vertical;"
+                placeholder="Ex.: cliente aceita similar, urgência, laboratório específico, combinar entrega..."
+              ></textarea>
+            </div>
           </div>
 
           <div class="form-actions">
@@ -2939,9 +2948,9 @@
       const OPERADOR_STORAGE_KEY = 'handover_operador_atual_v14';
       const HANDOVER_SESSION_STORAGE_KEY = 'handover_auth_session_v41';
       const HANDOVER_LOGO_HEADER_URL =
-        'https://drive.google.com/uc?export=view&id=1TIlxCaHjVAapbkxFbP1gNeVjyADTW2jT';
+        'https://drive.google.com/thumbnail?id=1IdmH4FBrd6mRqFVyhdJlN_1208DJWmQm&sz=w320';
       const HANDOVER_LOGO_LOGIN_URL =
-        'https://drive.google.com/uc?export=view&id=17s2utJRJj1MLaeJn59APJD9EQKCs5ehq';
+        'https://drive.google.com/thumbnail?id=1IdmH4FBrd6mRqFVyhdJlN_1208DJWmQm&sz=w320';
 
       let handoverSession = null;
       let handoverAuthState = 'checking';
@@ -3047,6 +3056,8 @@
       const novoRegistroDropdown = document.getElementById('novo-registro-dropdown');
 
       let lastRenderedQueueItems = [];
+      let formMode_ = 'create';
+      let editingItemContext_ = null;
 
       ensureChecklistObservationDelegation_();
 
@@ -3331,7 +3342,10 @@
 
       function applySessionToHeader_() {
         var el = document.getElementById('handover-session-profile');
-        if (!el || !handoverSession) {
+        if (!handoverSession) {
+          return;
+        }
+        if (!el) {
           return;
         }
         var nome =
@@ -4252,7 +4266,14 @@
           return;
         }
         var list = dashboardData.geral || [];
-        list.unshift(record);
+        var idx = list.findIndex(function (g) {
+          return g.ID === record.ID;
+        });
+        if (idx >= 0) {
+          list[idx] = record;
+        } else {
+          list.unshift(record);
+        }
         dashboardData.geral = list;
       }
 
@@ -4856,6 +4877,30 @@
         });
       }
 
+      function findActiveRawById_(id, typeOpt) {
+        var sid = String(id || '');
+        if (!sid) {
+          return null;
+        }
+        if (!typeOpt || typeOpt === 'geral') {
+          var g = (dashboardData.geral || []).find(function (row) {
+            return String(row.ID || '') === sid;
+          });
+          if (g) {
+            return { type: 'geral', origem: 'Geral', row: g };
+          }
+        }
+        if (!typeOpt || typeOpt === 'medicamento') {
+          var m = (dashboardData.medicamentos || []).find(function (row) {
+            return String(row.ID || '') === sid;
+          });
+          if (m) {
+            return { type: 'medicamento', origem: 'Medicamentos', row: m };
+          }
+        }
+        return null;
+      }
+
       function buildCardDetailExtras_(item) {
         var lines = [];
         if (!item || item.type === 'historico') {
@@ -4912,6 +4957,151 @@
           extras +
           (item.extraMeta ? '\n\n' + item.extraMeta : '');
         openCardDetailOverlay_(item.title, body);
+      }
+
+      function openEditHandoverItem_(id) {
+        closeAllCardMenus_();
+        var ctx = findActiveRawById_(id);
+        if (!ctx || !ctx.row) {
+          showToast_('Item não encontrado para edição.', true);
+          return;
+        }
+        if (ctx.type === 'medicamento' && String(ctx.row.Status || '').trim().toLowerCase() === 'cancelado') {
+          showToast_('Item cancelado não pode ser editado nesta etapa.', true);
+          return;
+        }
+
+        formMode_ = 'edit';
+        editingItemContext_ = {
+          id: id,
+          origem: ctx.origem,
+          type: ctx.type,
+        };
+        requestForm.reset();
+        categorySelect.value = ctx.type === 'medicamento' ? 'Medicamentos' : 'Geral';
+        categorySelect.disabled = true;
+        tipoSelect.disabled = ctx.type === 'medicamento';
+        document.getElementById('form-modal-title').textContent = 'Editar registro';
+        saveButton.textContent = 'Salvar edição';
+        clearStatus(formStatus);
+        updateVisibleFields();
+
+        if (ctx.type === 'geral') {
+          document.getElementById('tituloGeral').value = ctx.row.Titulo || '';
+          document.getElementById('urgenciaGeral').value = ctx.row.Urgencia || 'Normal';
+          document.getElementById('descricao').value = ctx.row.Descricao || '';
+          document.getElementById('autor').value = ctx.row.Autor || getOperadorAtual_();
+          var tem = document.getElementById('geral-tem-vencimento');
+          var gd = document.getElementById('geral-data-vencimento');
+          var gh = document.getElementById('geral-hora-vencimento');
+          if (tem) {
+            tem.checked = Boolean(ctx.row.Tem_Vencimento);
+          }
+          if (gd) {
+            gd.value = ctx.row.Data_Vencimento || '';
+          }
+          if (gh) {
+            gh.value = ctx.row.Hora_Vencimento || '';
+          }
+          toggleGeralVencimentoFields_();
+        } else {
+          var tipo = ctx.row.Tipo || 'Encomenda';
+          document.getElementById('tipo').value = tipo;
+          document.getElementById('medicamento').value = ctx.row.Medicamento || '';
+          document.getElementById('atendente').value = ctx.row.Atendente || getOperadorAtual_();
+          document.getElementById('previsaoEntrega').value = ctx.row.Previsao_Entrega || '';
+          document.getElementById('cliente').value = ctx.row.Cliente || '';
+          document.getElementById('telefone').value = ctx.row.Telefone || '';
+          document.getElementById('precoVenda').value =
+            ctx.row.Preco_Venda === undefined || ctx.row.Preco_Venda === null ? '' : String(ctx.row.Preco_Venda);
+          document.getElementById('prePago').checked = Boolean(ctx.row.Pre_Pago);
+          var fc = document.getElementById('fornecedorCompra');
+          var cod = document.getElementById('codigoCompraFornecedor');
+          var fr = document.getElementById('formaRecebimento');
+          var obs = document.getElementById('observacaoSolicitacao');
+          if (fc) {
+            fc.value = ctx.row.Fornecedor_Compra || 'Não informado';
+          }
+          if (cod) {
+            cod.value = ctx.row.Codigo_Compra_Fornecedor || '';
+          }
+          if (fr) {
+            fr.value = ctx.row.Forma_Recebimento || 'A combinar';
+          }
+          if (obs) {
+            obs.value = ctx.row.Observacao_Solicitacao || '';
+          }
+          updateMedicinePriceVisibility_();
+        }
+
+        formModalOverlay.classList.remove('hidden');
+        formModalOverlay.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        updateAutoRefreshStatus_();
+      }
+
+      function openAuditDrawerForActiveItem_(id) {
+        closeAllCardMenus_();
+        var item = findQueueItemById_(id);
+        var ctx = findActiveRawById_(id);
+        lastAuditRawRecord = ctx && ctx.row ? ctx.row : item || { ID: id, Origem: '' };
+        lastAuditTimelineBasic = false;
+        lastAuditTimelineEvents = [];
+        auditTimelineFilter = 'todos';
+        openAuditDrawerDom_();
+        var stEl = document.getElementById('audit-drawer-status');
+        var inner = document.getElementById('audit-drawer-inner');
+        if (stEl) {
+          stEl.classList.remove('hidden');
+          stEl.textContent = 'Carregando auditoria...';
+        }
+        if (inner) {
+          inner.innerHTML = '';
+        }
+        var tok = ensureSessionTokenForAction_();
+        if (!tok) {
+          return;
+        }
+        try {
+          getScriptRunner_()
+            .withSuccessHandler(function (response) {
+              var rows = response && Array.isArray(response.auditoria) ? response.auditoria : [];
+              lastAuditTimelineEvents = rows.map(function (row) {
+                var ts = row.Data_Hora || '';
+                return {
+                  title: (row.Nome || row.Usuario || 'Usuário') + ' editou ' + (row.Campo || 'campo'),
+                  detail:
+                    String(row.Valor_Anterior || '') +
+                    ' → ' +
+                    String(row.Valor_Novo || '') +
+                    (row.Resumo ? '\n' + row.Resumo : ''),
+                  tsRaw: ts,
+                  sortKey: parseDateTime_(ts),
+                  tsLabel: ts ? formatDateTime(ts) : '',
+                  tone: 'blue',
+                  filterCat: 'edicao',
+                };
+              });
+              lastAuditTimelineBasic = rows.length === 0;
+              if (stEl) {
+                stEl.classList.toggle('hidden', rows.length > 0);
+                stEl.textContent = rows.length ? '' : 'Nenhum registro de auditoria para este item.';
+              }
+              renderAuditDrawerInner_();
+            })
+            .withFailureHandler(function (error) {
+              if (stEl) {
+                stEl.classList.remove('hidden');
+                stEl.textContent = getErrorMessage(error);
+              }
+            })
+            .getHandoverAuditTrail(id, tok);
+        } catch (error) {
+          if (stEl) {
+            stEl.classList.remove('hidden');
+            stEl.textContent = error.message;
+          }
+        }
       }
 
       function cardMoreCopiar_(id) {
@@ -6742,7 +6932,16 @@
           '\')"><span class="card-menu-ico" aria-hidden="true">' +
           iconSvg_('eye', 15) +
           '</span>Ver detalhes</button>' +
-          '<button type="button" disabled title="A trilha completa fica na aba Histórico (arquivo)."><span class="card-menu-ico" aria-hidden="true">' +
+          (item.statusKey !== 'cancelado'
+            ? '<button type="button" onclick="openEditHandoverItem_(\'' +
+              escapeJsSingleQuoted_(item.id) +
+              '\')"><span class="card-menu-ico" aria-hidden="true">' +
+              iconSvg_('edit', 15) +
+              '</span>Editar</button>'
+            : '') +
+          '<button type="button" onclick="openAuditDrawerForActiveItem_(\'' +
+          escapeJsSingleQuoted_(item.id) +
+          '\')"><span class="card-menu-ico" aria-hidden="true">' +
           iconSvg_('clock', 15) +
           '</span>Ver trilha de auditoria</button>' +
           '<button type="button" onclick="cardMoreCopiar_(\'' +
@@ -6941,10 +7140,12 @@
           var codigoCard = String(item.Codigo_Compra_Fornecedor || '').trim();
           var formaRecebimentoCard =
             tipoLow === 'encomenda' ? String(item.Forma_Recebimento || 'A combinar').trim() || 'A combinar' : '';
+          var observacaoSolicitacaoCard = String(item.Observacao_Solicitacao || '').trim();
           var descPlainMed =
             'Tipo: ' +
             (item.Tipo || '-') +
-            (tipoLow === 'falta' ? '' : ' · Pré-pago: ' + (item.Pre_Pago ? 'Sim' : 'Não'));
+            (tipoLow === 'falta' ? '' : ' · Pré-pago: ' + (item.Pre_Pago ? 'Sim' : 'Não')) +
+            (observacaoSolicitacaoCard ? ' · Obs: ' + observacaoSolicitacaoCard : '');
           var searchBlob = [
             item.Medicamento,
             item.Tipo,
@@ -6955,6 +7156,7 @@
             fornecedorCard,
             codigoCard,
             formaRecebimentoCard,
+            observacaoSolicitacaoCard,
             waShort,
             auditMed,
             revLine,
@@ -7890,6 +8092,12 @@
         formModalOverlay.setAttribute('aria-hidden', 'true');
         document.body.style.overflow = '';
         requestForm.reset();
+        formMode_ = 'create';
+        editingItemContext_ = null;
+        categorySelect.disabled = false;
+        tipoSelect.disabled = false;
+        document.getElementById('form-modal-title').textContent = 'Novo registro';
+        saveButton.textContent = 'Salvar';
         updateVisibleFields();
         updateMedicinePriceVisibility_();
         clearStatus(formStatus);
@@ -7901,6 +8109,12 @@
           return;
         }
         requestForm.reset();
+        formMode_ = 'create';
+        editingItemContext_ = null;
+        categorySelect.disabled = false;
+        tipoSelect.disabled = false;
+        document.getElementById('form-modal-title').textContent = 'Novo registro';
+        saveButton.textContent = 'Salvar';
         var cat =
           initialCategory === 'Medicamentos'
             ? 'Medicamentos'
@@ -8131,6 +8345,11 @@
             return;
           }
 
+          if (formMode_ === 'edit' && editingItemContext_) {
+            handleEditSubmit_(tab, payload, tok);
+            return;
+          }
+
           var pendingCtx = {
             tab: tab,
             operador: operador,
@@ -8236,6 +8455,53 @@
         });
       }
 
+      function handleEditSubmit_(tab, payload, tok) {
+        if (!editingItemContext_ || !editingItemContext_.id) {
+          setStatus(formStatus, 'Registro de edição não encontrado.', true);
+          return;
+        }
+        setFormLoading_(true);
+        saveButton.textContent = 'Salvando edição...';
+        var started = Date.now();
+        try {
+          getScriptRunner_()
+            .withSuccessHandler(function (response) {
+              if (!response || response.success === false || !response.itemAtualizado || !response.itemAtualizado.ID) {
+                setFormLoading_(false);
+                saveButton.textContent = 'Salvar edição';
+                setStatus(
+                  formStatus,
+                  response && response.message ? response.message : 'O servidor não confirmou a edição.',
+                  true
+                );
+                return;
+              }
+              if (tab === 'Geral') {
+                upsertGeral_(response.itemAtualizado);
+              } else {
+                upsertMedicamento_(response.itemAtualizado);
+              }
+              perfLog_('updateHandoverItem', started);
+              closeFormModal_();
+              setFormLoading_(false);
+              renderAll();
+              showToast_('Edição salva');
+            })
+            .withFailureHandler(function (error) {
+              setFormLoading_(false);
+              saveButton.textContent = 'Salvar edição';
+              setStatus(formStatus, getErrorMessage(error), true);
+              showToast_(getErrorMessage(error), true);
+            })
+            .updateHandoverItem(editingItemContext_.id, editingItemContext_.origem, payload, tok);
+        } catch (error) {
+          setFormLoading_(false);
+          saveButton.textContent = 'Salvar edição';
+          setStatus(formStatus, error.message, true);
+          showToast_(error.message, true);
+        }
+      }
+
       function getGeneralPayload() {
         var temVencCb = document.getElementById('geral-tem-vencimento');
         var temVencimento = !!(temVencCb && temVencCb.checked);
@@ -8264,6 +8530,7 @@
           cod = codEl ? String(codEl.value || '').trim() : '';
         }
         var formaEl = document.getElementById('formaRecebimento');
+        var obsEl = document.getElementById('observacaoSolicitacao');
         return {
           tipo: document.getElementById('tipo').value,
           medicamento: document.getElementById('medicamento').value,
@@ -8276,6 +8543,7 @@
           fornecedorCompra: fc,
           codigoCompraFornecedor: cod,
           formaRecebimento: formaEl ? formaEl.value || 'A combinar' : 'A combinar',
+          observacaoSolicitacao: obsEl ? obsEl.value || '' : '',
         };
       }
 
@@ -8907,6 +9175,8 @@
               a +
               '><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="3"/></svg>'
             );
+          case 'edit':
+            return '<svg' + a + '><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
           case 'layers':
             return (
               '<svg' +

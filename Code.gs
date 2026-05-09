@@ -5,6 +5,7 @@ const SHEET_NAMES = {
   ARQUIVO: 'Arquivo_Resolvidos',
   CHECKLIST: 'Checklist_Turnos',
   USUARIOS: 'Usuarios_Handover',
+  AUDITORIA: 'Auditoria_Handover',
 };
 
 /** Valores exatos da coluna Status_Compra (dropdown na aba operacional). */
@@ -161,6 +162,7 @@ const HEADERS = {
     'Fornecedor_Compra',
     'Codigo_Compra_Fornecedor',
     'Forma_Recebimento',
+    'Observacao_Solicitacao',
   ],
   Compras_Medicamentos: [
     'ID_Handover',
@@ -186,8 +188,23 @@ const HEADERS = {
     'Fornecedor_Compra',
     'Codigo_Compra_Fornecedor',
     'Forma_Recebimento',
+    'Observacao_Solicitacao',
   ],
   Usuarios_Handover: HANDOVER_USERS_HEADERS,
+  Auditoria_Handover: [
+    'ID_Auditoria',
+    'Data_Hora',
+    'Acao',
+    'Origem',
+    'ID_Item',
+    'Usuario',
+    'Nome',
+    'Perfil',
+    'Campo',
+    'Valor_Anterior',
+    'Valor_Novo',
+    'Resumo',
+  ],
   Arquivo_Resolvidos: [
     'Origem',
     'ID',
@@ -364,7 +381,8 @@ function ensureSheetHeadersFor_(sheetName) {
     sheetName === SHEET_NAMES.ARQUIVO ||
     sheetName === SHEET_NAMES.MEDICAMENTOS ||
     sheetName === SHEET_NAMES.COMPRAS_MEDICAMENTOS ||
-    sheetName === SHEET_NAMES.CHECKLIST
+    sheetName === SHEET_NAMES.CHECKLIST ||
+    sheetName === SHEET_NAMES.AUDITORIA
   ) {
     ensureHeadersLegacyAdditive_(sheet, HEADERS[sheetName]);
   } else {
@@ -375,6 +393,10 @@ function ensureSheetHeadersFor_(sheetName) {
 
 function getComprasMedicamentosSheet_() {
   return ensureSheetHeadersFor_(SHEET_NAMES.COMPRAS_MEDICAMENTOS);
+}
+
+function getAuditoriaHandoverSheet_() {
+  return ensureSheetHeadersFor_(SHEET_NAMES.AUDITORIA);
 }
 
 /**
@@ -1430,6 +1452,7 @@ function buildComprasRowNamedValuesFromMedicamento_(medItem, existingStatusCompr
       normalizeFornecedorCompraInput_(medItem.Fornecedor_Compra)
     ),
     Forma_Recebimento: isFalta ? '' : normalizeFormaRecebimento_(medItem.Forma_Recebimento),
+    Observacao_Solicitacao: sanitizeText_(medItem.Observacao_Solicitacao || ''),
   };
 }
 
@@ -2410,6 +2433,116 @@ function saveData(tab, data, sessionToken) {
   return result;
 }
 
+function updateHandoverItem(id, origem, payload, sessionToken) {
+  const started = Date.now();
+  const sess = requireSessionHandover_(sessionToken);
+  const itemId = sanitizeText_(id);
+  const sheetName = normalizeEditOrigem_(origem);
+  if (!itemId) {
+    throw new Error('ID do item obrigatorio para edicao.');
+  }
+  if (!sheetName) {
+    throw new Error('Origem invalida para edicao.');
+  }
+
+  ensureSheetHeadersFor_(sheetName);
+  const location = findRowById_(sheetName, itemId);
+  if (!location) {
+    throw new Error('Item nao encontrado para edicao: ' + itemId);
+  }
+
+  var before = rowToObjectFromSheetRow_(location.sheet, location.rowNumber);
+  normalizeItemForClient_(before);
+  if (toBoolean_(before.Excluido)) {
+    throw new Error('Item excluido nao pode ser editado.');
+  }
+  if (
+    sheetName === SHEET_NAMES.MEDICAMENTOS &&
+    sanitizeText_(before.Status).toLowerCase() === 'cancelado'
+  ) {
+    throw new Error('Item cancelado nao pode ser editado nesta etapa.');
+  }
+
+  var patch = buildAllowedEditPatch_(sheetName, before, payload || {});
+  var changes = [];
+  Object.keys(patch).forEach(function (field) {
+    var oldValue = before[field];
+    var newValue = patch[field];
+    if (auditComparableValue_(oldValue) === auditComparableValue_(newValue)) {
+      return;
+    }
+    setCellByHeader_(location.sheet, location.rowNumber, field, newValue);
+    changes.push({ campo: field, anterior: oldValue, novo: newValue });
+  });
+
+  if (!changes.length) {
+    return {
+      success: true,
+      itemAtualizado:
+        sheetName === SHEET_NAMES.GERAL ? fetchGeralRecordById_(itemId) : fetchMedicationRecordById_(itemId),
+      audit: [],
+      message: 'Nenhuma alteracao detectada.',
+    };
+  }
+
+  setCellByHeader_(location.sheet, location.rowNumber, 'Ultima_Acao_Por', getSessionDisplayName_(sess));
+  setCellByHeader_(location.sheet, location.rowNumber, 'Ultima_Acao_Em', new Date());
+
+  if (sheetName === SHEET_NAMES.MEDICAMENTOS) {
+    mirrorComprasMedicamentosRowForMedicamentoId_(itemId);
+  }
+
+  writeHandoverEditAudit_(sheetName, itemId, sess, changes);
+  var updated =
+    sheetName === SHEET_NAMES.GERAL ? fetchGeralRecordById_(itemId) : fetchMedicationRecordById_(itemId);
+
+  Logger.log('[Handover][perf] updateHandoverItem origem=' + sheetName + ' ms=' + (Date.now() - started));
+  return {
+    success: true,
+    itemAtualizado: updated,
+    audit: changes.map(function (c) {
+      return {
+        Campo: c.campo,
+        Valor_Anterior: formatAuditValue_(c.anterior),
+        Valor_Novo: formatAuditValue_(c.novo),
+      };
+    }),
+  };
+}
+
+function getHandoverAuditTrail(id, sessionToken) {
+  requireSessionHandover_(sessionToken);
+  var itemId = sanitizeText_(id);
+  if (!itemId) {
+    throw new Error('ID do item obrigatorio para auditoria.');
+  }
+  var sheet = getAuditoriaHandoverSheet_();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    return { success: true, auditoria: [] };
+  }
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var values = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  var out = values
+    .map(function (row) {
+      return rowCellsToObject_(headers, row);
+    })
+    .filter(function (row) {
+      return sanitizeText_(row.ID_Item) === itemId;
+    })
+    .map(function (row) {
+      Object.keys(row).forEach(function (key) {
+        if (row[key] instanceof Date) {
+          row[key] = Utilities.formatDate(row[key], HANDOVER_TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss");
+        }
+      });
+      return row;
+    })
+    .reverse();
+  return { success: true, auditoria: out };
+}
+
 /**
  * Insere registro em Geral ou Medicamentos com autoria explícita (usado por saveData após sessão e por populateTestData manual).
  */
@@ -2506,6 +2639,7 @@ function appendHandoverRecord_(tab, data, authorLabel) {
         Fornecedor_Compra: fnCompra,
         Codigo_Compra_Fornecedor: codCompra,
         Forma_Recebimento: '',
+        Observacao_Solicitacao: sanitizeText_(data.observacaoSolicitacao || ''),
       });
       sheet.appendRow(rowValuesFalta);
       try {
@@ -2556,6 +2690,7 @@ function appendHandoverRecord_(tab, data, authorLabel) {
       Fornecedor_Compra: fnCompra,
       Codigo_Compra_Fornecedor: codCompra,
       Forma_Recebimento: formaRecebimento,
+      Observacao_Solicitacao: sanitizeText_(data.observacaoSolicitacao || ''),
     });
     sheet.appendRow(rowValues);
     try {
@@ -2597,6 +2732,141 @@ function fetchData() {
     medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS),
     checklistTurno: buildChecklistTurnoPayload_(inferDefaultChecklistTurno_()),
   };
+}
+
+function normalizeEditOrigem_(origem) {
+  var s = sanitizeText_(origem);
+  if (s === SHEET_NAMES.GERAL || s.toLowerCase() === 'geral') {
+    return SHEET_NAMES.GERAL;
+  }
+  if (s === SHEET_NAMES.MEDICAMENTOS || s.toLowerCase() === 'medicamentos') {
+    return SHEET_NAMES.MEDICAMENTOS;
+  }
+  return '';
+}
+
+function buildAllowedEditPatch_(sheetName, current, payload) {
+  if (sheetName === SHEET_NAMES.GERAL) {
+    var temVenc = toBoolean_(payload.temVencimento);
+    var dataVen = '';
+    if (temVenc) {
+      dataVen = parseDate_(payload.dataVencimento);
+      if (!dataVen) {
+        throw new Error('Data de vencimento invalida. Use YYYY-MM-DD.');
+      }
+    }
+    return {
+      Titulo: sanitizeText_(payload.titulo),
+      Descricao: sanitizeText_(payload.descricao),
+      Urgencia: normalizeUrgenciaGeral_(payload.urgencia),
+      Tem_Vencimento: temVenc,
+      Data_Vencimento: temVenc ? dataVen : '',
+      Hora_Vencimento: temVenc ? sanitizeText_(payload.horaVencimento || '') : '',
+    };
+  }
+
+  var tipo = sanitizeText_(current.Tipo);
+  var isFalta = tipo.toLowerCase() === 'falta';
+  var out = {
+    Medicamento: sanitizeText_(payload.medicamento),
+    Atendente: sanitizeText_(payload.atendente),
+    Observacao_Solicitacao: sanitizeText_(payload.observacaoSolicitacao || ''),
+    Previsao_Entrega: parseDate_(payload.previsaoEntrega) || '',
+  };
+
+  if (!out.Medicamento) {
+    throw new Error('Informe o medicamento.');
+  }
+  if (!out.Atendente) {
+    throw new Error('Informe o atendente.');
+  }
+
+  if (!isFalta) {
+    var fornecedor = normalizeFornecedorCompraInput_(payload.fornecedorCompra);
+    out.Cliente = sanitizeText_(payload.cliente);
+    out.Telefone = sanitizeText_(payload.telefone);
+    out.Preco_Venda = parseSalePrice_(payload.precoVenda);
+    out.Pre_Pago = toBoolean_(payload.prePago);
+    out.Fornecedor_Compra = fornecedor;
+    out.Codigo_Compra_Fornecedor = normalizeCodigoCompraFornecedorInput_(
+      payload.codigoCompraFornecedor,
+      fornecedor
+    );
+    out.Forma_Recebimento = normalizeFormaRecebimento_(payload.formaRecebimento);
+    if (!out.Cliente) {
+      throw new Error('Informe o cliente.');
+    }
+    if (!out.Telefone) {
+      throw new Error('Informe o telefone do cliente.');
+    }
+    if (!out.Previsao_Entrega) {
+      throw new Error('Previsao_Entrega invalida. Use o formato YYYY-MM-DD com data real.');
+    }
+  }
+
+  return out;
+}
+
+function setCellByHeader_(sheet, rowNumber, headerName, value) {
+  var col = getColumnIndex_(sheet, headerName);
+  sheet.getRange(rowNumber, col).setValue(value);
+}
+
+function auditComparableValue_(value) {
+  if (value instanceof Date) {
+    if (value.getHours() === 0 && value.getMinutes() === 0 && value.getSeconds() === 0) {
+      return Utilities.formatDate(value, HANDOVER_TIMEZONE, 'yyyy-MM-dd');
+    }
+    return Utilities.formatDate(value, HANDOVER_TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss");
+  }
+  if (value === true || value === false) {
+    return value ? 'true' : 'false';
+  }
+  return sanitizeText_(value);
+}
+
+function formatAuditValue_(value) {
+  if (value instanceof Date) {
+    if (value.getHours() === 0 && value.getMinutes() === 0 && value.getSeconds() === 0) {
+      return Utilities.formatDate(value, HANDOVER_TIMEZONE, 'dd/MM/yyyy');
+    }
+    return Utilities.formatDate(value, HANDOVER_TIMEZONE, 'dd/MM/yyyy HH:mm:ss');
+  }
+  if (value === true || value === false) {
+    return value ? 'TRUE' : 'FALSE';
+  }
+  return sanitizeText_(value);
+}
+
+function writeHandoverEditAudit_(origem, itemId, sess, changes) {
+  if (!changes || !changes.length) {
+    return;
+  }
+  var sheet = getAuditoriaHandoverSheet_();
+  var nome = getSessionDisplayName_(sess);
+  var usuario = sanitizeText_(sess && sess.usuario);
+  var perfil = sanitizeText_(sess && sess.perfil);
+  var now = new Date();
+  changes.forEach(function (change) {
+    var oldVal = formatAuditValue_(change.anterior);
+    var newVal = formatAuditValue_(change.novo);
+    sheet.appendRow(
+      buildAppendRowValuesFromNamedMap_(sheet, {
+        ID_Auditoria: Utilities.getUuid(),
+        Data_Hora: now,
+        Acao: 'EDITAR',
+        Origem: origem,
+        ID_Item: itemId,
+        Usuario: usuario,
+        Nome: nome,
+        Perfil: perfil,
+        Campo: change.campo,
+        Valor_Anterior: oldVal,
+        Valor_Novo: newVal,
+        Resumo: nome + ' editou ' + change.campo + ' de "' + oldVal + '" para "' + newVal + '".',
+      })
+    );
+  });
 }
 
 function fetchHistoricoResolvidos(limit, sessionToken) {
