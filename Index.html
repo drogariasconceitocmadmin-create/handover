@@ -3064,6 +3064,14 @@
       };
       let dashboardAutoRefreshTimer = null;
       let lastDashboardSyncTs = Date.now();
+      let handoverRefreshInFlight_ = false;
+      let handoverDeferredSilentRefresh_ = false;
+      let handoverAutoSyncTimer_ = null;
+      let handoverSyncAgeTimer_ = null;
+      let handoverTabResumeInstalled_ = false;
+      var handoverSyncLabelOverride_ = '';
+      var HANDOVER_AUTO_SYNC_MS = 30000;
+      var HANDOVER_TAB_RESUME_MIN_MS = 13000;
 
       const formModalOverlay = document.getElementById('form-modal-overlay');
       const formModalCloseBtn = document.getElementById('form-modal-close');
@@ -3420,7 +3428,7 @@
         syncAutorFieldFromOperador_();
         syncMedicamentoAtendenteFromOperador_();
         initChecklistTurnoUi_();
-        initDashboardSync_();
+        startHandoverAutoSync_();
         initHandoverPhase1Layout_();
         window.requestAnimationFrame(function () {
           window.setTimeout(function () {
@@ -3668,10 +3676,10 @@
         function finishLocal() {
           handoverSessionRpcSeq_ += 1;
           handoverLoginRpcSeq_ += 1;
-          if (dashboardAutoRefreshTimer) {
-            window.clearInterval(dashboardAutoRefreshTimer);
-            dashboardAutoRefreshTimer = null;
-          }
+          stopHandoverAutoSync_();
+          handoverRefreshInFlight_ = false;
+          handoverDeferredSilentRefresh_ = false;
+          handoverSyncLabelOverride_ = '';
           hideAppShell_();
           dashboardData = normalizeData({});
           historicoResolvidos = [];
@@ -3838,19 +3846,28 @@
         }
       }
 
-      function touchLastSyncTime_() {
-        lastDashboardSyncTs = Date.now();
+      function renderLastSyncLabel_() {
         var el = document.getElementById('last-sync-label');
         if (!el) {
           return;
         }
-        var d = new Date(lastDashboardSyncTs);
-        el.textContent =
-          String(d.getHours()).padStart(2, '0') +
-          ':' +
-          String(d.getMinutes()).padStart(2, '0') +
-          ':' +
-          String(d.getSeconds()).padStart(2, '0');
+        if (handoverSyncLabelOverride_) {
+          el.textContent = handoverSyncLabelOverride_;
+          return;
+        }
+        var sec = Math.max(0, Math.floor((Date.now() - lastDashboardSyncTs) / 1000));
+        el.textContent = sec < 2 ? 'Agora' : 'Atualizado há ' + sec + 's';
+      }
+
+      function setHandoverSyncLabelOverride_(text) {
+        handoverSyncLabelOverride_ = text == null ? '' : String(text);
+        renderLastSyncLabel_();
+      }
+
+      function touchLastSyncTime_() {
+        lastDashboardSyncTs = Date.now();
+        handoverSyncLabelOverride_ = '';
+        renderLastSyncLabel_();
       }
 
       // Mantido como no-op para compatibilidade com chamadas legadas do frontend.
@@ -3871,20 +3888,184 @@
         return checklistObservationEditMode.size > 0;
       }
 
-      function initDashboardSync_() {
+      function hasChecklistObservationDrafts_() {
+        var k;
+        for (k in checklistObservationDrafts) {
+          if (!Object.prototype.hasOwnProperty.call(checklistObservationDrafts, k)) {
+            continue;
+          }
+          if (String(checklistObservationDrafts[k] || '').trim()) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function isElementInsideAppShell_(el) {
+        var shell = document.getElementById('app-shell');
+        return !!(shell && el && shell.contains(el));
+      }
+
+      function isUserTypingInApp_() {
+        var el = document.activeElement;
+        if (!el || !el.tagName) {
+          return false;
+        }
+        if (el.disabled || el.readOnly) {
+          return false;
+        }
+        var tag = String(el.tagName).toLowerCase();
+        if (tag === 'textarea' || tag === 'select') {
+          return isElementInsideAppShell_(el);
+        }
+        if (tag === 'input') {
+          var t = String(el.type || '').toLowerCase();
+          if (
+            t === 'button' ||
+            t === 'submit' ||
+            t === 'checkbox' ||
+            t === 'radio' ||
+            t === 'range' ||
+            t === 'file' ||
+            t === 'hidden' ||
+            t === 'reset'
+          ) {
+            return false;
+          }
+          return isElementInsideAppShell_(el);
+        }
+        if (el.isContentEditable) {
+          return isElementInsideAppShell_(el);
+        }
+        return false;
+      }
+
+      function hasBlockingQueueSync_() {
+        var i;
+        var g;
+        var m;
+        for (i = 0; i < (dashboardData.geral || []).length; i++) {
+          g = dashboardData.geral[i];
+          if (
+            g.__syncState === 'syncing' ||
+            g.__resolveState === 'resolving' ||
+            String(g.ID || '').indexOf('opt-') === 0
+          ) {
+            return true;
+          }
+        }
+        for (i = 0; i < (dashboardData.medicamentos || []).length; i++) {
+          m = dashboardData.medicamentos[i];
+          if (m.__syncState === 'syncing' || String(m.ID || '').indexOf('opt-') === 0) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function canAutoRefreshHandover_() {
+        if (handoverAuthState !== 'logged_in') {
+          return false;
+        }
+        var ho = document.getElementById('handover-login-overlay');
+        if (ho && !ho.classList.contains('hidden')) {
+          return false;
+        }
+        if (isAnyBlockingModalOpen_()) {
+          return false;
+        }
+        var novoMenu = document.getElementById('novo-registro-menu');
+        if (novoMenu && !novoMenu.classList.contains('hidden')) {
+          return false;
+        }
+        if (isChecklistObservationEditing_()) {
+          return false;
+        }
+        if (hasChecklistObservationDrafts_()) {
+          return false;
+        }
+        if (isUserTypingInApp_()) {
+          return false;
+        }
+        if (handoverRefreshInFlight_) {
+          return false;
+        }
+        if (hasBlockingQueueSync_()) {
+          return false;
+        }
+        return true;
+      }
+
+      function stopHandoverAutoSync_() {
+        if (handoverAutoSyncTimer_) {
+          window.clearInterval(handoverAutoSyncTimer_);
+          handoverAutoSyncTimer_ = null;
+        }
+        if (handoverSyncAgeTimer_) {
+          window.clearInterval(handoverSyncAgeTimer_);
+          handoverSyncAgeTimer_ = null;
+        }
+        if (dashboardAutoRefreshTimer) {
+          window.clearInterval(dashboardAutoRefreshTimer);
+          dashboardAutoRefreshTimer = null;
+        }
+      }
+
+      function installHandoverTabResumeListeners_() {
+        if (handoverTabResumeInstalled_) {
+          return;
+        }
+        handoverTabResumeInstalled_ = true;
+        document.addEventListener('visibilitychange', onHandoverDocVisibility_);
+        window.addEventListener('focus', onHandoverWindowFocus_);
+      }
+
+      function onHandoverDocVisibility_() {
+        if (document.visibilityState !== 'visible') {
+          return;
+        }
+        maybeRefreshDashboardOnTabVisible_();
+      }
+
+      function onHandoverWindowFocus_() {
+        if (document.visibilityState === 'hidden') {
+          return;
+        }
+        maybeRefreshDashboardOnTabVisible_();
+      }
+
+      function maybeRefreshDashboardOnTabVisible_() {
+        if (handoverAuthState !== 'logged_in') {
+          return;
+        }
+        if (Date.now() - lastDashboardSyncTs < HANDOVER_TAB_RESUME_MIN_MS) {
+          return;
+        }
+        if (!canAutoRefreshHandover_()) {
+          return;
+        }
+        refreshDashboardNow_(true, { auto: true });
+      }
+
+      function startHandoverAutoSync_() {
+        stopHandoverAutoSync_();
         if (handoverAuthState !== 'logged_in') {
           return;
         }
         touchLastSyncTime_();
-        if (dashboardAutoRefreshTimer) {
-          window.clearInterval(dashboardAutoRefreshTimer);
-        }
-        dashboardAutoRefreshTimer = window.setInterval(function () {
-          if (isAnyBlockingModalOpen_() || isChecklistObservationEditing_()) {
+        handoverAutoSyncTimer_ = window.setInterval(function () {
+          if (!canAutoRefreshHandover_()) {
             return;
           }
-          refreshDashboardNow_(true);
-        }, 60000);
+          refreshDashboardNow_(true, { auto: true });
+        }, HANDOVER_AUTO_SYNC_MS);
+        handoverSyncAgeTimer_ = window.setInterval(function () {
+          if (handoverAuthState !== 'logged_in') {
+            return;
+          }
+          renderLastSyncLabel_();
+        }, 2000);
+        installHandoverTabResumeListeners_();
       }
 
       function mergeServerIntoDashboard_(bundle) {
@@ -3921,7 +4102,8 @@
         updateLastActionLabel_();
       }
 
-      function refreshDashboardNow_(silent) {
+      function refreshDashboardNow_(silent, opts) {
+        opts = opts || {};
         if (handoverAuthState !== 'logged_in') {
           return;
         }
@@ -3929,9 +4111,26 @@
           showToast_('Feche os modais para atualizar.', true);
           return;
         }
+        if (opts.auto && !canAutoRefreshHandover_()) {
+          return;
+        }
         captureObservationDraftsFromDom_();
         var tok = ensureSessionTokenForAction_();
         if (!tok) {
+          return;
+        }
+        if (opts.auto && !canAutoRefreshHandover_()) {
+          return;
+        }
+        if (handoverRefreshInFlight_) {
+          if (opts.auto) {
+            return;
+          }
+          if (!silent) {
+            showToast_('Atualização em andamento.', false);
+            return;
+          }
+          handoverDeferredSilentRefresh_ = true;
           return;
         }
         var refreshBtn = !silent ? document.getElementById('refresh-dashboard-btn') : null;
@@ -3943,36 +4142,69 @@
             refreshBtn.textContent = refreshPrevLabel || 'Atualizar agora';
           }
         }
+        function flushHandoverDeferredSilentRefresh_() {
+          if (!handoverDeferredSilentRefresh_) {
+            return;
+          }
+          handoverDeferredSilentRefresh_ = false;
+          window.setTimeout(function () {
+            refreshDashboardNow_(true);
+          }, 0);
+        }
         if (refreshBtn) {
           refreshPrevLabel = refreshBtn.textContent;
           refreshPrevDisabled = refreshBtn.disabled;
           refreshBtn.disabled = true;
           refreshBtn.textContent = 'Atualizando...';
         }
+        if (opts.auto) {
+          setHandoverSyncLabelOverride_('Sincronizando...');
+        }
+        handoverRefreshInFlight_ = true;
         var started = Date.now();
         try {
+          /* Auto-sync reutiliza refreshDashboardBundle (mesmo payload do manual silencioso).
+             Otimização futura: endpoint mais leve (p.ex. sem Histórico completo quando a aba Histórico não está ativa). */
           getScriptRunner_()
             .withSuccessHandler(function (bundle) {
+              handoverRefreshInFlight_ = false;
               perfLog_('refreshDashboardBundle', started);
               mergeServerIntoDashboard_(bundle);
               touchLastSyncTime_();
               initChecklistTurnoUi_();
               renderAll();
               restoreRefreshBtn_();
+              flushHandoverDeferredSilentRefresh_();
               if (!silent) {
                 showToast_('Dados atualizados');
               }
             })
             .withFailureHandler(function (error) {
+              handoverRefreshInFlight_ = false;
               perfLog_('refreshDashboardBundle_fail', started);
               restoreRefreshBtn_();
+              flushHandoverDeferredSilentRefresh_();
+              if (opts.auto) {
+                setHandoverSyncLabelOverride_('Falha ao atualizar');
+                window.setTimeout(function () {
+                  setHandoverSyncLabelOverride_('');
+                }, 8000);
+              }
               if (!silent) {
                 showToast_(getErrorMessage(error), true);
               }
             })
             .refreshDashboardBundle(activeChecklistTurno, tok);
         } catch (error) {
+          handoverRefreshInFlight_ = false;
           restoreRefreshBtn_();
+          flushHandoverDeferredSilentRefresh_();
+          if (opts.auto) {
+            setHandoverSyncLabelOverride_('Falha ao atualizar');
+            window.setTimeout(function () {
+              setHandoverSyncLabelOverride_('');
+            }, 8000);
+          }
           if (!silent) {
             showToast_(error.message, true);
           }
