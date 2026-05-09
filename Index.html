@@ -485,6 +485,15 @@
         line-height: 1.35;
       }
 
+      .field-hint {
+        display: block;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--muted);
+        margin: 2px 0 4px;
+        line-height: 1.35;
+      }
+
       .summary-strip {
         display: grid;
         grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -2382,6 +2391,10 @@
         margin-top: 5px;
       }
 
+      .check-item-meta:empty {
+        display: none;
+      }
+
       .check-actions {
         display: flex;
         flex-wrap: wrap;
@@ -3184,7 +3197,8 @@
               </div>
 
               <div class="field">
-                <label for="formaRecebimento">Forma de recebimento</label>
+                <label for="formaRecebimento">Retirada ou entrega</label>
+                <span class="field-hint">Como o cliente prefere receber quando o medicamento chegar.</span>
                 <select id="formaRecebimento" name="formaRecebimento">
                   <option value="A combinar">A combinar</option>
                   <option value="Retira na loja">Retira na loja</option>
@@ -5260,7 +5274,7 @@
                 ['faltas', 'Faltas'],
                 ['encomendas', 'Encomendas'],
                 ['comprados', 'Comprados'],
-                ['comprados_sem_aviso', 'Comprados sem aviso'],
+                ['comprados_sem_aviso', 'A avisar'],
                 ['entregues', 'Entregues'],
                 ['cancelados', 'Cancelados'],
                 ['vencidos_hoje', 'Vencidos/Hoje'],
@@ -5626,7 +5640,7 @@
         var secCompra =
           detailMedicamentoRow_('Fornecedor', raw.Fornecedor_Compra) +
           detailMedicamentoRow_('Código compra', raw.Codigo_Compra_Fornecedor) +
-          detailMedicamentoRow_('Forma recebimento', raw.Forma_Recebimento) +
+          detailMedicamentoRow_('Retirada ou entrega', raw.Forma_Recebimento) +
           detailMedicamentoRow_('Previsão', raw.Previsao_Entrega ? formatDate(raw.Previsao_Entrega) : '');
 
         var criado = raw.Timestamp ? formatDateTime(raw.Timestamp) : '';
@@ -5742,13 +5756,13 @@
         }
         var msg =
           'Tem certeza que deseja deletar este item?\n\n' +
-          'Ele serÃ¡ removido da visualizaÃ§Ã£o operacional, mas ficarÃ¡ registrado para auditoria.';
+          'Ele será removido da visualização operacional, mas ficará registrado para auditoria.';
         if (!window.confirm(msg)) {
           return;
         }
         var motivo = '';
         try {
-          var m = window.prompt('Motivo da deleÃ§Ã£o (opcional):', '');
+          var m = window.prompt('Motivo da deleção (opcional):', '');
           motivo = m == null ? '' : String(m || '');
         } catch (ePrompt) {}
         var tok = ensureSessionTokenForAction_();
@@ -5767,7 +5781,7 @@
         try {
           getScriptRunner_()
             .withSuccessHandler(function () {
-              showToast_('Item deletado da visualizaÃ§Ã£o operacional.');
+              showToast_('Item deletado da visualização operacional.');
               refreshDashboardNow_(true);
             })
             .withFailureHandler(function (error) {
@@ -5995,9 +6009,9 @@
           ),
           buildSummaryCard_(
             'sem_aviso',
-            'Comprados sem aviso',
+            'Aguardando aviso',
             String(boughtWithoutWhatsapp.length),
-            'WhatsApp pendente',
+            'Cliente ainda não avisado',
             'kpi-orange',
             'bell'
           ),
@@ -7520,7 +7534,7 @@
           if (item.medTipo === 'encomenda') {
             chunks.push(row('Cliente', item.metaCliente));
             chunks.push(row('Telefone', item.metaTelefone));
-            chunks.push(row('Recebimento', item.metaFormaRecebimento));
+            chunks.push(row('Retirada ou entrega', item.metaFormaRecebimento));
           }
           chunks.push(row('Atendente', item.metaAtendente));
           chunks.push(row('Observação', item.metaObservacaoSolicitacao));
@@ -8041,7 +8055,7 @@
           entregues: 'Entregues',
           resolvidos: 'Histórico / Resolvidos',
           resolvidos_parcialmente: 'Resolvidos parcialmente',
-          comprados_sem_aviso: 'Comprados sem aviso',
+          comprados_sem_aviso: 'Aguardando aviso',
           cancelados: 'Cancelados',
           vencidos_hoje: 'Vencidos/Hoje',
         };
@@ -8523,7 +8537,7 @@
         const draftVal = editing ? getObservationDraftValueForEdit_(item) : '';
         const checkInfo = item.Data_Hora_Check
           ? 'Última marcação: ' + formatDateTime(item.Data_Hora_Check)
-          : 'Sem marcação';
+          : '';
         const respLine = item.Responsavel ? 'Responsável: ' + item.Responsavel : '';
 
         var obsBlock = '';
@@ -9493,8 +9507,7 @@
       function cancelMedicationRequest_(id) {
         var cancelMsg =
           'Tem certeza que deseja cancelar esta solicitação de medicamento?\n\n' +
-          'Essa ação vai marcar o pedido como CANCELADO no Handover e também na planilha de compras.\n\n' +
-          'Se foi um engano, você poderá reverter depois alterando o status para Pendente de compra ou Comprado.';
+          'O pedido será marcado como CANCELADO no Handover e também na planilha de compras.';
         if (!window.confirm(cancelMsg)) {
           return;
         }
