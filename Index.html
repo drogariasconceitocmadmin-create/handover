@@ -2711,10 +2711,11 @@
             </button>
           </div>
 
-          <div class="toolbar-actions" style="margin-bottom: 8px;">
+          <div class="toolbar-actions" style="margin-bottom: 8px; display: flex; align-items: center; gap: 12px;">
             <button id="checklist-generate-btn" type="button" class="light" onclick="refreshChecklistToday()">
-              Atualizar checklist
+              Sincronizar checklist
             </button>
+            <span id="checklist-sync-label" class="ho-muted" style="font-size:12px;" aria-live="polite"></span>
           </div>
 
           <div id="checklist-content" class="hidden">
@@ -3034,6 +3035,9 @@
       let lastAuditRawRecord = null;
       let checklistPendingItemId = null;
       let isChecklistExpanded = false;
+      let checklistCacheByTurno_ = Object.create(null);
+      let checklistSyncTs_ = 0;
+      let checklistSyncing_ = false;
       const openChecklistCategories = new Set();
       const checklistObservationEditMode = new Set();
 
@@ -3913,6 +3917,9 @@
         dashboardData.checklistTurno = normalizeChecklistData_(bundle.checklistTurno);
         if (bundle.bundleTurno) {
           activeChecklistTurno = bundle.bundleTurno;
+          if (dashboardData.checklistTurno) {
+            checklistCacheByTurno_[activeChecklistTurno] = dashboardData.checklistTurno;
+          }
         }
         updateLastActionLabel_();
       }
@@ -3991,11 +3998,27 @@
       function onChecklistTurnoChange_(value) {
         activeChecklistTurno = value || 'Manhã';
         updateChecklistTurnTitle_();
-        refreshChecklistForTurno_(false);
+        var cached = checklistCacheByTurno_[activeChecklistTurno];
+        if (cached) {
+          dashboardData.checklistTurno = cached;
+          renderChecklistSection();
+          renderSummary();
+          setChecklistSyncStatus_('cached');
+        } else {
+          setChecklistSyncStatus_('loading');
+          if (checklistCategories) {
+            checklistCategories.innerHTML =
+              '<div class="empty-box">Carregando checklist de ' +
+              escapeHtml(activeChecklistTurno) +
+              '...</div>';
+          }
+        }
+        refreshChecklistForTurno_(true);
       }
 
       function refreshChecklistForTurno_(silent) {
         var started = Date.now();
+        var turnoSolicitado = activeChecklistTurno;
         var tok = ensureSessionTokenForAction_();
         if (!tok) {
           if (!silent) {
@@ -4003,30 +4026,38 @@
           }
           return;
         }
+        setChecklistSyncStatus_('syncing');
         try {
           getScriptRunner_()
             .withSuccessHandler(function (response) {
               perfLog_('generateChecklistForTurno', started);
               if (response.checklistTurno) {
-                dashboardData.checklistTurno = normalizeChecklistData_(response.checklistTurno);
+                var normalized = normalizeChecklistData_(response.checklistTurno);
+                checklistCacheByTurno_[turnoSolicitado] = normalized;
+                if (turnoSolicitado === activeChecklistTurno) {
+                  dashboardData.checklistTurno = normalized;
+                }
               }
               touchLastSyncTime_();
               updateMainTabBadges_();
               renderDeskSidebar_();
               renderChecklistSection();
               renderSummary();
+              setChecklistSyncStatus_('ok');
               if (!silent) {
                 showToast_('Checklist do turno carregado');
               }
             })
             .withFailureHandler(function (error) {
               perfLog_('generateChecklistForTurno_fail', started);
+              setChecklistSyncStatus_('error', getErrorMessage(error));
               if (!silent) {
                 showToast_(getErrorMessage(error), true);
               }
             })
             .generateChecklistForTurno(activeChecklistTurno, tok);
         } catch (error) {
+          setChecklistSyncStatus_('error', error.message);
           if (!silent) {
             showToast_(error.message, true);
           }
@@ -7553,7 +7584,7 @@
 
         if (items.length > 0) {
           checklistHint.textContent = 'Checklist de hoje já gerado.';
-          checklistGenerateBtn.textContent = 'Atualizar checklist';
+          checklistGenerateBtn.textContent = 'Sincronizar checklist';
         } else {
           checklistHint.textContent = 'Checklist ainda não gerado.';
           checklistGenerateBtn.textContent = 'Gerar checklist de hoje';
@@ -7806,24 +7837,33 @@
 
       function resyncChecklistFromServer_() {
         var started = Date.now();
+        var turnoSolicitado = activeChecklistTurno;
         var tok = ensureSessionTokenForAction_();
         if (!tok) {
           return;
         }
+        setChecklistSyncStatus_('syncing');
         try {
           getScriptRunner_()
             .withSuccessHandler(function (response) {
-              dashboardData.checklistTurno = normalizeChecklistData_(response.checklistTurno);
               perfLog_('generateChecklistForTurno', started);
+              if (response.checklistTurno) {
+                var normalized = normalizeChecklistData_(response.checklistTurno);
+                checklistCacheByTurno_[turnoSolicitado] = normalized;
+                if (turnoSolicitado === activeChecklistTurno) {
+                  dashboardData.checklistTurno = normalized;
+                }
+              }
               renderChecklistSection();
               renderSummary();
+              setChecklistSyncStatus_('ok');
             })
             .withFailureHandler(function (error) {
-              setStatus(checklistStatus, getErrorMessage(error), true);
+              setChecklistSyncStatus_('error', getErrorMessage(error));
             })
             .generateChecklistForTurno(activeChecklistTurno, tok);
         } catch (error) {
-          setStatus(checklistStatus, error.message, true);
+          setChecklistSyncStatus_('error', error.message);
         }
       }
 
@@ -8092,34 +8132,37 @@
       }
 
       function refreshChecklistToday() {
-        setStatus(checklistStatus, 'Atualizando checklist...');
-        setChecklistButtonsDisabled(true);
+        setChecklistSyncStatus_('syncing');
 
         var started = Date.now();
+        var turnoSolicitado = activeChecklistTurno;
         var tok = ensureSessionTokenForAction_();
         if (!tok) {
-          setChecklistButtonsDisabled(false);
+          setChecklistSyncStatus_('error', 'Sessão expirada');
           return;
         }
         try {
           getScriptRunner_()
             .withSuccessHandler(function (response) {
-              dashboardData.checklistTurno = normalizeChecklistData_(response.checklistTurno);
               perfLog_('generateChecklistForTurno', started);
+              if (response.checklistTurno) {
+                var normalized = normalizeChecklistData_(response.checklistTurno);
+                checklistCacheByTurno_[turnoSolicitado] = normalized;
+                if (turnoSolicitado === activeChecklistTurno) {
+                  dashboardData.checklistTurno = normalized;
+                }
+              }
               renderAll();
-              setStatus(checklistStatus, 'Checklist atualizado.');
-              setChecklistButtonsDisabled(false);
-              showToast_('Checklist atualizado');
+              setChecklistSyncStatus_('ok');
+              showToast_('Checklist sincronizado');
             })
             .withFailureHandler(function (error) {
-              setStatus(checklistStatus, getErrorMessage(error), true);
-              setChecklistButtonsDisabled(false);
+              setChecklistSyncStatus_('error', getErrorMessage(error));
               showToast_(getErrorMessage(error), true);
             })
             .generateChecklistForTurno(activeChecklistTurno, tok);
         } catch (error) {
-          setStatus(checklistStatus, error.message, true);
-          setChecklistButtonsDisabled(false);
+          setChecklistSyncStatus_('error', error.message);
           showToast_(error.message, true);
         }
       }
@@ -9149,6 +9192,32 @@
         }
         if (checklistToggleBtn) {
           checklistToggleBtn.disabled = disabled;
+        }
+      }
+
+      function setChecklistSyncStatus_(state, errorMsg) {
+        checklistSyncing_ = state === 'syncing' || state === 'loading';
+        setChecklistButtonsDisabled(checklistSyncing_);
+        var syncLabel = document.getElementById('checklist-sync-label');
+        var statusEl = checklistStatus;
+        if (state === 'loading') {
+          if (syncLabel) { syncLabel.textContent = 'Carregando ' + escapeHtml(activeChecklistTurno) + '...'; }
+          if (statusEl) { clearStatus(statusEl); }
+        } else if (state === 'syncing') {
+          if (syncLabel) { syncLabel.textContent = 'Sincronizando...'; }
+          if (statusEl) { clearStatus(statusEl); }
+        } else if (state === 'cached') {
+          if (syncLabel) { syncLabel.textContent = 'Cache local • atualizando...'; }
+          if (statusEl) { clearStatus(statusEl); }
+        } else if (state === 'ok') {
+          checklistSyncTs_ = Date.now();
+          var d = new Date(checklistSyncTs_);
+          var hhmm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+          if (syncLabel) { syncLabel.textContent = 'Sincronizado às ' + hhmm; }
+          if (statusEl) { clearStatus(statusEl); }
+        } else if (state === 'error') {
+          if (syncLabel) { syncLabel.textContent = ''; }
+          if (statusEl) { setStatus(statusEl, 'Falha ao sincronizar' + (errorMsg ? ': ' + errorMsg : ''), true); }
         }
       }
 
