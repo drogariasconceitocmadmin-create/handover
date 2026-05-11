@@ -1,81 +1,63 @@
 {
   "projeto": "Handover - Drogarias Conceito",
-  "status_geral": "APROVADO_COM_RESSALVAS",
+  "status_geral": "ROLLBACK_V57",
   "branch_publicada": "hotfix/handover-p0-save-medicamentos",
-  "commit_publicado": "c923984",
-  "versao_tentada": 58,
+  "commit_publicado": "e7eccee",
+  "versao_tentada": 59,
   "versao_ativa": 57,
   "rollback_feito": true,
-  "rollback_motivo": "Deployment mantido em v57 aguardando republicacao manual pelo usuario. Smoke concluido com aprovacao (ressalvas abaixo).",
+  "rollback_motivo": "v59 reprovada em smoke manual. Falhas P0: (1) item salvo na planilha nao recarrega na tela apos logout/login; (2) erro 'constant variable' ao clicar Atualizar agora. Rollback imediato para v57.",
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
   "pop_tocado": false,
-  "data_smoke": "2026-05-11",
-  "smoke_v58": {
+  "data_incidente": "2026-05-11",
+  "smoke_v59": {
     "executado": true,
-    "sessoes": ["2026-05-10 (parcial - sem browser)", "2026-05-11 (smoke real)"],
-    "login_pin": "PASSOU",
-    "login_pin_detalhe": "Usuario Carlos, PIN 642068. Login aceito, session token estabelecido.",
-    "encomenda": "PASSOU",
-    "encomenda_detalhe": "TESTE_V58_ENCOMENDA criado em 10/05. TESTE_V58_WA criado em 11/05 (12:20:34) e cancelado em limpeza (12:38:00).",
-    "medicamentos": "PASSOU",
-    "medicamentos_detalhe": "Registros salvos em aba Medicamentos via saveData. Campos obrigatorios preenchidos corretamente.",
-    "compras_medicamentos": "PASSOU_PARCIAL",
-    "compras_medicamentos_detalhe": "Espelho confirmado para TESTE_V58_FALTA2 (Status_Compra=Cancelado, Cancelado_Por=Carlos). Espelho de TESTE_V58_WA nao verificado na planilha diretamente (sessao interrompida antes da confirmacao).",
-    "persistencia_logout_login": "PASSOU",
-    "persistencia_detalhe": "Re-login em 11/05 apos expiracao de sessao de 10/05. Novos registros criados em 11/05 foram persistidos e visiveis apos login.",
-    "popup_pos_sucesso": "PASSOU",
-    "popup_detalhe": "Popup de criar registro fecha somente apos confirmacao do backend (saveData retorna OK).",
-    "edicao_medicamento": "PASSOU",
-    "edicao_detalhe": "Botao Editar presente no card. Formulario de edicao abre, campos editaveis, Salvar edicao envia ao backend.",
-    "auditoria_handover": "PASSOU",
-    "auditoria_detalhe": "Acao EDITAR registrada em Auditoria_Handover. Campos: Acao, Usuario, Campo, Valor_Anterior, Valor_Novo, Data_Hora preenchidos.",
-    "falta": "PASSOU",
-    "falta_detalhe": "TESTE_V58_FALTA2 criado (11/05 12:13:46). Tipo=Falta selecionado via dropdown keyboard nav (ArrowDown+Tab). Card apareceu no filtro Faltas.",
-    "cancelamento_falta": "PASSOU",
-    "cancelamento_detalhe": "TESTE_V58_FALTA2 cancelado (11/05 12:15:32). Card moveu para filtro Cancelados. Tag CANCELADO exibida. Cancelado_Por=Carlos. Mensagem 'Pedido cancelado.' na status bar.",
-    "status_compra_cancelado": "PASSOU",
-    "status_compra_detalhe": "TESTE_V58_FALTA2 exibiu Status_Compra=Cancelado, Status_Handover=Cancelado, Cancelado_Por=Carlos no card.",
-    "whatsapp": "PASSOU",
-    "whatsapp_detalhe": "URL gerada: api.whatsapp.com/send/?phone=5511987654321&text=Ol%C3%A1%2C+Ana+Silva%21+Passando+para+avisar+que+o+medicamento+TESTE_V58_WA+j%C3%A1+chegou... Encoding UTF-8 correto, sem mojibake. Nome 'Ana Silva' capitalizado. Phone 5511987654321 com DDI 55 correto. WHATSAPP campo atualizado para 'Tentativa registrada' apos envio.",
-    "atualizar_agora": "PASSOU",
-    "atualizar_agora_detalhe": "Botao 'Atualizar agora' clicado as 12:38. Estado 'Atualizando...' exibido. Refresh completado com dados atualizados.",
-    "cards": "PASSOU",
-    "cards_detalhe": "Cards exibem todos os campos: Cliente, Telefone, Recebimento, Atendente, Previsao, Pre-pago, WhatsApp, Ultima Acao. Layout adequado.",
-    "header": "PASSOU",
-    "header_detalhe": "Header exibe apenas 'Carlos' em OPERADOR ATUAL, sem formato 'Nome - Perfil'. Ultima Atualizacao e Ultima Acao visiveis.",
-    "logo": "PASSOU",
-    "logo_detalhe": "Logo 'Drogarias Conceito' visivel no header. Fallback nao necessario testado."
+    "tipo": "smoke manual (operador humano)",
+    "sessao": "2026-05-11",
+    "validacao_encomenda_preco_data": "PASSOU",
+    "validacao_encomenda_preco_data_detalhe": "Encomenda sem preco e sem data bloqueou corretamente conforme v59.",
+    "gravacao_medicamentos": "PASSOU",
+    "gravacao_medicamentos_detalhe": "Item salvo e gravado na planilha Medicamentos.",
+    "persistencia_apos_logout_login": "FALHOU_P0",
+    "persistencia_detalhe": "Apos logout e novo login, item salvo na planilha nao recarregou na tela. Regressao de persistencia P0.",
+    "atualizar_agora": "FALHOU_P0",
+    "atualizar_agora_detalhe": "Erro 'constant variable' ao clicar Atualizar agora. Regressao critica P0.",
+    "modal_cancelar": "NAO_TESTADO",
+    "whatsapp": "NAO_TESTADO",
+    "edicao_auditada": "NAO_TESTADO",
+    "logo_header_cards": "NAO_TESTADO"
   },
-  "limpeza": {
-    "registros_criados": ["TESTE_V58_FALTA2", "TESTE_V58_WA"],
-    "registros_cancelados": ["TESTE_V58_FALTA2 (11/05 12:15:32)", "TESTE_V58_WA (11/05 12:38:00)"],
-    "delete_fisico": false,
-    "usuarios_cabecalhos_abas_preservados": true,
-    "observacao": "TESTE_V58_ENCOMENDA de 10/05 nao verificado nesta sessao. Registros de teste cancelados logicamente, nao removidos fisicamente."
+  "smoke_v57_pos_rollback": {
+    "executado": false,
+    "motivo": "Rollback efetuado. Smoke adicional nao solicitado pelo usuario neste ciclo."
   },
-  "falhas": {
-    "criticas": [],
-    "medias": [
-      "Popup nativo de confirmacao ('Tem certeza que deseja cancelar?') dentro do iframe do GAS nao visivel via Claude in Chrome. Bloqueio de automacao - nao afeta usabilidade real. Operador humano ve e interage normalmente.",
-      "Verificacao de Compras_Medicamentos para TESTE_V58_WA nao concluida: sessao interrompida por limite de plano antes da confirmacao na planilha."
+  "falhas_v59": {
+    "criticas": [
+      "Persistencia apos logout/login: item salvo na planilha nao recarrega na tela. Regressao P0.",
+      "Atualizar agora: erro 'constant variable'. Regressao P0."
     ],
-    "leves": [
-      "Re-login necessario em 11/05 apos expiracao do token de sessao de 10/05 - comportamento esperado.",
-      "Registros de 10/05 (TESTE_V58_ENCOMENDA) nao visiveis em 11/05 sem Atualizar agora - filtro de data do frontend nao investigado a fundo.",
-      "CDP sendCommand timeout em 2 ocasioes durante chamadas pesadas ao backend GAS - renderer recuperou sem perda de dados."
-    ]
+    "medias": [],
+    "leves": []
   },
-  "bloqueio_popup_confirmacao": {
-    "descricao": "Ao clicar 'Cancelar pedido' no dropdown, o GAS exibe um confirm() nativo do navegador dentro do iframe com o texto: 'Tem certeza que deseja cancelar esta solicitação de medicamento? Essa ação vai marcar o pedido como CANCELADO no Handover e também na planilha de compras. Se foi um engano, você poderá reverter depois alterando o status para Pendente de compra ou Comprado.' Botoes: OK / Cancelar.",
-    "impacto_automacao": "Claude in Chrome nao consegue ver nem clicar em dialogs nativos do navegador dentro de iframes cross-origin.",
-    "impacto_producao": "NENHUM. Operador humano ve e confirma normalmente.",
-    "workaround_smoke": "Multiplas tentativas de click em coordenadas diferentes ate o popup ser confirmado manualmente (usuario clicou OK externamente ou o click caiu na posicao correta apos resize)."
+  "rollback_log": {
+    "versao_antes": 59,
+    "versao_apos": 57,
+    "comando": "clasp deploy --versionNumber 57 --deploymentId AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
+    "resultado": "Deployed AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw @57",
+    "confirmado_em": "2026-05-11",
+    "clasp_deployments_apos": "@57"
   },
   "proximos_passos": {
-    "republicar_v58": "clasp deploy --versionNumber 58 --deploymentId AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
-    "verificar_compras_medicamentos_wa": "Abrir planilha Compras_Medicamentos e confirmar linha TESTE_V58_WA com Status_Compra=Cancelado, Cancelado_Por=Carlos.",
-    "documentar_popup": "Considerar se o confirm() nativo e intencional ou se deve ser substituido por modal customizado no proximo ciclo."
+    "investigar_v59": "Identificar a variavel 'constant variable' que causa erro no Atualizar agora. Verificar se e conflito de const/let introduzido no Index.html v59.",
+    "investigar_persistencia": "Verificar se o erro de constant variable impede o carregamento de dados apos login (pode ser a mesma causa raiz).",
+    "corrigir_e_republicar": "Corrigir bug em nova branch ou commit, rodar smoke completo, publicar como v60.",
+    "pop_tocado": false
   },
-  "veredito": "v58 APROVADA COM RESSALVAS. Todos os fluxos funcionais testados e aprovados: login, criar encomenda/falta, edicao auditada, cancelamento, WhatsApp sem mojibake, espelho Compras_Medicamentos, Atualizar agora, UX de cards e header. Ressalvas: (1) popup nativo de confirmacao de cancelamento nao interagivel via automacao Claude in Chrome - sem impacto em producao; (2) espelho Compras_Medicamentos para TESTE_V58_WA nao verificado na planilha diretamente. Deployment permanece em v57 aguardando republicacao manual pelo usuario."
+  "historico_versoes": {
+    "v57": "ATIVA (versao de producao apos rollback de v59)",
+    "v58": "APROVADO_COM_RESSALVAS em 2026-05-11. Recursos: edicao auditada, ajustes UX.",
+    "v59": "REPROVADA em 2026-05-11. Falhas P0: constant variable / persistencia. Nao publicada em producao."
+  },
+  "veredito": "v59 REPROVADA. Rollback imediato para v57 efetuado. Deployment oficial aponta para v57. POP nao tocado. Causas raiz de v59 a investigar antes de novo ciclo."
 }

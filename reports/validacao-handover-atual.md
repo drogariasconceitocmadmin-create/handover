@@ -1,120 +1,93 @@
-# Validacao Handover v58 - Smoke Real
+# Incidente Handover — Rollback v59 → v57
 
 Projeto: Handover - Drogarias Conceito
 
 Branch: `hotfix/handover-p0-save-medicamentos`
 
-Commit local: `c923984 - feat(handover): adiciona edicao auditada e ajustes UX v57`
+Commit local: `e7eccee — fix(handover): v59 valida encomenda preco+data e modal cancelar medicamento`
 
 Deployment oficial: `AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw`
 
 URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec`
 
-Data smoke real: 2026-05-11
-
-Sessoes: 2026-05-10 (sem browser, rollback preventivo) + 2026-05-11 (smoke real)
+Data incidente: 2026-05-11
 
 ## Resultado
 
-Status geral: APROVADO_COM_RESSALVAS
+Status geral: **ROLLBACK_V57**
 
-Versao testada: 58.
+Versão antes do incidente: 59
 
-Versao ativa no deployment: 57 (aguarda republicacao manual).
+Rollback: **SIM** — deployment voltou para v57
 
-Rollback feito: SIM (preventivo de 10/05, mantido ate republicacao manual).
+Versão ativa final: **57**
 
-POP tocado: NAO.
+POP tocado: **NÃO**
 
-## Smoke v58 - Resultados por Item
+## Cronologia
+
+| Hora | Evento |
+|------|--------|
+| ~13:29 | v59 publicada via `clasp push` + `clasp deploy @59` |
+| ~13:30–13:46 | Smoke manual iniciado pelo operador |
+| ~13:46 | Falha P0 detectada: constant variable + persistência |
+| ~14:xx | Decisão: rollback imediato para v57 |
+| ~14:xx | `clasp deploy --versionNumber 57 ...` executado. Deployment confirmado @57 |
+
+## Smoke v59 — Resultados
 
 | Item | Resultado | Detalhe |
 |------|-----------|---------|
-| Login/PIN | PASSOU | Carlos/642068. Session token estabelecido. |
-| Criar Encomenda | PASSOU | TESTE_V58_WA criado 11/05 12:20:34. Campos salvos. |
-| Gravacao Medicamentos | PASSOU | saveData persistiu em aba Medicamentos. |
-| Espelho Compras_Medicamentos | PASSOU PARCIAL | FALTA2 confirmado. TESTE_V58_WA nao verificado na planilha (sessao interrompida). |
-| Persistencia logout/login | PASSOU | Re-login em 11/05, dados persistidos entre sessoes. |
-| Popup fecha pos-sucesso | PASSOU | Popup fecha apos confirmacao backend. |
-| Edicao de medicamento | PASSOU | Botao Editar presente. Formulario abre e salva. |
-| Auditoria_Handover (EDITAR) | PASSOU | Acao=EDITAR registrada com todos os campos. |
-| Criar Falta | PASSOU | TESTE_V58_FALTA2 criado 11/05 12:13:46. Tipo=Falta via keyboard nav. |
-| Cancelamento de Falta | PASSOU | FALTA2 cancelado 11/05 12:15:32. Card moveu para Cancelados. |
-| Status_Compra = Cancelado | PASSOU | Cancelado_Por=Carlos. Tag CANCELADO. Mensagem "Pedido cancelado." |
-| WhatsApp sem mojibake | PASSOU | URL: phone=5511987654321, texto "Ola, Ana Silva!" UTF-8 correto. |
-| Atualizar agora | PASSOU | Botao mostrou "Atualizando..." e completou. |
-| Cards maiores | PASSOU | Todos os campos visiveis no card. |
-| Header sem "Nome - Perfil" | PASSOU | Header exibe apenas "Carlos" como OPERADOR ATUAL. |
-| Logo ou fallback | PASSOU | Logo Drogarias Conceito visivel. |
+| Validação Encomenda sem preço+data | PASSOU | Bloqueou corretamente. |
+| Gravação em Medicamentos | PASSOU | Item salvo na planilha. |
+| Persistência após logout/login | **FALHOU P0** | Item salvo não recarrega na tela após novo login. |
+| Atualizar agora | **FALHOU P0** | Erro "constant variable" exibido ao clicar. |
+| Modal cancelar medicamento | NÃO TESTADO | Smoke interrompido por P0 antes deste item. |
+| WhatsApp | NÃO TESTADO | — |
+| Edição auditada | NÃO TESTADO | — |
+| Logo/header/cards | NÃO TESTADO | — |
 
-## WhatsApp - Detalhe do Link Gerado
+## Falhas P0
 
-URL capturada no tab aberto pelo botao "Avisar no WhatsApp":
+### 1. Erro "constant variable" ao Atualizar agora
+
+Ao clicar "Atualizar agora" após o login, o app exibe erro relacionado a `constant variable`.
+Causa provável: conflito de declaração `const` ou `let` introduzido no `Index.html` da v59
+(possivelmente dentro do novo código do modal de cancelamento ou das hints de validação).
+
+### 2. Item salvo não recarrega após logout/login
+
+Após salvar um medicamento (gravação confirmada na planilha) e fazer logout + login,
+o item não aparece na tela. Causa provável: o mesmo erro de `constant variable` impede
+a execução do `loadData` no carregamento da sessão.
+
+## Rollback
 
 ```
-https://api.whatsapp.com/send/?phone=5511987654321&text=Ol%C3%A1%2C+Ana+Silva%21+Passando+para+avisar+que+o+medicamento+TESTE_V58_WA+j%C3%A1+chegou+aqui+na+Drogarias+Conceito+e+est%C3%A1+separado+para+voc%C3%AA.%0A%0AVoc%C3%AA+prefere+retirar+na+loja+ou+quer+que+a+gente+combine+a+entrega%3F+Obrigado%21&type=phone_number&app_absent=0
+clasp deploy --versionNumber 57 --deploymentId AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw
 ```
 
-Verificacoes:
-- Phone: `5511987654321` - DDI 55 + DDD 11 + numero: CORRETO
-- Texto decodificado: `Ola, Ana Silva! Passando para avisar que o medicamento TESTE_V58_WA ja chegou aqui na Drogarias Conceito e esta separado para voce. Voce prefere retirar na loja ou quer que a gente combine a entrega? Obrigado!`
-- Encoding: UTF-8 URL-encoded, sem mojibake: CORRETO
-- Nome capitalizado "Ana Silva": CORRETO
+Saída: `Deployed AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw @57`
 
-## Limpeza
+Confirmado via `clasp deployments`: deployment oficial exibe `@57`.
 
-Registros criados: TESTE_V58_FALTA2, TESTE_V58_WA.
+## Próximos Passos
 
-Registros cancelados logicamente:
-- TESTE_V58_FALTA2: CANCELADO em 11/05 12:15:32
-- TESTE_V58_WA: CANCELADO em 11/05 12:38:00
+1. Investigar `constant variable` no `Index.html` da v59: procurar por `const` redeclarado ou `let` em escopo conflitante no código novo do modal de cancelamento e nas hints de validação.
+2. Verificar se a causa raiz do `constant variable` é a mesma que impede o carregamento após login.
+3. Corrigir em nova branch ou commit. Rodar smoke completo antes de publicar como v60.
+4. Não tocar POP neste ciclo.
 
-Delete fisico: NAO.
+## Histórico de Versões
 
-## Bloqueio Operacional: Popup Nativo de Confirmacao
-
-Ao clicar "Cancelar pedido" no dropdown, o GAS exibe um `confirm()` nativo do navegador dentro do iframe com o texto:
-
-> "Tem certeza que deseja cancelar esta solicitacao de medicamento? Essa acao vai marcar o pedido como CANCELADO no Handover e tambem na planilha de compras. Se foi um engano, voce podera reverter depois alterando o status para Pendente de compra ou Comprado."
-
-Botoes: **OK** / **Cancelar**
-
-Impacto na automacao: Claude in Chrome nao consegue ver nem interagir com dialogs nativos do navegador em iframes cross-origin.
-
-Impacto em producao: NENHUM. Operador humano ve e confirma normalmente.
-
-## Falhas
-
-Criticas: nenhuma.
-
-Medias:
-
-1. Popup nativo de confirmacao de cancelamento nao visivel via automacao Claude in Chrome. Sem impacto em producao.
-2. Espelho Compras_Medicamentos para TESTE_V58_WA nao verificado diretamente na planilha (sessao interrompida por limite de plano antes da confirmacao).
-
-Leves:
-
-1. Re-login necessario em 11/05 apos expiracao do token de 10/05 (comportamento esperado).
-2. Registros de 10/05 nao visiveis em 11/05 sem Atualizar agora - filtro de data do frontend nao investigado.
-3. CDP sendCommand timeout em 2 ocasioes durante chamadas pesadas ao GAS - renderer recuperou sem perda de dados.
-
-## Proximos Passos
-
-1. Republicar v58 no deployment oficial:
-   ```
-   clasp deploy --versionNumber 58 --deploymentId AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw
-   ```
-
-2. Verificar manualmente na planilha Compras_Medicamentos se TESTE_V58_WA tem Status_Compra=Cancelado e Cancelado_Por=Carlos.
-
-3. Decidir se o `confirm()` nativo de cancelamento e intencional ou deve ser substituido por modal customizado no proximo ciclo.
+| Versão | Status |
+|--------|--------|
+| v57 | **ATIVA** — versão de produção após rollback |
+| v58 | APROVADO COM RESSALVAS (2026-05-11) — recursos: edição auditada, ajustes UX |
+| v59 | **REPROVADA** (2026-05-11) — P0: constant variable / persistência |
 
 ## Veredito
 
-v58 APROVADA COM RESSALVAS.
-
-Todos os fluxos funcionais testados e aprovados: login, criar encomenda/falta, edicao auditada, cancelamento, WhatsApp sem mojibake, espelho Compras_Medicamentos, Atualizar agora, UX de cards e header.
-
-Ressalvas: (1) popup nativo de confirmacao de cancelamento nao interagivel via automacao - sem impacto em producao; (2) espelho Compras_Medicamentos para TESTE_V58_WA nao verificado diretamente na planilha.
-
-Deployment permanece em v57 aguardando republicacao manual pelo usuario. Codigo c923984 intacto na branch.
+v59 **REPROVADA**. Rollback imediato para v57 efetuado e confirmado.
+Deployment oficial aponta para v57. POP não tocado.
+Causas raiz de v59 a investigar antes de novo ciclo de publicação.
