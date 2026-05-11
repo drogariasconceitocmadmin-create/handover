@@ -1,154 +1,107 @@
-# Validacao Handover v57 - Performance Save Medicamentos
+# Validacao Handover v58 - Tentativa de Release / Rollback Preventivo
 
 Projeto: Handover - Drogarias Conceito
 
-Branch publicada: `hotfix/handover-p0-save-medicamentos`
+Branch: `hotfix/handover-p0-save-medicamentos`
 
-Commit publicado: `636ef8d - perf(handover): reduz espera ao salvar medicamento e melhora leitura dos cards`
+Commit local: `c923984 - feat(handover): adiciona edicao auditada e ajustes UX v57`
 
 Deployment oficial: `AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw`
 
 URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec`
 
+Data tentativa: 2026-05-10
+
 ## Resultado
 
-Status geral: OK COM RESSALVA
+Status geral: ROLLBACK PREVENTIVO
 
-Versao publicada: 57.
+Versao tentada: 58.
 
-Rollback feito: NAO.
+Versao ativa apos rollback: 57.
+
+Rollback feito: SIM.
+
+Motivo: Extensao Claude in Chrome indisponivel em duas tentativas consecutivas. Smoke real nao executado. Rollback preventivo obrigatorio conforme regras da release.
 
 POP tocado: NAO.
 
-## Preflight
+## Preflight v58
 
 - Branch `hotfix/handover-p0-save-medicamentos`: OK.
-- HEAD `636ef8d`: OK.
+- HEAD `c923984`: OK.
+- Working tree limpo antes do push: OK.
 - `.clasp.json` do Handover oficial: OK.
-- POP ausente: OK.
+- POP ausente no diff e no codigo: OK.
 - `sheet.clear()` novo: ausente.
-- `deleteRow` novo: ausente; ocorrencia existente e legada nao entrou neste hotfix.
-- Checklist nao foi alterado pelo hotfix: OK.
-- Login/PIN nao foi alterado pelo hotfix: OK.
-- `Status_Compra` nao foi alterado pelo hotfix: OK.
-- `saveData` nao chama `setupSpreadsheet()` diretamente: OK.
-- Observacao: `requireSessionHandover_` ainda chama `setupSpreadsheet()` por caminho legado de validacao de sessao.
-- Log de performance presente: `[Handover][perf] saveData total...` no backend e `[Handover] saveData ms=...` no console do front.
+- `deleteRow` novo: ausente.
+- Arquivos do commit `c923984`: apenas `Code.gs` e `Index.html`.
+- `saveData` preservado: OK.
+- Login/PIN preservado: OK.
+- `Medicamentos`/`Compras_Medicamentos` preservados: OK.
+- `Status_Compra` preservado: OK.
+- `Auditoria_Handover` aditiva (nao substitui): OK.
+- Botao Editar presente no diff: OK.
 
-## Publicacao
+## Publicacao v58
 
-- `clasp.cmd status`: OK.
-- `clasp.cmd push`: OK.
-- Versao criada: 57.
-- Deployment oficial atualizado para v57.
-- Novo deployment nao foi criado.
+- `clasp.cmd status`: OK - 3 arquivos rastreados.
+- `clasp.cmd push`: OK - `appsscript.json`, `Code.gs`, `Index.html` enviados as 23:09:58.
+- Versao criada: 58 - `Handover v58 edicao auditada UX cards`.
+- Deployment oficial atualizado para v58: OK.
+- Novo deployment nao foi criado: OK.
 
-## Smoke 1 - Login
+## Smoke v58
 
-- Login Carlos/admin: OK.
-- Dashboard abriu: OK.
+Nao executado.
 
-## Smoke 2 - Performance Encomenda
+Motivo: Extensao Claude in Chrome indisponivel. Nenhuma conexao com o browser foi estabelecida em duas tentativas consecutivas. Smoke real impossivel sem browser.
 
-Registro:
+Itens nao testados:
 
-- `TESTE_PERF_ENCOMENDA_V57`
+- Login/PIN
+- Criar Encomenda TESTE_V58_ENCOMENDA
+- Gravacao em Medicamentos
+- Espelho em Compras_Medicamentos
+- Persistencia apos logout/login
+- Popup fecha somente apos sucesso real
+- Edicao de medicamento
+- Auditoria_Handover (Acao = EDITAR)
+- Criar Falta TESTE_V58_FALTA
+- Cancelamento de Falta
+- Status_Compra = Cancelado
+- WhatsApp sem mojibake
+- Atualizar agora
+- Cards maiores
+- Header sem "Nome - Perfil"
+- Logo ou fallback
 
-Resultado:
+## Rollback
 
-- Tempo do clique Salvar ate modal fechar com sucesso real: 11,7s.
-- Log capturado: `[Handover] saveData ms= 11121`.
-- Gravou em `Medicamentos`: OK.
-- Espelhou em `Compras_Medicamentos`: OK.
-- Persistiu apos logout/login: OK.
-- Modal nao fechou em falso: OK.
-- Campos conferidos:
-  - Fornecedor_Compra: `Panpharma`.
-  - Codigo_Compra_Fornecedor: `PERF57`.
-  - Forma_Recebimento: `A combinar`.
-
-Observacao:
-
-- Uma tentativa sem `Previsao_Entrega` foi bloqueada pela validacao do formulario com a mensagem `Informe a previsao de entrega.`; nao houve chamada de sucesso falsa.
-
-## Smoke 3 - Performance Falta
-
-Registro:
-
-- `TESTE_PERF_FALTA_V57`
-
-Resultado:
-
-- Tempo do clique Salvar ate modal fechar com sucesso real: 19,9s.
-- Log capturado: `[Handover] saveData ms= 19619`.
-- Gravou em `Medicamentos`: OK.
-- Espelhou em `Compras_Medicamentos`: OK.
-- Cancelamento pelo Handover: OK.
-- `Compras_Medicamentos.Status_Compra` ficou `Cancelado`: OK.
-
-## Smoke 4 - Regressao curta
-
-WhatsApp:
-
-- Encomenda marcada como Comprado.
-- Botao `Avisar no WhatsApp` abriu URL `api.whatsapp.com` sem envio real.
-- Texto decodificado conferido com acentuacao correta:
-  - `Olá, Teste Perf!`
-  - `está`
-  - `você`
-  - `Você`
-- Mojibake visual: nao observado.
-
-Atualizar agora:
-
-- Botao virou `Atualizando...`: OK.
-- Botao voltou para `Atualizar agora`: OK.
-
-Menu:
-
-- Menu do card nao trouxe `Imprimir`: OK.
-
-Cards:
-
-- Titulo do card medido em `19px`: OK.
-- Descricao do card medida em `15px`: OK.
-- Sem overflow horizontal observado: OK.
-
-## Performance residual
-
-- Estimativa anterior: 25-30s.
-- Encomenda v57 medida: 11,7s.
-- Falta v57 medida: 19,9s.
-- `refreshDashboardBundle` ainda aparece pesado em logs do front, com medicoes observadas de 14,8s, 20,0s e 26,4s.
+- De: v58
+- Para: v57
+- Deployment revertido via `clasp deploy --versionNumber 57`: OK.
+- Codigo local (branch `hotfix/handover-p0-save-medicamentos`, commit `c923984`) nao foi alterado.
+- Nota: apenas o apontamento do deployment foi revertido para v57. A v58 continua disponivel como versao no Apps Script e pode ser republicada sem novo `clasp push` apos smoke manual bem-sucedido.
 
 ## Limpeza
 
-Registros criados nesta rodada:
+Registros criados: nenhum (smoke nao executado).
 
-- `TESTE_PERF_ENCOMENDA_V57`
-- `TESTE_PERF_FALTA_V57`
+Registros removidos: nenhum.
 
-Limpeza realizada:
-
-- Os dois registros foram cancelados logicamente pelo Handover.
-- Nenhuma linha foi apagada fisicamente.
-- Usuarios, cabecalhos e abas nao foram alterados manualmente.
+Delete fisico: nao.
 
 ## Falhas
 
-Criticas:
-
-- Nenhuma.
+Criticas: nenhuma.
 
 Medias:
 
-- Falta ainda levou 19,9s para salvar; abaixo do pior caso de 25-30s, mas ainda perceptivelmente lenta.
-- `refreshDashboardBundle` continua pesado, com medicoes entre 14,8s e 26,4s.
+- Smoke v58 nao executado. Extensao Claude in Chrome indisponivel. Rollback preventivo aplicado conforme regras.
 
-Leves:
-
-- Tentativa sem previsao de entrega foi bloqueada corretamente por validacao do formulario.
+Leves: nenhuma.
 
 ## Veredito
 
-v57 publicada e mantida. Persistencia real, espelho em `Compras_Medicamentos`, WhatsApp, Atualizar agora e cards passaram. A performance melhorou na Encomenda, mas ainda ha gargalo residual no refresh e na Falta.
+v58 publicada no GAS (clasp push + versao 58 + deployment atualizado). Smoke bloqueado por indisponibilidade do browser. Rollback preventivo para v57 aplicado conforme regras obrigatorias da release. Codigo c923984 preservado intacto na branch. v58 esta pronta para nova tentativa de smoke assim que o browser estiver disponivel - nao e necessario novo clasp push, apenas republicar o deployment para versao 58.

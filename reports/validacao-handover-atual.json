@@ -1,119 +1,83 @@
 {
   "projeto": "Handover - Drogarias Conceito",
-  "status_geral": "OK_COM_RESSALVA",
+  "status_geral": "ROLLBACK_PREVENTIVO",
   "branch_publicada": "hotfix/handover-p0-save-medicamentos",
-  "commit_publicado": "636ef8d",
-  "versao_publicada": 57,
-  "rollback_feito": false,
+  "commit_publicado": "c923984",
+  "versao_tentada": 58,
+  "versao_ativa": 57,
+  "rollback_feito": true,
+  "rollback_motivo": "Smoke v58 bloqueado por indisponibilidade da extensao Claude in Chrome. Rollback preventivo obrigatorio conforme regras da release.",
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
   "pop_tocado": false,
-  "preflight": {
+  "data_tentativa": "2026-05-10",
+  "preflight_v58": {
     "branch_correta": true,
-    "head_636ef8d": true,
+    "head_c923984": true,
     "clasp_handover": true,
     "pop_ausente": true,
     "sheet_clear_novo": false,
     "deleteRow_novo": false,
-    "checklist_alterado": false,
-    "login_pin_alterado": false,
-    "status_compra_alterado": false,
-    "saveData_chamada_direta_setupSpreadsheet_removida": true,
-    "requireSessionHandover_setupSpreadsheet_legado_presente": true,
-    "log_perf_presente": true
+    "working_tree_limpo": true,
+    "arquivos_commit": ["Code.gs", "Index.html"],
+    "saveData_preservado": true,
+    "login_pin_preservado": true,
+    "medicamentos_preservado": true,
+    "compras_medicamentos_preservado": true,
+    "status_compra_preservado": true,
+    "auditoria_handover_aditiva": true,
+    "botao_editar_presente": true
   },
-  "publicacao": {
+  "publicacao_v58": {
     "clasp_status": "OK",
-    "clasp_push": "OK",
-    "versao_criada": 57,
+    "clasp_push": "OK - 3 arquivos enviados as 23:09:58",
+    "versao_criada": 58,
     "deployment_atualizado": true,
     "novo_deployment_criado": false
   },
-  "login_pin": {
-    "login_carlos_admin": true,
-    "dashboard_abriu": true,
-    "logout_login_persistencia_testado": true
+  "smoke_v58": {
+    "executado": false,
+    "motivo_bloqueio": "Extensao Claude in Chrome indisponivel em duas tentativas consecutivas",
+    "login_pin": "NAO_TESTADO",
+    "encomenda": "NAO_TESTADO",
+    "medicamentos": "NAO_TESTADO",
+    "compras_medicamentos": "NAO_TESTADO",
+    "persistencia_logout_login": "NAO_TESTADO",
+    "popup_pos_sucesso": "NAO_TESTADO",
+    "edicao_medicamento": "NAO_TESTADO",
+    "auditoria_handover": "NAO_TESTADO",
+    "falta": "NAO_TESTADO",
+    "cancelamento_falta": "NAO_TESTADO",
+    "whatsapp": "NAO_TESTADO",
+    "atualizar_agora": "NAO_TESTADO",
+    "cards": "NAO_TESTADO",
+    "header": "NAO_TESTADO",
+    "logo": "NAO_TESTADO"
   },
-  "performance": {
-    "tempo_antes_estimado": "25-30s",
-    "encomenda": {
-      "registro": "TESTE_PERF_ENCOMENDA_V57",
-      "tempo_ms": 11683,
-      "tempo_legivel": "11,7s",
-      "log_console": "[Handover] saveData ms= 11121",
-      "modal_fechou_apos_sucesso_real": true,
-      "medicamentos": true,
-      "compras_medicamentos": true,
-      "persistencia_logout_login": true
-    },
-    "falta": {
-      "registro": "TESTE_PERF_FALTA_V57",
-      "tempo_ms": 19915,
-      "tempo_legivel": "19,9s",
-      "log_console": "[Handover] saveData ms= 19619",
-      "medicamentos": true,
-      "compras_medicamentos": true,
-      "cancelamento_compras_refletido": true
-    },
-    "refresh_dashboard": {
-      "refreshDashboardBundle_ms_observados": [14821, 20023, 26432],
-      "atualizar_agora": "OK - botao vira Atualizando... e volta para Atualizar agora",
-      "gargalo_residual": "refreshDashboardBundle ainda fica na faixa de 14-26s em algumas operacoes"
-    }
-  },
-  "medicamentos": {
-    "criacao_encomenda": true,
-    "criacao_falta": true,
-    "persistencia_real": true,
-    "placeholder_otimista_falso": false
-  },
-  "compras_medicamentos": {
-    "encomenda_espelhou": true,
-    "falta_espelhou": true,
-    "fornecedor_codigo_forma_encomenda": true,
-    "cancelamento_falta_status_compra": "Cancelado",
-    "cancelamento_encomenda_status_compra": "Cancelado"
-  },
-  "regressao_curta": {
-    "whatsapp": {
-      "abriu_sem_envio_real": true,
-      "url": "https://api.whatsapp.com/send/?phone=5521999999999",
-      "texto_visual": "OK - Ola/Teste Perf, Voce/esta/voce com acentuacao correta na URL decodificada",
-      "mojibake_visual": false
-    },
-    "menu_sem_imprimir": true,
-    "atualizar_agora": true,
-    "cards": {
-      "titulo_font_size": "19px",
-      "descricao_font_size": "15px",
-      "overflow_horizontal": false
-    }
+  "rollback": {
+    "de_versao": 58,
+    "para_versao": 57,
+    "deployment_revertido": true,
+    "codigo_revertido_no_gas": true,
+    "codigo_local_git_inalterado": true,
+    "nota": "Apenas o deployment foi revertido para v57. O codigo local (c923984) permanece na branch. v58 pode ser republicada apos smoke manual bem-sucedido."
   },
   "limpeza": {
-    "registros_criados": [
-      "TESTE_PERF_ENCOMENDA_V57",
-      "TESTE_PERF_FALTA_V57"
-    ],
-    "registros_removidos": [
-      "TESTE_PERF_ENCOMENDA_V57 - cancelado logicamente",
-      "TESTE_PERF_FALTA_V57 - cancelado logicamente"
-    ],
+    "registros_criados": [],
+    "registros_removidos": [],
     "delete_fisico": false,
     "usuarios_cabecalhos_abas_preservados": true
   },
   "falhas": {
     "criticas": [],
     "medias": [
-      "Falta ainda levou 19,9s para salvar; abaixo do pior caso de 25-30s, mas ainda perceptivelmente lenta.",
-      "refreshDashboardBundle continua pesado, com medicoes entre 14,8s e 26,4s."
+      "Smoke v58 nao executado: extensao Claude in Chrome indisponivel. Rollback preventivo aplicado conforme regras."
     ],
-    "leves": [
-      "Tentativa sem Previsao de entrega foi bloqueada corretamente por validacao do formulario; nao foi falha de backend."
-    ]
+    "leves": []
   },
   "reports": {
     "commitado": true,
     "push": true
   },
-  "veredito": "v57 publicada e mantida. Persistencia real, espelho em Compras_Medicamentos, WhatsApp, Atualizar agora e cards passaram. Performance melhorou na Encomenda, mas ainda ha gargalo residual no refresh e na Falta."
+  "veredito": "v58 publicada (Code.gs + Index.html via clasp push, versao 58 criada, deployment atualizado). Smoke bloqueado por indisponibilidade do browser. Rollback preventivo para v57 conforme regras obrigatorias. Codigo c923984 preservado na branch. v58 pronta para nova tentativa de smoke quando browser estiver disponivel."
 }
