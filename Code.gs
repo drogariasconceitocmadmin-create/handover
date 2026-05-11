@@ -2206,7 +2206,7 @@ function ensureTodayChecklistForTurno_(turnoParam) {
     });
   }
 
-  const rowsToInsert = [];
+  let rowsToInsert = [];
   template.forEach(function (templateItem) {
     const itemKey =
       identityPrefix + '|' + buildChecklistIdentityKey_(sanitizeText_(templateItem.item));
@@ -2400,12 +2400,18 @@ function refreshDashboardBundle(checklistTurnoOpt, sessionToken) {
   setupSpreadsheet();
   requireSessionHandover_(sessionToken);
   var turno = sanitizeChecklistTurno_(checklistTurnoOpt || inferDefaultChecklistTurno_());
+  var checklistPayload = null;
+  try {
+    checklistPayload = buildChecklistTurnoPayload_(turno);
+  } catch (eChecklist) {
+    Logger.log('[Handover] refreshDashboardBundle: checklist falhou, retornando null. ' + eChecklist.message);
+  }
   return {
     geral: fetchSheetItems_(SHEET_NAMES.GERAL).filter(function (item) {
       return !item.Resolvido;
     }),
     medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS),
-    checklistTurno: buildChecklistTurnoPayload_(turno),
+    checklistTurno: checklistPayload,
     bundleTurno: turno,
   };
 }
