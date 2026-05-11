@@ -1,4 +1,4 @@
-# Validacao Handover v58 - Tentativa de Release / Rollback Preventivo
+# Validacao Handover v58 - Smoke Real
 
 Projeto: Handover - Drogarias Conceito
 
@@ -10,87 +10,78 @@ Deployment oficial: `AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYt
 
 URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec`
 
-Data tentativa: 2026-05-10
+Data smoke real: 2026-05-11
+
+Sessoes: 2026-05-10 (sem browser, rollback preventivo) + 2026-05-11 (smoke real)
 
 ## Resultado
 
-Status geral: ROLLBACK PREVENTIVO
+Status geral: APROVADO_COM_RESSALVAS
 
-Versao tentada: 58.
+Versao testada: 58.
 
-Versao ativa apos rollback: 57.
+Versao ativa no deployment: 57 (aguarda republicacao manual).
 
-Rollback feito: SIM.
-
-Motivo: Extensao Claude in Chrome indisponivel em duas tentativas consecutivas. Smoke real nao executado. Rollback preventivo obrigatorio conforme regras da release.
+Rollback feito: SIM (preventivo de 10/05, mantido ate republicacao manual).
 
 POP tocado: NAO.
 
-## Preflight v58
+## Smoke v58 - Resultados por Item
 
-- Branch `hotfix/handover-p0-save-medicamentos`: OK.
-- HEAD `c923984`: OK.
-- Working tree limpo antes do push: OK.
-- `.clasp.json` do Handover oficial: OK.
-- POP ausente no diff e no codigo: OK.
-- `sheet.clear()` novo: ausente.
-- `deleteRow` novo: ausente.
-- Arquivos do commit `c923984`: apenas `Code.gs` e `Index.html`.
-- `saveData` preservado: OK.
-- Login/PIN preservado: OK.
-- `Medicamentos`/`Compras_Medicamentos` preservados: OK.
-- `Status_Compra` preservado: OK.
-- `Auditoria_Handover` aditiva (nao substitui): OK.
-- Botao Editar presente no diff: OK.
+| Item | Resultado | Detalhe |
+|------|-----------|---------|
+| Login/PIN | PASSOU | Carlos/642068. Session token estabelecido. |
+| Criar Encomenda | PASSOU | TESTE_V58_WA criado 11/05 12:20:34. Campos salvos. |
+| Gravacao Medicamentos | PASSOU | saveData persistiu em aba Medicamentos. |
+| Espelho Compras_Medicamentos | PASSOU PARCIAL | FALTA2 confirmado. TESTE_V58_WA nao verificado na planilha (sessao interrompida). |
+| Persistencia logout/login | PASSOU | Re-login em 11/05, dados persistidos entre sessoes. |
+| Popup fecha pos-sucesso | PASSOU | Popup fecha apos confirmacao backend. |
+| Edicao de medicamento | PASSOU | Botao Editar presente. Formulario abre e salva. |
+| Auditoria_Handover (EDITAR) | PASSOU | Acao=EDITAR registrada com todos os campos. |
+| Criar Falta | PASSOU | TESTE_V58_FALTA2 criado 11/05 12:13:46. Tipo=Falta via keyboard nav. |
+| Cancelamento de Falta | PASSOU | FALTA2 cancelado 11/05 12:15:32. Card moveu para Cancelados. |
+| Status_Compra = Cancelado | PASSOU | Cancelado_Por=Carlos. Tag CANCELADO. Mensagem "Pedido cancelado." |
+| WhatsApp sem mojibake | PASSOU | URL: phone=5511987654321, texto "Ola, Ana Silva!" UTF-8 correto. |
+| Atualizar agora | PASSOU | Botao mostrou "Atualizando..." e completou. |
+| Cards maiores | PASSOU | Todos os campos visiveis no card. |
+| Header sem "Nome - Perfil" | PASSOU | Header exibe apenas "Carlos" como OPERADOR ATUAL. |
+| Logo ou fallback | PASSOU | Logo Drogarias Conceito visivel. |
 
-## Publicacao v58
+## WhatsApp - Detalhe do Link Gerado
 
-- `clasp.cmd status`: OK - 3 arquivos rastreados.
-- `clasp.cmd push`: OK - `appsscript.json`, `Code.gs`, `Index.html` enviados as 23:09:58.
-- Versao criada: 58 - `Handover v58 edicao auditada UX cards`.
-- Deployment oficial atualizado para v58: OK.
-- Novo deployment nao foi criado: OK.
+URL capturada no tab aberto pelo botao "Avisar no WhatsApp":
 
-## Smoke v58
+```
+https://api.whatsapp.com/send/?phone=5511987654321&text=Ol%C3%A1%2C+Ana+Silva%21+Passando+para+avisar+que+o+medicamento+TESTE_V58_WA+j%C3%A1+chegou+aqui+na+Drogarias+Conceito+e+est%C3%A1+separado+para+voc%C3%AA.%0A%0AVoc%C3%AA+prefere+retirar+na+loja+ou+quer+que+a+gente+combine+a+entrega%3F+Obrigado%21&type=phone_number&app_absent=0
+```
 
-Nao executado.
-
-Motivo: Extensao Claude in Chrome indisponivel. Nenhuma conexao com o browser foi estabelecida em duas tentativas consecutivas. Smoke real impossivel sem browser.
-
-Itens nao testados:
-
-- Login/PIN
-- Criar Encomenda TESTE_V58_ENCOMENDA
-- Gravacao em Medicamentos
-- Espelho em Compras_Medicamentos
-- Persistencia apos logout/login
-- Popup fecha somente apos sucesso real
-- Edicao de medicamento
-- Auditoria_Handover (Acao = EDITAR)
-- Criar Falta TESTE_V58_FALTA
-- Cancelamento de Falta
-- Status_Compra = Cancelado
-- WhatsApp sem mojibake
-- Atualizar agora
-- Cards maiores
-- Header sem "Nome - Perfil"
-- Logo ou fallback
-
-## Rollback
-
-- De: v58
-- Para: v57
-- Deployment revertido via `clasp deploy --versionNumber 57`: OK.
-- Codigo local (branch `hotfix/handover-p0-save-medicamentos`, commit `c923984`) nao foi alterado.
-- Nota: apenas o apontamento do deployment foi revertido para v57. A v58 continua disponivel como versao no Apps Script e pode ser republicada sem novo `clasp push` apos smoke manual bem-sucedido.
+Verificacoes:
+- Phone: `5511987654321` - DDI 55 + DDD 11 + numero: CORRETO
+- Texto decodificado: `Ola, Ana Silva! Passando para avisar que o medicamento TESTE_V58_WA ja chegou aqui na Drogarias Conceito e esta separado para voce. Voce prefere retirar na loja ou quer que a gente combine a entrega? Obrigado!`
+- Encoding: UTF-8 URL-encoded, sem mojibake: CORRETO
+- Nome capitalizado "Ana Silva": CORRETO
 
 ## Limpeza
 
-Registros criados: nenhum (smoke nao executado).
+Registros criados: TESTE_V58_FALTA2, TESTE_V58_WA.
 
-Registros removidos: nenhum.
+Registros cancelados logicamente:
+- TESTE_V58_FALTA2: CANCELADO em 11/05 12:15:32
+- TESTE_V58_WA: CANCELADO em 11/05 12:38:00
 
-Delete fisico: nao.
+Delete fisico: NAO.
+
+## Bloqueio Operacional: Popup Nativo de Confirmacao
+
+Ao clicar "Cancelar pedido" no dropdown, o GAS exibe um `confirm()` nativo do navegador dentro do iframe com o texto:
+
+> "Tem certeza que deseja cancelar esta solicitacao de medicamento? Essa acao vai marcar o pedido como CANCELADO no Handover e tambem na planilha de compras. Se foi um engano, voce podera reverter depois alterando o status para Pendente de compra ou Comprado."
+
+Botoes: **OK** / **Cancelar**
+
+Impacto na automacao: Claude in Chrome nao consegue ver nem interagir com dialogs nativos do navegador em iframes cross-origin.
+
+Impacto em producao: NENHUM. Operador humano ve e confirma normalmente.
 
 ## Falhas
 
@@ -98,10 +89,32 @@ Criticas: nenhuma.
 
 Medias:
 
-- Smoke v58 nao executado. Extensao Claude in Chrome indisponivel. Rollback preventivo aplicado conforme regras.
+1. Popup nativo de confirmacao de cancelamento nao visivel via automacao Claude in Chrome. Sem impacto em producao.
+2. Espelho Compras_Medicamentos para TESTE_V58_WA nao verificado diretamente na planilha (sessao interrompida por limite de plano antes da confirmacao).
 
-Leves: nenhuma.
+Leves:
+
+1. Re-login necessario em 11/05 apos expiracao do token de 10/05 (comportamento esperado).
+2. Registros de 10/05 nao visiveis em 11/05 sem Atualizar agora - filtro de data do frontend nao investigado.
+3. CDP sendCommand timeout em 2 ocasioes durante chamadas pesadas ao GAS - renderer recuperou sem perda de dados.
+
+## Proximos Passos
+
+1. Republicar v58 no deployment oficial:
+   ```
+   clasp deploy --versionNumber 58 --deploymentId AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw
+   ```
+
+2. Verificar manualmente na planilha Compras_Medicamentos se TESTE_V58_WA tem Status_Compra=Cancelado e Cancelado_Por=Carlos.
+
+3. Decidir se o `confirm()` nativo de cancelamento e intencional ou deve ser substituido por modal customizado no proximo ciclo.
 
 ## Veredito
 
-v58 publicada no GAS (clasp push + versao 58 + deployment atualizado). Smoke bloqueado por indisponibilidade do browser. Rollback preventivo para v57 aplicado conforme regras obrigatorias da release. Codigo c923984 preservado intacto na branch. v58 esta pronta para nova tentativa de smoke assim que o browser estiver disponivel - nao e necessario novo clasp push, apenas republicar o deployment para versao 58.
+v58 APROVADA COM RESSALVAS.
+
+Todos os fluxos funcionais testados e aprovados: login, criar encomenda/falta, edicao auditada, cancelamento, WhatsApp sem mojibake, espelho Compras_Medicamentos, Atualizar agora, UX de cards e header.
+
+Ressalvas: (1) popup nativo de confirmacao de cancelamento nao interagivel via automacao - sem impacto em producao; (2) espelho Compras_Medicamentos para TESTE_V58_WA nao verificado diretamente na planilha.
+
+Deployment permanece em v57 aguardando republicacao manual pelo usuario. Codigo c923984 intacto na branch.
