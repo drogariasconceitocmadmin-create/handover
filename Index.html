@@ -3857,6 +3857,7 @@
           (formModalOverlay && !formModalOverlay.classList.contains('hidden')) ||
           (operadorRequiredOverlay && !operadorRequiredOverlay.classList.contains('hidden')) ||
           (reopenConfirmOverlay && !reopenConfirmOverlay.classList.contains('hidden')) ||
+          (medCancelOverlay && !medCancelOverlay.classList.contains('hidden')) ||
           (cardDetailOverlay && !cardDetailOverlay.classList.contains('hidden')) ||
           (auditOv && !auditOv.classList.contains('hidden'))
         );
@@ -4375,6 +4376,7 @@
         if (!patch || !patch.checklistItem || !patch.checklistItem.ID) {
           return;
         }
+        ensureDashboardChecklistShell_();
         var items = dashboardData.checklistTurno.items || [];
         var idx = items.findIndex(function (i) {
           return checklistDraftKey_(i.ID) === checklistDraftKey_(patch.checklistItem.ID);
@@ -5361,15 +5363,22 @@
       }
 
       function renderAll() {
-        updateLastActionLabel_();
-        updateMainTabBadges_();
-        renderDeskSidebar_();
-        renderSummary();
-        renderQueue();
-        renderChecklistSection();
+        try {
+          ensureDashboardChecklistShell_();
+          updateLastActionLabel_();
+          updateMainTabBadges_();
+          renderDeskSidebar_();
+          renderSummary();
+          renderQueue();
+          renderChecklistSection();
+        } catch (err) {
+          console.error('Handover: renderAll falhou', err);
+          showToast_('Erro ao atualizar o painel. Abra o console (F12) para detalhes.', true);
+        }
       }
 
       function renderSummary() {
+        ensureDashboardChecklistShell_();
         const allQueueItems = buildWorkQueueItems(dashboardData);
         const geralItems = allQueueItems.filter(function (item) {
           return item.type === 'geral';
@@ -7524,6 +7533,7 @@
       }
 
       function renderChecklistSummaryBarAndHints_() {
+        ensureDashboardChecklistShell_();
         const checklist = dashboardData.checklistTurno;
         const items = checklist.items || [];
         const summary = checklist.summary || buildChecklistSummary_(items);
@@ -7557,6 +7567,7 @@
         captureObservationDraftsFromDom_();
         renderChecklistSummaryBarAndHints_();
 
+        ensureDashboardChecklistShell_();
         const checklist = dashboardData.checklistTurno;
         const items = checklist.items || [];
 
@@ -7641,6 +7652,7 @@
 
       function findChecklistItemModel_(itemId) {
         var key = checklistDraftKey_(itemId);
+        ensureDashboardChecklistShell_();
         var items = dashboardData.checklistTurno.items || [];
         for (var i = 0; i < items.length; i++) {
           if (checklistDraftKey_(items[i].ID) === key) {
@@ -7654,6 +7666,7 @@
         if (!checklistCategories) {
           return;
         }
+        ensureDashboardChecklistShell_();
         var checklist = dashboardData.checklistTurno;
         var items = checklist.items || [];
         var grouped = groupChecklistByCategory_(items);
@@ -7711,7 +7724,10 @@
           return true;
         }
 
-        var html = buildChecklistItemHtml_(item, dashboardData.checklistTurno.isAfterDeadline);
+        var html = buildChecklistItemHtml_(
+          item,
+          !!(dashboardData.checklistTurno && dashboardData.checklistTurno.isAfterDeadline)
+        );
         var tpl = document.createElement('template');
         tpl.innerHTML = html.trim();
         var fresh = tpl.content.firstElementChild;
@@ -7766,6 +7782,7 @@
       }
 
       function optimisticChecklistPatch_(id, uiStatusLabel) {
+        ensureDashboardChecklistShell_();
         var items = dashboardData.checklistTurno.items || [];
         var idx = items.findIndex(function (i) {
           return checklistDraftKey_(i.ID) === checklistDraftKey_(id);
@@ -9165,6 +9182,17 @@
             percentualConcluido: Number(summary.percentualConcluido || 0),
           },
         };
+      }
+
+      function ensureDashboardChecklistShell_() {
+        var cur = dashboardData.checklistTurno;
+        if (cur == null || typeof cur !== 'object') {
+          dashboardData.checklistTurno = normalizeChecklistData_(null);
+          return;
+        }
+        if (!Array.isArray(cur.items) || !cur.summary || typeof cur.summary !== 'object') {
+          dashboardData.checklistTurno = normalizeChecklistData_(cur);
+        }
       }
 
       function getScriptRunner_() {
