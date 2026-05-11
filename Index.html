@@ -1660,6 +1660,17 @@
         color: var(--danger);
       }
 
+      .field.field-invalid > label {
+        color: var(--danger);
+      }
+
+      .field.field-invalid input,
+      .field.field-invalid select,
+      .field.field-invalid textarea {
+        box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.35);
+        border-color: var(--danger);
+      }
+
       .queue-title {
         margin: 0 0 6px;
         font-size: 18px;
@@ -2869,7 +2880,7 @@
                 <input id="telefone" name="telefone" placeholder="(11) 91234-5678">
               </div>
 
-              <div class="field">
+              <div class="field" id="med-previsao-entrega-field">
                 <label for="previsaoEntrega">Previsão de entrega</label>
                 <input id="previsaoEntrega" name="previsaoEntrega" type="date">
                 <div class="date-shortcuts">
@@ -2921,6 +2932,34 @@
       </div>
     </div>
 
+    <div id="med-cancel-overlay" class="modal-overlay hidden" aria-hidden="true">
+      <div class="modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="med-cancel-title">
+        <div class="modal-head">
+          <h2 id="med-cancel-title">Cancelar solicitação?</h2>
+        </div>
+        <p class="muted" style="margin-top:0;">
+          Esta ação marcará o pedido como Cancelado no Handover e em Compras_Medicamentos.
+        </p>
+        <p id="med-cancel-summary-med" class="muted" style="margin:8px 0 0;"></p>
+        <p id="med-cancel-summary-cli-wrap" class="muted hidden" style="margin:4px 0 0;">
+          <span id="med-cancel-summary-cli"></span>
+        </p>
+        <div class="field" style="margin-top:12px;">
+          <label for="med-cancel-motivo">Motivo do cancelamento</label>
+          <textarea
+            id="med-cancel-motivo"
+            rows="3"
+            style="min-height:72px;resize:vertical;"
+            placeholder="Ex.: cliente desistiu, produto indisponível, pedido duplicado..."
+          ></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="light" onclick="closeCancelMedicationModal_()">Voltar</button>
+          <button type="button" onclick="confirmCancelMedicationModal_()">Cancelar solicitação</button>
+        </div>
+      </div>
+    </div>
+
     <div id="reopen-confirm-overlay" class="modal-overlay hidden" aria-hidden="true">
       <div class="modal-dialog card" role="dialog" aria-modal="true">
         <div class="modal-head">
@@ -2946,6 +2985,8 @@
 
     <script>
       const OPERADOR_STORAGE_KEY = 'handover_operador_atual_v14';
+      const ENCOMENDA_PRECO_DATA_MSG =
+        'Para registrar uma encomenda, informe o preço de venda e a data prevista de entrega.';
       const HANDOVER_SESSION_STORAGE_KEY = 'handover_auth_session_v41';
       const HANDOVER_LOGO_HEADER_URL =
         'https://drive.google.com/thumbnail?id=1IdmH4FBrd6mRqFVyhdJlN_1208DJWmQm&sz=w320';
@@ -3002,6 +3043,7 @@
           ? dashboardData.checklistTurno.turno
           : 'Manhã';
       let pendingReopenHistoricoId = null;
+      let pendingCancelMedicationId_ = null;
       let historicoFilterState = {
         criados: 'todos',
         resolucao: 'todos',
@@ -3042,6 +3084,7 @@
       const operadorRequiredOverlay = document.getElementById('operador-required-overlay');
       const operadorModalInput = document.getElementById('operador-modal-input');
       const reopenConfirmOverlay = document.getElementById('reopen-confirm-overlay');
+      const medCancelOverlay = document.getElementById('med-cancel-overlay');
       const historicoFiltersPanel = document.getElementById('historico-filters-panel');
       const checklistTurnSelect = document.getElementById('checklist-turno-select');
       const checklistTurnTitleEl = document.getElementById('checklist-turn-title');
@@ -4192,10 +4235,55 @@
         }
       }
 
+      function clearEncomendaRequiredHints_() {
+        var p = document.getElementById('preco-venda-field');
+        var d = document.getElementById('med-previsao-entrega-field');
+        if (p) {
+          p.classList.remove('field-invalid');
+        }
+        if (d) {
+          d.classList.remove('field-invalid');
+        }
+      }
+
+      function applyEncomendaRequiredHints_(flags) {
+        clearEncomendaRequiredHints_();
+        if (!flags) {
+          return;
+        }
+        if (flags.preco) {
+          var pf = document.getElementById('preco-venda-field');
+          if (pf) {
+            pf.classList.add('field-invalid');
+          }
+        }
+        if (flags.data) {
+          var df = document.getElementById('med-previsao-entrega-field');
+          if (df) {
+            df.classList.add('field-invalid');
+          }
+        }
+      }
+
+      /** @returns {{preco:boolean,data:boolean}|null} */
+      function getEncomendaPrecoDataHints_(payload) {
+        if (String(payload.tipo || '').toLowerCase() !== 'encomenda') {
+          return null;
+        }
+        var dataOk = !!String(payload.previsaoEntrega || '').trim();
+        var pv = payload.precoVenda;
+        var preOk = !(pv === '' || pv === null || pv === undefined);
+        if (dataOk && preOk) {
+          return null;
+        }
+        return { preco: !preOk, data: !dataOk };
+      }
+
       function updateMedicinePriceVisibility_() {
         if (!tipoSelect) {
           return;
         }
+        clearEncomendaRequiredHints_();
         var isFalta = String(tipoSelect.value || '').toLowerCase() === 'falta';
         if (precoVendaField) {
           precoVendaField.classList.toggle('hidden', isFalta);
@@ -4984,6 +5072,7 @@
         document.getElementById('form-modal-title').textContent = 'Editar registro';
         saveButton.textContent = 'Salvar edição';
         clearStatus(formStatus);
+        clearEncomendaRequiredHints_();
         updateVisibleFields();
 
         if (ctx.type === 'geral') {
@@ -8101,6 +8190,7 @@
         updateVisibleFields();
         updateMedicinePriceVisibility_();
         clearStatus(formStatus);
+        clearEncomendaRequiredHints_();
         updateAutoRefreshStatus_();
       }
 
@@ -8128,6 +8218,7 @@
         syncMedicamentoAtendenteFromOperador_();
         toggleGeralVencimentoFields_();
         clearStatus(formStatus);
+        clearEncomendaRequiredHints_();
         formModalOverlay.classList.remove('hidden');
         formModalOverlay.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
@@ -8165,6 +8256,7 @@
         generalFields.classList.toggle('hidden', isMedication);
         medicineFields.classList.toggle('hidden', !isMedication);
         clearStatus(formStatus);
+        clearEncomendaRequiredHints_();
         updateMedicinePriceVisibility_();
         if (isMedication) {
           syncMedicamentoAtendenteFromOperador_();
@@ -8312,6 +8404,7 @@
       function handleSubmit(event) {
         event.preventDefault();
         clearStatus(formStatus);
+        clearEncomendaRequiredHints_();
 
         runWithOperador_(function (operador) {
           syncAutorFieldFromOperador_();
@@ -8325,6 +8418,7 @@
             if (!isFalta) {
               const priceResult = normalizePriceInput_(payload.precoVenda);
               if (priceResult.error) {
+                applyEncomendaRequiredHints_({ preco: true, data: false });
                 setStatus(formStatus, priceResult.error, true);
                 return;
               }
@@ -8336,6 +8430,12 @@
 
           const validationError = validatePayload(tab, payload);
           if (validationError) {
+            var enHints = tab === 'Medicamentos' ? getEncomendaPrecoDataHints_(payload) : null;
+            if (validationError === ENCOMENDA_PRECO_DATA_MSG && enHints) {
+              applyEncomendaRequiredHints_(enHints);
+            } else {
+              clearEncomendaRequiredHints_();
+            }
             setStatus(formStatus, validationError, true);
             return;
           }
@@ -8567,7 +8667,15 @@
           if (!isFaltaVal) {
             if (!payload.cliente.trim()) return 'Informe o cliente.';
             if (!payload.telefone.trim()) return 'Informe o telefone do cliente.';
-            if (!payload.previsaoEntrega) return 'Informe a previsão de entrega.';
+            var dataOkEnc = !!String(payload.previsaoEntrega || '').trim();
+            var preOkEnc = !(
+              payload.precoVenda === '' ||
+              payload.precoVenda === null ||
+              payload.precoVenda === undefined
+            );
+            if (!dataOkEnc || !preOkEnc) {
+              return ENCOMENDA_PRECO_DATA_MSG;
+            }
           }
         }
 
@@ -8718,19 +8826,71 @@
         });
       }
 
+      function closeCancelMedicationModal_() {
+        pendingCancelMedicationId_ = null;
+        var ta = document.getElementById('med-cancel-motivo');
+        if (ta) {
+          ta.value = '';
+        }
+        if (medCancelOverlay) {
+          medCancelOverlay.classList.add('hidden');
+          medCancelOverlay.setAttribute('aria-hidden', 'true');
+        }
+      }
+
       function cancelMedicationRequest_(id) {
-        var cancelMsg =
-          'Tem certeza que deseja cancelar esta solicitação de medicamento?\n\n' +
-          'Essa ação vai marcar o pedido como CANCELADO no Handover e também na planilha de compras.\n\n' +
-          'Se foi um engano, você poderá reverter depois alterando o status para Pendente de compra ou Comprado.';
-        if (!window.confirm(cancelMsg)) {
+        var list = dashboardData.medicamentos || [];
+        var item = list.find(function (m) {
+          return m.ID === id;
+        });
+        if (!item || item.__syncState === 'syncing') {
           return;
         }
-        var motivo = '';
-        try {
-          var m = window.prompt('Motivo do cancelamento (opcional):', '');
-          motivo = m == null ? '' : String(m || '');
-        } catch (ePrompt) {}
+        if (String(item.Status || '').trim().toLowerCase() === 'cancelado') {
+          showToast_('Este item já está cancelado.', false);
+          return;
+        }
+        pendingCancelMedicationId_ = id;
+        var medLine = document.getElementById('med-cancel-summary-med');
+        var cliWrap = document.getElementById('med-cancel-summary-cli-wrap');
+        var cliLine = document.getElementById('med-cancel-summary-cli');
+        var ta = document.getElementById('med-cancel-motivo');
+        if (medLine) {
+          medLine.textContent = 'Medicamento: ' + String(item.Medicamento || '—').trim();
+        }
+        var cli = String(item.Cliente || '').trim();
+        if (cliWrap && cliLine) {
+          if (cli) {
+            cliWrap.classList.remove('hidden');
+            cliLine.textContent = 'Cliente: ' + cli;
+          } else {
+            cliWrap.classList.add('hidden');
+            cliLine.textContent = '';
+          }
+        }
+        if (ta) {
+          ta.value = '';
+        }
+        if (medCancelOverlay) {
+          medCancelOverlay.classList.remove('hidden');
+          medCancelOverlay.setAttribute('aria-hidden', 'false');
+        }
+        window.setTimeout(function () {
+          if (ta) {
+            ta.focus();
+          }
+        }, 50);
+      }
+
+      function confirmCancelMedicationModal_() {
+        var id = pendingCancelMedicationId_;
+        var motivoEl = document.getElementById('med-cancel-motivo');
+        var motivo = motivoEl ? String(motivoEl.value || '').trim() : '';
+        if (!id) {
+          closeCancelMedicationModal_();
+          return;
+        }
+        closeCancelMedicationModal_();
 
         runWithOperador_(function (operador) {
           var tok = ensureSessionTokenForAction_();

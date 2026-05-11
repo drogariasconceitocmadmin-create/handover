@@ -1,3 +1,12 @@
+## Hotfix v59 — Encomenda obrigatória (preço + data) + modal de cancelamento (maio/2026)
+
+- **Branch:** `hotfix/handover-p0-save-medicamentos`
+- **Deploy:** não realizado nesta rodada (sem `clasp push`, sem POP).
+- **Escopo 1 — Encomenda:** validação obrigatória de **preço de venda** e **data prevista de entrega** no `Index.html` antes do placeholder otimista e no `Code.gs` em `appendHandoverRecord_` / `buildAllowedEditPatch_` (mensagem unificada: *Para registrar uma encomenda, informe o preço de venda e a data prevista de entrega.*). **Falta** continua sem exigir preço nem data. Campos pendentes recebem destaque visual (`.field-invalid`).
+- **Escopo 2 — Cancelamento:** substituídos `window.confirm` / `prompt` por **modal próprio** (`#med-cancel-overlay`): título, texto de impacto Handover + Compras_Medicamentos, resumo medicamento/cliente, textarea opcional de motivo, botões **Voltar** e **Cancelar solicitação**; motivo continua opcional e espelhado via fluxo existente de `cancelMedicationRequest` / mirror.
+
+---
+
 ## Hotfix v46 — smoke (cancel, atualizar, planilha, nome cliente) (maio/2026)
 
 - **Branch:** `feat/handover-auth-pin-v41-recebimento`

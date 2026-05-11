@@ -16,6 +16,10 @@ const COMPRAS_STATUS_COMPRA = {
   CANCELADO: 'Cancelado',
 };
 
+/** Encomenda: preço e data obrigatórios (criação e edição). */
+var ENCOMENDA_PRECO_DATA_MSG_ =
+  'Para registrar uma encomenda, informe o preço de venda e a data prevista de entrega.';
+
 const FORMAS_RECEBIMENTO = {
   A_COMBINAR: 'A combinar',
   RETIRA_LOJA: 'Retira na loja',
@@ -2657,9 +2661,12 @@ function appendHandoverRecord_(tab, data, authorLabel) {
 
     const previsaoEntrega = parseDate_(data.previsaoEntrega);
     if (!previsaoEntrega) {
-      throw new Error('Previsao_Entrega invalida. Use o formato YYYY-MM-DD com data real.');
+      throw new Error(ENCOMENDA_PRECO_DATA_MSG_);
     }
     const precoVenda = parseSalePrice_(data.precoVenda);
+    if (precoVenda === '' || precoVenda === null || precoVenda === undefined) {
+      throw new Error(ENCOMENDA_PRECO_DATA_MSG_);
+    }
     const formaRecebimento = normalizeFormaRecebimento_(data.formaRecebimento);
 
     const rowValues = buildAppendRowValuesFromNamedMap_(sheet, {
@@ -2800,7 +2807,10 @@ function buildAllowedEditPatch_(sheetName, current, payload) {
       throw new Error('Informe o telefone do cliente.');
     }
     if (!out.Previsao_Entrega) {
-      throw new Error('Previsao_Entrega invalida. Use o formato YYYY-MM-DD com data real.');
+      throw new Error(ENCOMENDA_PRECO_DATA_MSG_);
+    }
+    if (out.Preco_Venda === '' || out.Preco_Venda === null || out.Preco_Venda === undefined) {
+      throw new Error(ENCOMENDA_PRECO_DATA_MSG_);
     }
   }
 
