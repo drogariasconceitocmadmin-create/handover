@@ -2613,7 +2613,9 @@ function refreshDashboardBundle(checklistTurnoOpt, sessionToken) {
     geral: fetchSheetItems_(SHEET_NAMES.GERAL).filter(function (item) {
       return !item.Resolvido;
     }),
-    medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS),
+    medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS).filter(function (m) {
+      return String(m.Status || '').trim().toLowerCase() !== 'cancelado';
+    }),
     checklistTurno: checklistPayload,
     bundleTurno: turno,
   };
@@ -2942,7 +2944,9 @@ function fetchData() {
     geral: fetchSheetItems_(SHEET_NAMES.GERAL).filter(function (item) {
       return !item.Resolvido;
     }),
-    medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS),
+    medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS).filter(function (m) {
+      return String(m.Status || '').trim().toLowerCase() !== 'cancelado';
+    }),
     checklistTurno: buildChecklistTurnoPayload_(inferDefaultChecklistTurno_()),
   };
 }
@@ -3120,10 +3124,26 @@ function fetchHistoricoResolvidos(limit, sessionToken) {
     })
     .reverse();
 
-  Logger.log('fetchHistoricoResolvidos ms=' + (Date.now() - started));
+  // Incluir medicamentos cancelados que ainda estejam na aba Medicamentos
+  // (fallback: archive pode ter falhado — não aparecem em Arquivo_Resolvidos).
+  var archivedIds = {};
+  historico.forEach(function (h) { if (h.ID) { archivedIds[h.ID] = true; } });
+
+  var canceladosMed = fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS).filter(function (m) {
+    return String(m.Status || '').trim().toLowerCase() === 'cancelado' && !archivedIds[m.ID];
+  }).map(function (m) {
+    m.Origem = SHEET_NAMES.MEDICAMENTOS;
+    m.Estado_Arquivo = 'Cancelado';
+    m.Arquivado_Em = m.Data_Cancelamento || m.Ultima_Acao_Em || '';
+    normalizeItemForClient_(m);
+    return m;
+  });
+
+  Logger.log('fetchHistoricoResolvidos ms=' + (Date.now() - started) +
+    ' arquivo=' + historico.length + ' cancelados_med=' + canceladosMed.length);
   return {
     success: true,
-    historico: historico,
+    historico: canceladosMed.concat(historico),
   };
 }
 
@@ -3334,19 +3354,21 @@ function cancelMedicationRequest(id, sessionToken, motivo) {
   // Mover para Arquivo_Resolvidos — cancelado sai da fila e aparece só no Histórico.
   try {
     SpreadsheetApp.flush();
-    moveRowToResolved(SHEET_NAMES.MEDICAMENTOS, rn);
-    // Marcar Estado_Arquivo como Cancelado (padrão seria Resolvido).
-    var archiveSheet = getSheetOrThrow_(getSpreadsheet_(), SHEET_NAMES.ARQUIVO);
-    var arcLoc = findRowById_(SHEET_NAMES.ARQUIVO, sanitizeText_(id));
-    if (arcLoc) {
-      archiveSheet
-        .getRange(arcLoc.rowNumber, getColumnIndex_(archiveSheet, 'Estado_Arquivo'))
-        .setValue('Cancelado');
+    var ss2 = getSpreadsheet_();
+    var archSh = getSheetOrThrow_(ss2, SHEET_NAMES.ARQUIVO);
+    // Ler a linha ANTES de deletar (sheet já validado acima).
+    var canceledObj = rowToObjectFromSheetRow_(sheet, rn);
+    appendArchiveNamedRow_(archSh, SHEET_NAMES.MEDICAMENTOS, canceledObj);
+    SpreadsheetApp.flush();
+    // Usar getLastRow() para localizar a linha recém-adicionada — sem scan por ID.
+    var arcRow = archSh.getLastRow();
+    if (arcRow > 1) {
+      archSh.getRange(arcRow, getColumnIndex_(archSh, 'Estado_Arquivo')).setValue('Cancelado');
     }
+    sheet.deleteRow(rn);
     Logger.log('cancelMedicationRequest arquivado id=' + sanitizeText_(id) + ' ms=' + (Date.now() - started));
     return { success: true, removedId: sanitizeText_(id) };
   } catch (archErr) {
-    // Se o arquivamento falhar, retorna o registro cancelado normalmente (não bloqueia).
     Logger.log('cancelMedicationRequest archive falhou: ' + archErr);
     return {
       success: true,
