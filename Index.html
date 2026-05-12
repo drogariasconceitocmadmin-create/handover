@@ -5662,6 +5662,34 @@
         return s.indexOf('T') >= 0 ? s.split('T')[0] : s.slice(0, 10);
       }
 
+      /** Dia de “fechamento” para filtros de resolução: resolução, cancelamento ou arquivamento. */
+      function historicoClosureDayKey_(item) {
+        var r = historicoResDay_(item);
+        if (r) {
+          return r;
+        }
+        var c = String(item.Data_Cancelamento || '').trim();
+        if (c.indexOf('T') >= 0) {
+          return c.split('T')[0];
+        }
+        if (c.length >= 10) {
+          return c.substring(0, 10);
+        }
+        var a = String(item.Arquivado_Em || '').trim();
+        if (a.indexOf('T') >= 0) {
+          return a.split('T')[0];
+        }
+        if (a.length >= 10) {
+          return a.substring(0, 10);
+        }
+        return '';
+      }
+
+      function invalidateHistoricoCache_() {
+        historicoLoadState = 'idle';
+        historicoResolvidos = [];
+      }
+
       function filterHistoricoRows_(rows) {
         var today = todayKeyLocal_();
         var cutoff = new Date();
@@ -5684,11 +5712,14 @@
           if (historicoFilterState.estado === 'reaberto' && String(item.Estado_Arquivo || '') !== 'Reaberto') {
             return false;
           }
-          if (
-            historicoFilterState.estado === 'resolvido' &&
-            String(item.Estado_Arquivo || 'Resolvido') !== 'Resolvido'
-          ) {
-            return false;
+          if (historicoFilterState.estado === 'resolvido') {
+            var eaRes = String(item.Estado_Arquivo || 'Resolvido').trim().toLowerCase();
+            if (eaRes === 'reaberto') {
+              return false;
+            }
+            if (eaRes !== 'resolvido' && eaRes !== 'cancelado') {
+              return false;
+            }
           }
 
           var opNeed = String(historicoFilterState.operador || '').trim().toLowerCase();
@@ -5721,11 +5752,11 @@
 
           var res = historicoFilterState.resolucao;
           if (res === 'hoje') {
-            if (historicoResDay_(item) !== today) {
+            if (historicoClosureDayKey_(item) !== today) {
               return false;
             }
           } else if (res === '7d') {
-            var rd = historicoResDay_(item);
+            var rd = historicoClosureDayKey_(item);
             if (!rd || rd < cutoffKey) {
               return false;
             }
@@ -9134,7 +9165,7 @@
                 if (response.removedId) {
                   // Item arquivado: sai da fila e aparece só no Histórico.
                   removeMedicamentoById_(response.removedId);
-                  historicoLoadState = 'idle';
+                  invalidateHistoricoCache_();
                 } else if (response.record) {
                   upsertMedicamento_(response.record);
                 }
@@ -9264,6 +9295,7 @@
                 perfLog_(functionName, started);
                 if (functionName === 'markAsResolved') {
                   removeGeralById_(response.removedId || id);
+                  invalidateHistoricoCache_();
                   renderAll();
                   setStatus(queueStatus, 'Solicitação arquivada.');
                   showToast_('Resolvido');

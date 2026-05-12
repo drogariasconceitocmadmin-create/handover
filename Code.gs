@@ -2644,6 +2644,21 @@ function saveData(tab, data, sessionToken) {
   const sess = requireSessionHandover_(sessionToken);
   const authorLabel = getSessionDisplayName_(sess);
   const result = appendHandoverRecord_(tab, data, authorLabel);
+  // Registrar evento de criação na trilha de auditoria.
+  try {
+    var novoId = result && result.record && result.record.ID ? result.record.ID : '';
+    if (novoId) {
+      var sheetNameAudit = tab === 'Medicamentos' ? SHEET_NAMES.MEDICAMENTOS : SHEET_NAMES.GERAL;
+      var titulo = tab === 'Medicamentos'
+        ? sanitizeText_(data.medicamento || data.tipo || 'Medicamento')
+        : sanitizeText_(data.titulo || data.descricao || 'Pendência');
+      writeHandoverEditAudit_(sheetNameAudit, novoId, sess, [
+        { campo: 'Status', anterior: '', novo: 'Criado', resumo: authorLabel + ' criou: ' + titulo },
+      ]);
+    }
+  } catch (auditErr) {
+    Logger.log('saveData audit: ' + auditErr);
+  }
   Logger.log('[Handover][perf] saveData total tab=' + tab + ' ms=' + (Date.now() - started));
   return result;
 }
@@ -3343,6 +3358,16 @@ function cancelMedicationRequest(id, sessionToken, motivo) {
 
   writeMedicationUltimaAcao_(sheet, rn, op);
 
+  // Registrar cancelamento na trilha de auditoria.
+  try {
+    writeHandoverEditAudit_(SHEET_NAMES.MEDICAMENTOS, sanitizeText_(id), sess, [
+      { campo: 'Status', anterior: 'Pendente', novo: 'Cancelado',
+        resumo: op + ' cancelou o pedido.' + (sanitizeText_(motivo) ? ' Motivo: ' + sanitizeText_(motivo) : '') },
+    ]);
+  } catch (auditCancelErr) {
+    Logger.log('cancelMedicationRequest audit: ' + auditCancelErr);
+  }
+
   // Espelhar em Compras_Medicamentos preservando Observacao_Compra/Mensagem_Cliente.
   try {
     SpreadsheetApp.flush();
@@ -3922,7 +3947,10 @@ function buildArchiveNamedValues_(sheetName, item) {
     Ultima_Acao_Em: item.Ultima_Acao_Em || '',
     Resolvido_Por: sanitizeText_(item.Resolvido_Por || ''),
     Data_Resolucao: item.Data_Resolucao || '',
-    Estado_Arquivo: 'Resolvido',
+    Estado_Arquivo:
+      sanitizeText_(String(item.Status || '').trim().toLowerCase()) === 'cancelado'
+        ? 'Cancelado'
+        : 'Resolvido',
     Reaberto_Por: '',
     Data_Reabertura: '',
     Motivo_Reabertura: '',
