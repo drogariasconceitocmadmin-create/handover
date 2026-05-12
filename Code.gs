@@ -4257,8 +4257,18 @@ function sendOrderEmail_(order) {
     ? Utilities.formatDate(order.previsaoEntrega, Session.getScriptTimeZone(), 'dd/MM/yyyy')
     : 'Nao informada';
 
+  var props = PropertiesService.getScriptProperties();
+  var handoverId = sanitizeText_(props.getProperty(HANDOVER_SPREADSHEET_ID_KEY) || '');
+  var comprasId  = sanitizeText_(props.getProperty(COMPRAS_SPREADSHEET_ID_KEY) || '');
+  var handoverUrl = handoverId
+    ? 'https://docs.google.com/spreadsheets/d/' + handoverId + '/edit'
+    : '';
+  var comprasUrl = comprasId
+    ? 'https://docs.google.com/spreadsheets/d/' + comprasId + '/edit'
+    : '';
+
   const subject = 'Nova encomenda de medicamento - ' + order.medicamento;
-  const body = [
+  var lines = [
     'Uma nova encomenda de medicamento foi cadastrada.',
     '',
     'ID: ' + order.id,
@@ -4268,10 +4278,21 @@ function sendOrderEmail_(order) {
     'Pre-pago: ' + (order.prePago ? 'Sim' : 'Nao'),
     'Previsao de entrega: ' + previsao,
     '',
-    'Este email e enviado apenas para registros com Tipo = Encomenda.',
-  ].join('\n');
+  ];
 
-  MailApp.sendEmail(EMAIL_ENCOMENDAS, subject, body);
+  if (comprasUrl) {
+    lines.push('Planilha de Compras: ' + comprasUrl);
+  }
+  if (handoverUrl) {
+    lines.push('Planilha Handover: ' + handoverUrl);
+  }
+  if (comprasUrl || handoverUrl) {
+    lines.push('');
+  }
+
+  lines.push('Este email e enviado apenas para registros com Tipo = Encomenda.');
+
+  MailApp.sendEmail(EMAIL_ENCOMENDAS, subject, lines.join('\n'));
 }
 
 function registerWhatsAppAttempt(id, sessionToken) {
