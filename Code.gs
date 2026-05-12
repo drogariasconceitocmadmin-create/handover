@@ -171,30 +171,36 @@ const HEADERS = {
     'Observacao_Solicitacao',
   ],
   Compras_Medicamentos: [
-    'ID_Handover',
+    'ID_Compra',           // UUID gerado na criação da linha de compras (novo)
+    'ID_Handover',         // FK → Medicamentos.ID
     'Data_Solicitacao',
     'Tipo',
     'Medicamento',
     'Atendente',
     'Cliente',
     'Telefone',
-    'Previsao_Entrega',
     'Preco_Venda',
     'Pre_Pago',
-    'Status_Compra',
-    'Data_Compra',
-    'Comprado_Por',
-    'Observacao_Compra',
-    'Mensagem_Cliente',
-    'Status_Handover',
-    'Ultima_Atualizacao',
-    'Cancelado_Por',
-    'Data_Cancelamento',
-    'Motivo_Cancelamento',
     'Fornecedor_Compra',
     'Codigo_Compra_Fornecedor',
     'Forma_Recebimento',
+    'Previsao_Entrega',
+    'Status_Compra',
+    'Status_Handover',
+    'Comprado',            // boolean espelhado de Medicamentos.Comprado
+    'Comprado_Por',
+    'Data_Compra',
+    'Entregue',            // boolean espelhado de Medicamentos.Entregue
+    'Entregue_Por',        // campo operacional — preenchido pelo fluxo de entrega
+    'Data_Entrega',        // campo operacional — preenchido pelo fluxo de entrega
+    'Cancelado',           // boolean: true quando Status_Handover = Cancelado
+    'Cancelado_Por',
+    'Data_Cancelamento',
+    'Motivo_Cancelamento',
     'Observacao_Solicitacao',
+    'Observacao_Compra',
+    'Mensagem_Cliente',
+    'Ultima_Atualizacao',
   ],
   Usuarios_Handover: HANDOVER_USERS_HEADERS,
   Auditoria_Handover: [
@@ -581,8 +587,39 @@ function applyComprasMedicamentosLayout_(sheet) {
   headerRange.setFontWeight('bold');
   sheet.setFrozenRows(1);
 
-  // UX: larguras e colunas operacionais (sem reordenar/destruir dados)
-  var widths = [140, 120, 90, 240, 120, 170, 120, 130, 90, 90, 140, 120, 140, 360, 380, 140, 160, 120, 110, 220, 130, 150];
+  // UX: larguras das 30 colunas do schema novo (ordem: ID_Compra…Ultima_Atualizacao)
+  var widths = [
+    120, // ID_Compra
+    140, // ID_Handover
+    120, // Data_Solicitacao
+     90, // Tipo
+    240, // Medicamento
+    120, // Atendente
+    170, // Cliente
+    120, // Telefone
+     90, // Preco_Venda
+     90, // Pre_Pago
+    130, // Fornecedor_Compra
+    150, // Codigo_Compra_Fornecedor
+    140, // Forma_Recebimento
+    130, // Previsao_Entrega
+    140, // Status_Compra
+    140, // Status_Handover
+     80, // Comprado
+    140, // Comprado_Por
+    120, // Data_Compra
+     80, // Entregue
+    140, // Entregue_Por
+    120, // Data_Entrega
+     80, // Cancelado
+    120, // Cancelado_Por
+    110, // Data_Cancelamento
+    220, // Motivo_Cancelamento
+    130, // Observacao_Solicitacao
+    360, // Observacao_Compra
+    380, // Mensagem_Cliente
+    160, // Ultima_Atualizacao
+  ];
   for (var c = 0; c < Math.min(widths.length, lastCol); c++) {
     sheet.setColumnWidth(c + 1, widths[c]);
   }
@@ -1547,6 +1584,7 @@ function applyMedicamentoCancelamentoEspelhoComprasNamed_(medItem, named) {
   }
   named.Status_Compra = COMPRAS_STATUS_COMPRA.CANCELADO;
   named.Status_Handover = 'Cancelado';
+  named.Cancelado = true;
   named.Comprado_Por = '';
   named.Data_Compra = '';
   named.Cancelado_Por = sanitizeText_(medItem.Cancelado_Por || named.Cancelado_Por);
@@ -1583,7 +1621,13 @@ function buildComprasRowNamedValuesFromMedicamento_(medItem, existingStatusCompr
       ? ''
       : medItem.Preco_Venda;
 
+  var statusHandover = sanitizeText_(medItem.Status || deriveMedicationStatus_(medItem));
+  var isCancelado = statusHandover.toLowerCase() === 'cancelado';
+
   return {
+    // ID_Compra: vazio no espelho automático; será preenchido por lógica dedicada
+    // quando a linha de Compras for criada manualmente ou via fluxo de compras.
+    ID_Compra: '',
     ID_Handover: sanitizeText_(medItem.ID || ''),
     Data_Solicitacao: medItem.Timestamp instanceof Date ? medItem.Timestamp : medItem.Timestamp || '',
     Tipo: tipo,
@@ -1591,26 +1635,31 @@ function buildComprasRowNamedValuesFromMedicamento_(medItem, existingStatusCompr
     Atendente: sanitizeText_(medItem.Atendente || ''),
     Cliente: isFalta ? '' : sanitizeText_(medItem.Cliente || ''),
     Telefone: isFalta ? '' : sanitizeText_(medItem.Telefone || ''),
-    Previsao_Entrega: medItem.Previsao_Entrega || '',
     Preco_Venda: preco,
     Pre_Pago: prePago,
-    Status_Compra: statusCompra,
-    Data_Compra: '',
-    Comprado_Por: '',
-    Observacao_Compra: '',
-    Mensagem_Cliente: '',
-    Status_Handover: sanitizeText_(medItem.Status || deriveMedicationStatus_(medItem)),
-    Ultima_Atualizacao: new Date(),
-    Cancelado_Por: sanitizeText_(medItem.Cancelado_Por || ''),
-    Data_Cancelamento: medItem.Data_Cancelamento || '',
-    Motivo_Cancelamento: sanitizeText_(medItem.Motivo_Cancelamento || ''),
     Fornecedor_Compra: normalizeFornecedorCompraInput_(medItem.Fornecedor_Compra),
     Codigo_Compra_Fornecedor: normalizeCodigoCompraFornecedorInput_(
       medItem.Codigo_Compra_Fornecedor,
       normalizeFornecedorCompraInput_(medItem.Fornecedor_Compra)
     ),
     Forma_Recebimento: isFalta ? '' : normalizeFormaRecebimento_(medItem.Forma_Recebimento),
+    Previsao_Entrega: medItem.Previsao_Entrega || '',
+    Status_Compra: statusCompra,
+    Status_Handover: statusHandover,
+    Comprado: toBoolean_(medItem.Comprado),       // espelhado de Medicamentos
+    Comprado_Por: '',
+    Data_Compra: '',
+    Entregue: toBoolean_(medItem.Entregue),        // espelhado de Medicamentos
+    Entregue_Por: '',                              // campo operacional — preenchido pelo fluxo de entrega
+    Data_Entrega: '',                              // campo operacional — preenchido pelo fluxo de entrega
+    Cancelado: isCancelado,                        // true quando Status_Handover = Cancelado
+    Cancelado_Por: sanitizeText_(medItem.Cancelado_Por || ''),
+    Data_Cancelamento: medItem.Data_Cancelamento || '',
+    Motivo_Cancelamento: sanitizeText_(medItem.Motivo_Cancelamento || ''),
     Observacao_Solicitacao: sanitizeText_(medItem.Observacao_Solicitacao || ''),
+    Observacao_Compra: '',
+    Mensagem_Cliente: '',
+    Ultima_Atualizacao: new Date(),
   };
 }
 
