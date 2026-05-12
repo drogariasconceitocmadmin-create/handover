@@ -891,6 +891,30 @@
         word-break: break-word;
       }
 
+      .card-detail-body .detail-section + .detail-section {
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border);
+      }
+      .card-detail-body .detail-section-title {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--primary, #2563eb);
+        margin-bottom: 10px;
+      }
+      .card-detail-body .detail-section dl {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 20px;
+      }
+      @media (max-width: 500px) {
+        .card-detail-body .detail-section dl {
+          grid-template-columns: 1fr;
+        }
+      }
+
       .card-detail-pre {
         white-space: pre-wrap;
         font-size: 13px;
@@ -5080,14 +5104,15 @@
           openHistoricoDetailById_(id);
           return;
         }
-        var extras = buildCardDetailExtras_(item);
-        var body =
-          item.title +
-          '\n\n' +
-          item.description +
-          extras +
-          (item.extraMeta ? '\n\n' + item.extraMeta : '');
-        openCardDetailOverlay_(item.title, body);
+        var ctx = findActiveRawById_(id);
+        var row = ctx && ctx.row ? ctx.row : {};
+        var html;
+        if (item.type === 'medicamento') {
+          html = buildMedicamentoDetailHtml_(row);
+        } else {
+          html = buildGeralDetailHtml_(row);
+        }
+        openCardDetailOverlay_(item.title || 'Detalhes', html, { isHtml: true });
       }
 
       function openEditHandoverItem_(id) {
@@ -5799,6 +5824,106 @@
         }
         return 'Medicamentos · ' + (item.Tipo || 'Registro');
       }
+
+      // ── Helpers para modal de detalhes estruturado ─────────────────────────
+      function detailSectionHtml_(title, rowsHtml) {
+        var content = rowsHtml.filter(Boolean).join('');
+        if (!content) return '';
+        return (
+          '<div class="detail-section">' +
+          '<div class="detail-section-title">' + escapeHtml(title) + '</div>' +
+          '<dl>' + content + '</dl>' +
+          '</div>'
+        );
+      }
+
+      function detailRowAlways_(label, value) {
+        var v = value == null || String(value).trim() === '' ? '—' : String(value).trim();
+        return (
+          '<div class="detail-row"><dt>' + escapeHtml(label) + '</dt>' +
+          '<dd>' + escapeHtml(v) + '</dd></div>'
+        );
+      }
+
+      function detailRowIf_(label, value) {
+        var v = value == null ? '' : String(value).trim();
+        if (!v) return '';
+        return (
+          '<div class="detail-row"><dt>' + escapeHtml(label) + '</dt>' +
+          '<dd>' + escapeHtml(v) + '</dd></div>'
+        );
+      }
+
+      function buildMedicamentoDetailHtml_(row) {
+        if (!row) return '<p>Sem dados.</p>';
+        var isFalta = medicationTipoFromRecord_(row) === 'falta';
+
+        var solicitacao = detailSectionHtml_('Solicitação', [
+          detailRowAlways_('Tipo', isFalta ? 'Falta' : 'Encomenda'),
+          detailRowAlways_('Medicamento', row.Medicamento),
+          detailRowAlways_('Status', row.Status),
+          detailRowIf_('Data da solicitação', row.Timestamp ? formatDateTime(row.Timestamp) : ''),
+        ]);
+
+        var cliente = detailSectionHtml_('Cliente', [
+          detailRowAlways_('Cliente', row.Cliente),
+          detailRowAlways_('Telefone', row.Telefone),
+          detailRowAlways_('Atendente', row.Atendente),
+        ]);
+
+        var compraRows = [];
+        if (!isFalta) {
+          compraRows.push(detailRowIf_('Fornecedor', row.Fornecedor_Compra));
+          compraRows.push(detailRowIf_('Código fornecedor', row.Codigo_Compra_Fornecedor));
+          compraRows.push(detailRowAlways_('Preço de venda', row.Preco_Venda ? formatCurrencyBr_(row.Preco_Venda) : ''));
+          compraRows.push(detailRowAlways_('Pré-pago', row.Pre_Pago ? 'Sim' : 'Não'));
+          compraRows.push(detailRowIf_('Forma de recebimento', row.Forma_Recebimento));
+          compraRows.push(detailRowIf_('Previsão de entrega', row.Previsao_Entrega ? formatDate(row.Previsao_Entrega) : ''));
+        }
+        compraRows.push(detailRowIf_('Observação da solicitação', row.Observacao_Solicitacao));
+        var compra = detailSectionHtml_(isFalta ? 'Observação' : 'Compra', compraRows);
+
+        var whatsapp = detailSectionHtml_('WhatsApp', [
+          detailRowIf_('Status', row.Status_Aviso_WhatsApp),
+          detailRowIf_('Data do aviso', row.Data_Aviso_WhatsApp ? formatDateTime(row.Data_Aviso_WhatsApp) : ''),
+        ]);
+
+        var ultimaAcao = detailSectionHtml_('Última ação', [
+          detailRowIf_('Por', row.Ultima_Acao_Por),
+          detailRowIf_('Em', row.Ultima_Acao_Em ? formatDateTime(row.Ultima_Acao_Em) : ''),
+        ]);
+
+        return solicitacao + cliente + compra + whatsapp + ultimaAcao;
+      }
+
+      function buildGeralDetailHtml_(row) {
+        if (!row) return '<p>Sem dados.</p>';
+        var titulo = geralQueueTitleFromItem_(row);
+
+        var solicitacao = detailSectionHtml_('Solicitação', [
+          detailRowAlways_('Título', titulo),
+          detailRowAlways_('Urgência', row.Urgencia || 'Normal'),
+          detailRowAlways_('Descrição', row.Descricao),
+          detailRowAlways_('Status', row.Resolvido ? 'Resolvido' : 'Pendente'),
+          detailRowIf_('Criado por', row.Autor),
+          detailRowIf_('Data', row.Timestamp ? formatDateTime(row.Timestamp) : ''),
+        ]);
+
+        var vencRows = [];
+        if (row.Tem_Vencimento) {
+          vencRows.push(detailRowIf_('Data', row.Data_Vencimento ? formatDate(row.Data_Vencimento) : ''));
+          vencRows.push(detailRowIf_('Hora', row.Hora_Vencimento || ''));
+        }
+        var vencimento = row.Tem_Vencimento ? detailSectionHtml_('Vencimento', vencRows) : '';
+
+        var ultimaAcao = detailSectionHtml_('Última ação', [
+          detailRowIf_('Por', row.Ultima_Acao_Por),
+          detailRowIf_('Em', row.Ultima_Acao_Em ? formatDateTime(row.Ultima_Acao_Em) : ''),
+        ]);
+
+        return solicitacao + vencimento + ultimaAcao;
+      }
+      // ── fim helpers detalhes ─────────────────────────────────────────────
 
       function detailDlRow_(label, value) {
         var v = value == null ? '' : String(value).trim();
