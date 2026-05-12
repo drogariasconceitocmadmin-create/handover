@@ -112,8 +112,8 @@ const CHECKLIST_TURNO_MANHA = 'Manhã';
 const CHECKLIST_TURNO_TARDE = 'Tarde';
 const CHECKLIST_TURNO_NOITE = 'Noite';
 const CHECKLIST_HORARIO_REFERENCIA = '07:00';
-const CHECKLIST_HORARIO_TARDE = '13:00';
-const CHECKLIST_HORARIO_NOITE = '21:00';
+const CHECKLIST_HORARIO_TARDE = '13:40';
+const CHECKLIST_HORARIO_NOITE = '22:00';
 const CHECKLIST_ALERT_HHMM = '07:30';
 
 const CHECKLIST_STATUS = {
@@ -2206,124 +2206,606 @@ function handleComprasMedicamentosStatusEdit_(sheet, rowNumber, newValue, oldVal
   processarStatusCompraPorIdHandover_(handoverId);
 }
 
+/**
+ * Template Manhã — Instrução de Abertura / checklist do turno da manhã (07:00, 21 itens).
+ * item_id estável (sem acento no id) para referência; chave de deduplicação na planilha continua pelo texto de Item.
+ */
+var CHECKLIST_TEMPLATE_MANHA_ = [
+  {
+    item_id: 'manha_climatizacao',
+    horario_referencia: '07:00',
+    categoria: 'Estrutura e Ambiente',
+    item: 'Climatização',
+    descricao: 'Ligar ar-condicionado e cortina de ar',
+  },
+  {
+    item_id: 'manha_iluminacao',
+    horario_referencia: '07:00',
+    categoria: 'Estrutura e Ambiente',
+    item: 'Iluminação',
+    descricao: 'Acender luzes do salão, fachada e tótens',
+  },
+  {
+    item_id: 'manha_som_ambiente',
+    horario_referencia: '07:00',
+    categoria: 'Estrutura e Ambiente',
+    item: 'Som ambiente',
+    descricao: 'Ligar rádio interna em volume agradável',
+  },
+  {
+    item_id: 'manha_fachada',
+    horario_referencia: '07:00',
+    categoria: 'Estrutura e Ambiente',
+    item: 'Fachada',
+    descricao: 'Verificar limpeza da calçada e se há obstruções na entrada',
+  },
+  {
+    item_id: 'manha_servidor',
+    horario_referencia: '07:00',
+    categoria: 'Sistemas e Operação',
+    item: 'Servidor',
+    descricao: 'Ligar e verificar se o banco de dados carregou corretamente',
+  },
+  {
+    item_id: 'manha_pdvs_balcao',
+    horario_referencia: '07:00',
+    categoria: 'Sistemas e Operação',
+    item: 'PDVs e Balcão',
+    descricao: 'Ligar computadores, monitores e impressoras térmicas',
+  },
+  {
+    item_id: 'manha_troco',
+    horario_referencia: '07:00',
+    categoria: 'Sistemas e Operação',
+    item: 'Troco',
+    descricao: 'Conferir o kit de troco',
+  },
+  {
+    item_id: 'manha_caixa',
+    horario_referencia: '07:00',
+    categoria: 'Sistemas e Operação',
+    item: 'Caixa',
+    descricao: 'Abrir e conferir',
+  },
+  {
+    item_id: 'manha_handover',
+    horario_referencia: '07:00',
+    categoria: 'Sistemas e Operação',
+    item: 'Handover',
+    descricao:
+      'Checar mensagens do turno anterior, limpar o que foi resolvido e programar entregas do dia de medicamentos encomendados',
+  },
+  {
+    item_id: 'manha_internet_tef',
+    horario_referencia: '07:00',
+    categoria: 'Sistemas e Operação',
+    item: 'Internet e TEF',
+    descricao: 'Testar conexão e máquinas de cartão',
+  },
+  {
+    item_id: 'manha_telefones_whatsapp',
+    horario_referencia: '07:00',
+    categoria: 'Sistemas e Operação',
+    item: 'Telefones/WhatsApp',
+    descricao: 'Verificar bateria, conexão e mensagens recebidas enquanto a loja estava fechada',
+  },
+  {
+    item_id: 'manha_pisos_prateleiras',
+    horario_referencia: '07:00',
+    categoria: 'Higiene e Organização',
+    item: 'Pisos e Prateleiras',
+    descricao: 'Conferir limpeza geral, sem pó ou manchas',
+  },
+  {
+    item_id: 'manha_lixeiras',
+    horario_referencia: '07:00',
+    categoria: 'Higiene e Organização',
+    item: 'Lixeiras',
+    descricao: 'Verificar se todas estão com sacos novos',
+  },
+  {
+    item_id: 'manha_banheiros_pias',
+    horario_referencia: '07:00',
+    categoria: 'Higiene e Organização',
+    item: 'Banheiros e Pias',
+    descricao: 'Repor sabonete líquido e papel toalha',
+  },
+  {
+    item_id: 'manha_alcool_gel',
+    horario_referencia: '07:00',
+    categoria: 'Higiene e Organização',
+    item: 'Álcool em gel',
+    descricao: 'Verificar disponibilidade no balcão',
+  },
+  {
+    item_id: 'manha_moto',
+    horario_referencia: '07:00',
+    categoria: 'Logística de Entrega',
+    item: 'Moto',
+    descricao: 'Usar sistema para conferir condições da moto junto com entregador',
+  },
+  {
+    item_id: 'manha_bau_mochila',
+    horario_referencia: '07:00',
+    categoria: 'Logística de Entrega',
+    item: 'Baú/Mochila',
+    descricao: 'Verificar limpeza interna e se está seco',
+  },
+  {
+    item_id: 'manha_maquineta_movel',
+    horario_referencia: '07:00',
+    categoria: 'Logística de Entrega',
+    item: 'Maquineta móvel',
+    descricao: 'Checar bateria da máquina de cartão de rua',
+  },
+  {
+    item_id: 'manha_termolabeis',
+    horario_referencia: '07:00',
+    categoria: 'Balcão e Medicamentos',
+    item: 'Termolábeis',
+    descricao: 'Conferir e anotar temperatura da geladeira de vacinas/insulinas',
+  },
+  {
+    item_id: 'manha_psicotropicos',
+    horario_referencia: '07:00',
+    categoria: 'Balcão e Medicamentos',
+    item: 'Psicotrópicos',
+    descricao: 'Verificar se armário controlado está fechado e chave acessível',
+  },
+  {
+    item_id: 'manha_reposicao',
+    horario_referencia: '07:00',
+    categoria: 'Balcão e Medicamentos',
+    item: 'Reposição',
+    descricao: 'Verificar buracos nas prateleiras de curva A para abastecimento imediato',
+  },
+];
+
+/**
+ * Template Tarde — Passagem de turno / continuidade (13:40, 20 itens).
+ */
+var CHECKLIST_TEMPLATE_TARDE_ = [
+  {
+    item_id: 'tarde_passagem_formal',
+    horario_referencia: '13:40',
+    categoria: 'Passagem de turno',
+    item: 'Passagem às 13h40',
+    descricao: 'Participar da passagem formal com a equipe da manhã e registrar pendências críticas',
+  },
+  {
+    item_id: 'tarde_ler_handover',
+    horario_referencia: '13:40',
+    categoria: 'Passagem de turno',
+    item: 'Ler Handover e pendências',
+    descricao: 'Conferir pendências gerais e medicamentos deixados pela manhã no app Handover',
+  },
+  {
+    item_id: 'tarde_caixa_parcial',
+    horario_referencia: '13:40',
+    categoria: 'Caixa e operação',
+    item: 'Conferência parcial do caixa',
+    descricao: 'Conferir abertura do turno tarde e alinhamento de fundo de troco conforme procedimento',
+  },
+  {
+    item_id: 'tarde_separacao_medicamentos',
+    horario_referencia: '13:40',
+    categoria: 'Medicamentos',
+    item: 'Separação e retiradas',
+    descricao: 'Verificar pedidos prontos para retirada e entregas programadas para a tarde',
+  },
+  {
+    item_id: 'tarde_encomendas_dia',
+    horario_referencia: '13:40',
+    categoria: 'Medicamentos',
+    item: 'Encomendas do dia',
+    descricao: 'Checar status, prazos e alertas de encomendas pendentes',
+  },
+  {
+    item_id: 'tarde_pdv_fila',
+    horario_referencia: '13:40',
+    categoria: 'Sistemas e PDV',
+    item: 'PDVs e fila',
+    descricao: 'Garantir PDVs logados, impressoras OK e fila de atendimento organizada',
+  },
+  {
+    item_id: 'tarde_curva_a',
+    horario_referencia: '14:00',
+    categoria: 'Estoque e exposição',
+    item: 'Reposição curva A',
+    descricao: 'Priorizar buracos críticos de giro até o fim da tarde',
+  },
+  {
+    item_id: 'tarde_entregas_rota',
+    horario_referencia: '14:00',
+    categoria: 'Logística',
+    item: 'Entregas da tarde',
+    descricao: 'Confirmar motoboy, rotas e pedidos que saem ainda hoje',
+  },
+  {
+    item_id: 'tarde_termolabeis',
+    horario_referencia: '15:00',
+    categoria: 'Balcão',
+    item: 'Termolábeis (tarde)',
+    descricao: 'Conferir e registrar temperatura da geladeira de vacinas/insulinas no período',
+  },
+  {
+    item_id: 'tarde_psicotropicos',
+    horario_referencia: '15:00',
+    categoria: 'Controlados',
+    item: 'Psicotrópicos e movimentação',
+    descricao: 'Conferir pendências de assinatura e movimentação do armário controlado',
+  },
+  {
+    item_id: 'tarde_whatsapp_balcao',
+    horario_referencia: '13:40',
+    categoria: 'Atendimento',
+    item: 'WhatsApp do balcão',
+    descricao: 'Responder filas e marcar o que precisa de continuidade à noite',
+  },
+  {
+    item_id: 'tarde_telefone_ramal',
+    horario_referencia: '13:40',
+    categoria: 'Atendimento',
+    item: 'Telefone e ramal',
+    descricao: 'Testar ramal do balcão e secretária eletrônica',
+  },
+  {
+    item_id: 'tarde_precos_etiquetas',
+    horario_referencia: '14:30',
+    categoria: 'Precificação',
+    item: 'Preços e etiquetas',
+    descricao: 'Conferir ofertas do dia e etiquetas legíveis',
+  },
+  {
+    item_id: 'tarde_pedidos_digitais',
+    horario_referencia: '14:00',
+    categoria: 'Canais digitais',
+    item: 'Pedidos digitais',
+    descricao: 'Conferir pedidos de marketplaces ou canais digitais ativos',
+  },
+  {
+    item_id: 'tarde_fiscal_sat',
+    horario_referencia: '15:00',
+    categoria: 'Fiscal',
+    item: 'Notas e SAT',
+    descricao: 'Conferir fila de emissão e inconsistências do período',
+  },
+  {
+    item_id: 'tarde_higiene_balcao',
+    horario_referencia: '16:00',
+    categoria: 'Higiene',
+    item: 'Higiene do balcão',
+    descricao: 'Organizar e higienizar superfície de atendimento e teclados',
+  },
+  {
+    item_id: 'tarde_lixeiras',
+    horario_referencia: '16:00',
+    categoria: 'Higiene',
+    item: 'Lixeiras do salão',
+    descricao: 'Garantir sacos com capacidade até o fechamento',
+  },
+  {
+    item_id: 'tarde_cameras',
+    horario_referencia: '16:30',
+    categoria: 'Segurança',
+    item: 'Câmeras e DVR',
+    descricao: 'Verificação visual rápida de gravador e câmeras principais',
+  },
+  {
+    item_id: 'tarde_quadro_comunicados',
+    horario_referencia: '13:40',
+    categoria: 'Gestão da loja',
+    item: 'Quadro de comunicados',
+    descricao: 'Atualizar recados internos e avisos da gerência',
+  },
+  {
+    item_id: 'tarde_alinhamento_gerencia',
+    horario_referencia: '17:00',
+    categoria: 'Gestão da loja',
+    item: 'Alinhamento com gerência',
+    descricao: 'Pontos críticos do dia, metas da tarde e repasse ao turno noite',
+  },
+];
+
+/**
+ * Template Noite — POP fechamento de turno / fechamento do dia (38 itens).
+ */
+var CHECKLIST_TEMPLATE_NOITE_ = [
+  {
+    item_id: 'noite_resumo_vendas',
+    horario_referencia: '21:00',
+    categoria: 'Fechamento financeiro',
+    item: 'Resumo de vendas do dia',
+    descricao: 'Conferir totais e comparativos conforme rotina da loja',
+  },
+  {
+    item_id: 'noite_fechamento_caixa_principal',
+    horario_referencia: '22:00',
+    categoria: 'Fechamento financeiro',
+    item: 'Fechamento caixa principal',
+    descricao: 'Conferência final, sangrias e fechamento conforme POP de caixa',
+  },
+  {
+    item_id: 'noite_fechamento_caixa_secundario',
+    horario_referencia: '22:00',
+    categoria: 'Fechamento financeiro',
+    item: 'Fechamento caixa secundário',
+    descricao: 'Se houver segundo PDV, repetir conferência e fechamento',
+  },
+  {
+    item_id: 'noite_sangrias_cofre',
+    horario_referencia: '22:00',
+    categoria: 'Fechamento financeiro',
+    item: 'Sangrias e cofre',
+    descricao: 'Registrar movimentações e destino dos valores conforme procedimento',
+  },
+  {
+    item_id: 'noite_conferencia_tef',
+    horario_referencia: '22:00',
+    categoria: 'Fechamento financeiro',
+    item: 'Conferência TEF / cartões',
+    descricao: 'Relatórios de máquinas e chargebacks pendentes de conferência',
+  },
+  {
+    item_id: 'noite_divergencias_caixa',
+    horario_referencia: '22:00',
+    categoria: 'Fechamento financeiro',
+    item: 'Divergências de caixa',
+    descricao: 'Registrar no livro de ocorrências se houver diferença',
+  },
+  {
+    item_id: 'noite_livro_caixa',
+    horario_referencia: '22:00',
+    categoria: 'Fechamento financeiro',
+    item: 'Livro de caixa / fechamento diário',
+    descricao: 'Encerrar lançamentos do dia conforme fiscalidade da loja',
+  },
+  {
+    item_id: 'noite_servidor_alertas',
+    horario_referencia: '21:30',
+    categoria: 'Sistemas',
+    item: 'Servidor e alertas',
+    descricao: 'Verificar alertas do sistema e backup do dia se aplicável',
+  },
+  {
+    item_id: 'noite_fechar_sessoes_pdv',
+    horario_referencia: '22:00',
+    categoria: 'Sistemas',
+    item: 'Encerrar sessões de PDV',
+    descricao: 'Fechar jornada corretamente em todos os terminais',
+  },
+  {
+    item_id: 'noite_impressoras',
+    horario_referencia: '22:00',
+    categoria: 'Sistemas',
+    item: 'Impressoras térmicas',
+    descricao: 'Desligar equipamentos para economia e segurança',
+  },
+  {
+    item_id: 'noite_ar_condicionado',
+    horario_referencia: '22:00',
+    categoria: 'Estrutura',
+    item: 'Ar-condicionado',
+    descricao: 'Ajustar temperatura ou desligar conforme política da loja',
+  },
+  {
+    item_id: 'noite_iluminacao',
+    horario_referencia: '22:00',
+    categoria: 'Estrutura',
+    item: 'Iluminação interna e fachada',
+    descricao: 'Reduzir luzes internas; fachada conforme shopping ou rua',
+  },
+  {
+    item_id: 'noite_som_ambiente',
+    horario_referencia: '21:30',
+    categoria: 'Estrutura',
+    item: 'Som ambiente',
+    descricao: 'Desligar rádio ou música interna',
+  },
+  {
+    item_id: 'noite_termolabeis_final',
+    horario_referencia: '22:00',
+    categoria: 'Medicamentos',
+    item: 'Termolábeis — leitura final',
+    descricao: 'Anotar temperatura final e lacrar se procedimento exigir',
+  },
+  {
+    item_id: 'noite_psicotropicos_trancado',
+    horario_referencia: '22:00',
+    categoria: 'Medicamentos',
+    item: 'Psicotrópicos trancados',
+    descricao: 'Gaveta/armário fechados; chaves no cofre conforme POP',
+  },
+  {
+    item_id: 'noite_livro_controlados',
+    horario_referencia: '22:00',
+    categoria: 'Medicamentos',
+    item: 'Livro de controlados',
+    descricao: 'Conferir pendências de assinatura e lançamentos do dia',
+  },
+  {
+    item_id: 'noite_estoque_manha',
+    horario_referencia: '21:30',
+    categoria: 'Medicamentos',
+    item: 'Sinalizar rupturas para manhã',
+    descricao: 'Anotar no Handover ou quadro o que precisa chegar cedo',
+  },
+  {
+    item_id: 'noite_separacao_pendentes',
+    horario_referencia: '21:30',
+    categoria: 'Medicamentos',
+    item: 'Separação e pendentes',
+    descricao: 'Zerar ou repassar pedidos em separação que ficaram pendentes',
+  },
+  {
+    item_id: 'noite_entregas_nao_concluidas',
+    horario_referencia: '21:30',
+    categoria: 'Logística',
+    item: 'Entregas não concluídas',
+    descricao: 'Registrar no Handover o que segue para o dia seguinte',
+  },
+  {
+    item_id: 'noite_handover_noturno',
+    horario_referencia: '22:00',
+    categoria: 'Handover',
+    item: 'Lançar Handover para manhã',
+    descricao: 'Pendências gerais, medicamentos e alertas de segurança',
+  },
+  {
+    item_id: 'noite_whatsapp_encerramento',
+    horario_referencia: '21:30',
+    categoria: 'Atendimento',
+    item: 'WhatsApp do balcão',
+    descricao: 'Deixar conversas críticas sinalizadas para retomada na manhã',
+  },
+  {
+    item_id: 'noite_limpeza_salao',
+    horario_referencia: '21:30',
+    categoria: 'Higiene',
+    item: 'Limpeza do salão',
+    descricao: 'Varreção rápida, bancas e corredores sem obstáculos',
+  },
+  {
+    item_id: 'noite_banheiros',
+    horario_referencia: '22:00',
+    categoria: 'Higiene',
+    item: 'Banheiros',
+    descricao: 'Descarga, sabonete, papel e lixeira pequena',
+  },
+  {
+    item_id: 'noite_lixeiras_externas',
+    horario_referencia: '22:00',
+    categoria: 'Higiene',
+    item: 'Lixeiras e descarte',
+    descricao: 'Sacos fechados e destino ao container se for o caso',
+  },
+  {
+    item_id: 'noite_balcao_organizado',
+    horario_referencia: '22:00',
+    categoria: 'Organização',
+    item: 'Balcão organizado',
+    descricao: 'Itens pessoais guardados; cadeiras encostadas',
+  },
+  {
+    item_id: 'noite_prateleiras_corredores',
+    horario_referencia: '21:30',
+    categoria: 'Organização',
+    item: 'Prateleiras e corredores',
+    descricao: 'Produtos alinhados e corredores desobstruídos',
+  },
+  {
+    item_id: 'noite_moto_bau',
+    horario_referencia: '22:00',
+    categoria: 'Logística',
+    item: 'Moto e baú',
+    descricao: 'Chaves no cofre; baú limpo e fechado conforme POP',
+  },
+  {
+    item_id: 'noite_portas_janelas',
+    horario_referencia: '22:00',
+    categoria: 'Segurança',
+    item: 'Portas e janelas',
+    descricao: 'Todas travadas exceto saída controlada da equipe',
+  },
+  {
+    item_id: 'noite_porta_aco_grade',
+    horario_referencia: '22:15',
+    categoria: 'Segurança',
+    item: 'Porta de aço / grade',
+    descricao: 'Fechamento completo e teste de trava',
+  },
+  {
+    item_id: 'noite_alarme',
+    horario_referencia: '22:15',
+    categoria: 'Segurança',
+    item: 'Alarme',
+    descricao: 'Ativar sistema conforme treinamento e POP de fechamento',
+  },
+  {
+    item_id: 'noite_chaves_cofre',
+    horario_referencia: '22:15',
+    categoria: 'Segurança',
+    item: 'Chaves e cofre',
+    descricao: 'Checklist de devolução de chaves e cofre fechado',
+  },
+  {
+    item_id: 'noite_cftv',
+    horario_referencia: '22:00',
+    categoria: 'Segurança',
+    item: 'CFTV gravando',
+    descricao: 'Verificação visual de gravador e câmeras principais',
+  },
+  {
+    item_id: 'noite_extintores',
+    horario_referencia: '21:30',
+    categoria: 'Segurança',
+    item: 'Extintores e rotas',
+    descricao: 'Desobstrução visual e acesso às rotas de fuga',
+  },
+  {
+    item_id: 'noite_agua_gas',
+    horario_referencia: '22:00',
+    categoria: 'Instalações',
+    item: 'Água e gás',
+    descricao: 'Torneiras fechadas; botijão se houver na loja',
+  },
+  {
+    item_id: 'noite_documentos_fiscais',
+    horario_referencia: '22:00',
+    categoria: 'Fiscal',
+    item: 'Documentos fiscais do dia',
+    descricao: 'Arquivar notas e resumos conforme rotina',
+  },
+  {
+    item_id: 'noite_email_resumo',
+    horario_referencia: '22:00',
+    categoria: 'Comunicação',
+    item: 'E-mail ou resumo interno',
+    descricao: 'Enviar resumo de ocorrências se procedimento da rede',
+  },
+  {
+    item_id: 'noite_quadro_recados',
+    horario_referencia: '22:00',
+    categoria: 'Comunicação',
+    item: 'Quadro de recados',
+    descricao: 'Atualizar para a equipe da manhã',
+  },
+  {
+    item_id: 'noite_varredura_final',
+    horario_referencia: '22:15',
+    categoria: 'Fechamento',
+    item: 'Última varredura da loja',
+    descricao: 'Passada final antes de acionar alarme e sair',
+  },
+];
+
+function getChecklistTemplateForTurno_(turnoParam) {
+  var turno = sanitizeChecklistTurno_(turnoParam);
+  if (turno === CHECKLIST_TURNO_TARDE) {
+    return CHECKLIST_TEMPLATE_TARDE_;
+  }
+  if (turno === CHECKLIST_TURNO_NOITE) {
+    return CHECKLIST_TEMPLATE_NOITE_;
+  }
+  return CHECKLIST_TEMPLATE_MANHA_;
+}
+
+/** @deprecated Use getChecklistTemplateForTurno_; mantido para compatibilidade legada. */
 function getChecklistTemplate_() {
-  return [
-    {
-      categoria: 'Estrutura e Ambiente',
-      item: 'Climatização',
-      descricao: 'Ligar ar-condicionado e cortina de ar',
-    },
-    {
-      categoria: 'Estrutura e Ambiente',
-      item: 'Iluminação',
-      descricao: 'Acender luzes do salão, fachada e tótens',
-    },
-    {
-      categoria: 'Estrutura e Ambiente',
-      item: 'Som ambiente',
-      descricao: 'Ligar rádio interna em volume agradável',
-    },
-    {
-      categoria: 'Estrutura e Ambiente',
-      item: 'Fachada',
-      descricao: 'Verificar limpeza da calçada e se há obstruções na entrada',
-    },
-    {
-      categoria: 'Sistemas e Operação',
-      item: 'Servidor',
-      descricao: 'Ligar e verificar se o banco de dados carregou corretamente',
-    },
-    {
-      categoria: 'Sistemas e Operação',
-      item: 'PDVs e Balcão',
-      descricao: 'Ligar computadores, monitores e impressoras térmicas',
-    },
-    {
-      categoria: 'Sistemas e Operação',
-      item: 'Troco',
-      descricao: 'Conferir o kit de troco',
-    },
-    {
-      categoria: 'Sistemas e Operação',
-      item: 'Caixa',
-      descricao: 'Abrir e conferir',
-    },
-    {
-      categoria: 'Sistemas e Operação',
-      item: 'Handover',
-      descricao:
-        'Checar mensagens do turno anterior, limpar o que foi resolvido e programar entregas do dia de medicamentos encomendados',
-    },
-    {
-      categoria: 'Sistemas e Operação',
-      item: 'Internet e TEF',
-      descricao: 'Testar conexão e máquinas de cartão',
-    },
-    {
-      categoria: 'Sistemas e Operação',
-      item: 'Telefones/WhatsApp',
-      descricao: 'Verificar bateria, conexão e mensagens recebidas enquanto a loja estava fechada',
-    },
-    {
-      categoria: 'Higiene e Organização',
-      item: 'Pisos e Prateleiras',
-      descricao: 'Conferir limpeza geral, sem pó ou manchas',
-    },
-    {
-      categoria: 'Higiene e Organização',
-      item: 'Lixeiras',
-      descricao: 'Verificar se todas estão com sacos novos',
-    },
-    {
-      categoria: 'Higiene e Organização',
-      item: 'Banheiros e Pias',
-      descricao: 'Repor sabonete líquido e papel toalha',
-    },
-    {
-      categoria: 'Higiene e Organização',
-      item: 'Álcool em gel',
-      descricao: 'Verificar disponibilidade no balcão',
-    },
-    {
-      categoria: 'Logística de Entrega',
-      item: 'Moto',
-      descricao: 'Usar sistema para conferir condições da moto junto com entregador',
-    },
-    {
-      categoria: 'Logística de Entrega',
-      item: 'Baú/Mochila',
-      descricao: 'Verificar limpeza interna e se está seco',
-    },
-    {
-      categoria: 'Logística de Entrega',
-      item: 'Maquineta móvel',
-      descricao: 'Checar bateria da máquina de cartão de rua',
-    },
-    {
-      categoria: 'Balcão e Medicamentos',
-      item: 'Termolábeis',
-      descricao: 'Conferir e anotar temperatura da geladeira de vacinas/insulinas',
-    },
-    {
-      categoria: 'Balcão e Medicamentos',
-      item: 'Psicotrópicos',
-      descricao: 'Verificar se armário controlado está fechado e chave acessível',
-    },
-    {
-      categoria: 'Balcão e Medicamentos',
-      item: 'Reposição',
-      descricao: 'Verificar buracos nas prateleiras de curva A para abastecimento imediato',
-    },
-  ];
+  return getChecklistTemplateForTurno_(CHECKLIST_TURNO_MANHA);
 }
 
 function getChecklistDateKey_(date) {
   return Utilities.formatDate(date || new Date(), HANDOVER_TIMEZONE, 'yyyy-MM-dd');
 }
 
-function getChecklistTemplateOrderMap_() {
-  return getChecklistTemplate_().reduce(function (orderMap, checklistItem, index) {
+function getChecklistTemplateOrderMap_(turnoParam) {
+  var turno = sanitizeChecklistTurno_(turnoParam);
+  return getChecklistTemplateForTurno_(turno).reduce(function (orderMap, checklistItem, index) {
     orderMap[buildChecklistIdentityKey_(checklistItem.item)] = index;
+    if (checklistItem.item_id) {
+      orderMap[buildChecklistIdentityKey_(checklistItem.item_id)] = index;
+    }
     return orderMap;
   }, {});
 }
@@ -2380,7 +2862,7 @@ function ensureTodayChecklistForTurno_(turnoParam) {
   const sheet = getSheetOrThrow_(ss, SHEET_NAMES.CHECKLIST);
   const lastCol = Math.max(sheet.getLastColumn(), 1);
   const headerCells = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  const template = getChecklistTemplate_();
+  const template = getChecklistTemplateForTurno_(turno);
   const dateKey = getChecklistDateKey_();
   const turno = sanitizeChecklistTurno_(turnoParam);
   const horarioRef = horarioReferenciaForTurno_(turno);
@@ -2417,11 +2899,16 @@ function ensureTodayChecklistForTurno_(turnoParam) {
       return;
     }
 
+    var rowHorario =
+      templateItem.horario_referencia != null && String(templateItem.horario_referencia).trim() !== ''
+        ? sanitizeText_(templateItem.horario_referencia)
+        : horarioRef;
+
     rowsToInsert.push([
       Utilities.getUuid(),
       dateKey,
       turno,
-      horarioRef,
+      rowHorario,
       sanitizeText_(templateItem.categoria),
       sanitizeText_(templateItem.item),
       sanitizeText_(templateItem.descricao),
@@ -2466,7 +2953,7 @@ function fetchChecklistItems_(dateKey, turno) {
   }
 
   const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, lastCol).getValues();
-  const orderMap = getChecklistTemplateOrderMap_();
+  const orderMap = getChecklistTemplateOrderMap_(filterTurno);
 
   return values
     .map(function (row) {
@@ -4206,7 +4693,8 @@ function normalizeChecklistItemForClient_(item) {
 
   item.Data = normalizeDateKeyCell_(item.Data);
   item.Turno = sanitizeText_(item.Turno) || CHECKLIST_TURNO_MANHA;
-  item.Horario_Referencia = sanitizeText_(item.Horario_Referencia) || CHECKLIST_HORARIO_REFERENCIA;
+  item.Horario_Referencia =
+    sanitizeText_(item.Horario_Referencia) || horarioReferenciaForTurno_(item.Turno) || CHECKLIST_HORARIO_REFERENCIA;
   item.Categoria = sanitizeText_(item.Categoria);
   item.Item = sanitizeText_(item.Item);
   item.Descricao = sanitizeText_(item.Descricao);
