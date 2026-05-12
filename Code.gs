@@ -2810,6 +2810,43 @@ function getChecklistTemplateOrderMap_(turnoParam) {
   }, {});
 }
 
+/**
+ * Remove linhas em Checklist_Turnos para a data e o turno dados quando o texto de Item
+ * não existe no template atual daquele turno (ex.: Noite com 21 itens antigos da Manhã).
+ * Só afeta a combinação (dateKey, turno) passada — tipicamente o dia corrente ao gerar checklist.
+ */
+function purgeChecklistRowsNotInTemplate_(sheet, lastCol, headerCells, dateKey, turno, template) {
+  var allowed = {};
+  for (var ti = 0; ti < template.length; ti++) {
+    allowed[buildChecklistIdentityKey_(sanitizeText_(template[ti].item))] = true;
+  }
+  var dk = String(dateKey || '').trim();
+  var turnoOk = sanitizeChecklistTurno_(turno);
+  var removed = 0;
+  var lr = sheet.getLastRow();
+  if (lr <= 1) {
+    return removed;
+  }
+  for (var rn = lr; rn >= 2; rn--) {
+    var row = sheet.getRange(rn, 1, 1, lastCol).getValues()[0];
+    var rowObject = rowCellsToObject_(headerCells, row);
+    var rowDate = normalizeDateKeyCell_(rowObject.Data);
+    var rowTurno = sanitizeText_(rowObject.Turno);
+    if (!rowDate || !rowTurno) {
+      continue;
+    }
+    if (String(rowDate).trim() !== dk || sanitizeChecklistTurno_(rowTurno) !== turnoOk) {
+      continue;
+    }
+    var itemText = sanitizeText_(rowObject.Item);
+    if (!itemText || !allowed[buildChecklistIdentityKey_(itemText)]) {
+      sheet.deleteRow(rn);
+      removed++;
+    }
+  }
+  return removed;
+}
+
 function sanitizeChecklistTurno_(value) {
   var label = sanitizeText_(value);
   if (label === CHECKLIST_TURNO_TARDE) {
@@ -2867,6 +2904,16 @@ function ensureTodayChecklistForTurno_(turnoParam) {
   const template = getChecklistTemplateForTurno_(turno);
   const horarioRef = horarioReferenciaForTurno_(turno);
   const identityPrefix = buildChecklistIdentityKey_(dateKey) + '|' + buildChecklistIdentityKey_(turno);
+
+  var purged = 0;
+  try {
+    purged = purgeChecklistRowsNotInTemplate_(sheet, lastCol, headerCells, dateKey, turno, template);
+    if (purged > 0) {
+      Logger.log('purgeChecklistRowsNotInTemplate_ date=' + dateKey + ' turno=' + turno + ' removed=' + purged);
+    }
+  } catch (purgeErr) {
+    Logger.log('purgeChecklistRowsNotInTemplate_: ' + purgeErr);
+  }
 
   const existingKeys = new Set();
   const lastRow = sheet.getLastRow();
@@ -2937,6 +2984,7 @@ function ensureTodayChecklistForTurno_(turnoParam) {
     dateKey: dateKey,
     turno: turno,
     insertedCount: rowsToInsert.length,
+    purgedCount: purged,
   };
 }
 
