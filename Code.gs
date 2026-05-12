@@ -3331,11 +3331,28 @@ function cancelMedicationRequest(id, sessionToken, motivo) {
     Logger.log('cancelMedicationRequest mirror compras: ' + ce);
   }
 
-  Logger.log('cancelMedicationRequest ms=' + (Date.now() - started));
-  return {
-    success: true,
-    record: fetchMedicationRecordById_(id),
-  };
+  // Mover para Arquivo_Resolvidos — cancelado sai da fila e aparece só no Histórico.
+  try {
+    SpreadsheetApp.flush();
+    moveRowToResolved(SHEET_NAMES.MEDICAMENTOS, rn);
+    // Marcar Estado_Arquivo como Cancelado (padrão seria Resolvido).
+    var archiveSheet = getSheetOrThrow_(getSpreadsheet_(), SHEET_NAMES.ARQUIVO);
+    var arcLoc = findRowById_(SHEET_NAMES.ARQUIVO, sanitizeText_(id));
+    if (arcLoc) {
+      archiveSheet
+        .getRange(arcLoc.rowNumber, getColumnIndex_(archiveSheet, 'Estado_Arquivo'))
+        .setValue('Cancelado');
+    }
+    Logger.log('cancelMedicationRequest arquivado id=' + sanitizeText_(id) + ' ms=' + (Date.now() - started));
+    return { success: true, removedId: sanitizeText_(id) };
+  } catch (archErr) {
+    // Se o arquivamento falhar, retorna o registro cancelado normalmente (não bloqueia).
+    Logger.log('cancelMedicationRequest archive falhou: ' + archErr);
+    return {
+      success: true,
+      record: fetchMedicationRecordById_(id),
+    };
+  }
 }
 
 function markAsResolved(id, sessionToken) {

@@ -9006,7 +9006,11 @@
             getScriptRunner_()
               .withSuccessHandler(function (response) {
                 delete item.__syncState;
-                if (response.record) {
+                if (response.removedId) {
+                  // Item arquivado: sai da fila e aparece só no Histórico.
+                  removeMedicamentoById_(response.removedId);
+                  historicoLoadState = 'idle';
+                } else if (response.record) {
                   upsertMedicamento_(response.record);
                 }
                 perfLog_('cancelMedicationRequest', started);
