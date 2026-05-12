@@ -86,6 +86,8 @@ const EMAIL_ENCOMENDAS = 'drogariasconceitocm@gmail.com';
 const HANDOVER_SPREADSHEET_ID_KEY = 'HANDOVER_SPREADSHEET_ID';
 const HANDOVER_SPREADSHEET_TITLE = 'Handover Drogarias Conceito';
 const HANDOVER_TIMEZONE = 'America/Sao_Paulo';
+const COMPRAS_SPREADSHEET_ID_KEY = 'COMPRAS_SPREADSHEET_ID';
+const COMPRAS_SPREADSHEET_TITLE = 'Compras_Drogarias_Conceito';
 
 // Auth/PIN (backend-only nesta Parte 1)
 const HANDOVER_USERS_HEADERS = [
@@ -355,6 +357,30 @@ function getSpreadsheet_() {
   }
 }
 
+/**
+ * Abre a planilha separada de Compras_Drogarias_Conceito.
+ * Requer que a propriedade COMPRAS_SPREADSHEET_ID esteja configurada.
+ * NÃO cria planilha automaticamente — use setupComprasPlanilha() para criar e configurar.
+ */
+function getComprasSpreadsheet_() {
+  var properties = PropertiesService.getScriptProperties();
+  var spreadsheetId = sanitizeText_(properties.getProperty(COMPRAS_SPREADSHEET_ID_KEY));
+  if (!spreadsheetId) {
+    throw new Error(
+      'Propriedade ' + COMPRAS_SPREADSHEET_ID_KEY + ' nao configurada. ' +
+      'Execute setupComprasPlanilha() para criar a planilha de Compras e configurar a propriedade automaticamente.'
+    );
+  }
+  try {
+    return SpreadsheetApp.openById(spreadsheetId);
+  } catch (error) {
+    throw new Error(
+      'Nao foi possivel abrir a planilha de Compras configurada em ' + COMPRAS_SPREADSHEET_ID_KEY +
+      ' (' + spreadsheetId + '). Verifique o ID e as permissoes da conta.'
+    );
+  }
+}
+
 function getSpreadsheetIdForDebug() {
   const spreadsheet = getSpreadsheet_();
   const spreadsheetId = spreadsheet.getId();
@@ -362,29 +388,151 @@ function getSpreadsheetIdForDebug() {
   return spreadsheetId;
 }
 
+// =============================================================================
+// Virada de Produção — funções de setup / manutenção (executar manualmente)
+// =============================================================================
+
+/**
+ * FASE 1 — MANUAL: copia a planilha do Handover como backup antes de qualquer reset.
+ * Executa no editor GAS; não toca em dados nem em propriedades.
+ * Retorna { ok, id, nome } do backup criado.
+ */
+function backupHandoverPlanilha() {
+  var ss = getSpreadsheet_();
+  var ts = Utilities.formatDate(new Date(), HANDOVER_TIMEZONE, 'yyyyMMdd_HHmm');
+  var copy = ss.copy('BACKUP_' + ts + '_' + ss.getName());
+  Logger.log('backupHandoverPlanilha: backup criado id=' + copy.getId() + ' nome=' + copy.getName() + ' url=' + copy.getUrl());
+  return { ok: true, id: copy.getId(), nome: copy.getName(), url: copy.getUrl() };
+}
+
+/**
+ * FASE 2 — MANUAL: cria a planilha Compras_Drogarias_Conceito, cria/formata a aba Compras_Medicamentos
+ * e salva o ID na propriedade COMPRAS_SPREADSHEET_ID automaticamente.
+ * Idempotente se a propriedade já existir: só recria headers/layout sem apagar dados.
+ * Retorna { ok, id, url, nome }.
+ */
+function setupComprasPlanilha() {
+  var properties = PropertiesService.getScriptProperties();
+  var existingId = sanitizeText_(properties.getProperty(COMPRAS_SPREADSHEET_ID_KEY));
+  var ss;
+  if (existingId) {
+    try {
+      ss = SpreadsheetApp.openById(existingId);
+      Logger.log('setupComprasPlanilha: planilha existente id=' + existingId);
+    } catch (e) {
+      Logger.log('setupComprasPlanilha: id existente invalido (' + existingId + '), criando nova planilha');
+      ss = null;
+    }
+  }
+  if (!ss) {
+    ss = SpreadsheetApp.create(COMPRAS_SPREADSHEET_TITLE);
+    properties.setProperty(COMPRAS_SPREADSHEET_ID_KEY, ss.getId());
+    Logger.log('setupComprasPlanilha: nova planilha criada id=' + ss.getId());
+  }
+
+  // Garante aba Compras_Medicamentos com headers corretos
+  var sheet = ss.getSheetByName(SHEET_NAMES.COMPRAS_MEDICAMENTOS);
+  if (!sheet) {
+    // Renomeia aba padrão "Página1" se existir, caso contrário insere nova
+    var sheets = ss.getSheets();
+    if (sheets.length === 1 && sheets[0].getLastRow() === 0) {
+      sheet = sheets[0];
+      sheet.setName(SHEET_NAMES.COMPRAS_MEDICAMENTOS);
+    } else {
+      sheet = ss.insertSheet(SHEET_NAMES.COMPRAS_MEDICAMENTOS);
+    }
+  }
+  ensureHeadersLegacyAdditive_(sheet, HEADERS.Compras_Medicamentos);
+  try {
+    applyComprasMedicamentosLayout_(sheet);
+  } catch (layoutErr) {
+    Logger.log('setupComprasPlanilha layout: ' + layoutErr);
+  }
+
+  Logger.log('setupComprasPlanilha: OK id=' + ss.getId() + ' url=' + ss.getUrl());
+  return { ok: true, id: ss.getId(), url: ss.getUrl(), nome: ss.getName() };
+}
+
+/**
+ * FASE 5 — MANUAL: renomeia e oculta a aba Compras_Medicamentos legada na planilha do Handover.
+ * Chamar APÓS confirmar que setupComprasPlanilha() foi executado e sincronizarComprasMedicamentos()
+ * copiou os dados para a nova planilha.
+ * Não apaga dados; apenas renomeia para LEGACY_Compras_YYYYMMDD e oculta.
+ */
+function renomearAbaComprasLegacy() {
+  var ss = getSpreadsheet_();
+  var sheet = ss.getSheetByName(SHEET_NAMES.COMPRAS_MEDICAMENTOS);
+  if (!sheet) {
+    Logger.log('renomearAbaComprasLegacy: aba Compras_Medicamentos nao encontrada (ja renomeada ou inexistente)');
+    return { ok: true, action: 'noop' };
+  }
+  var novoNome = 'LEGACY_Compras_' + Utilities.formatDate(new Date(), HANDOVER_TIMEZONE, 'yyyyMMdd');
+  sheet.setName(novoNome);
+  sheet.hideSheet();
+  Logger.log('renomearAbaComprasLegacy: aba renomeada para ' + novoNome + ' e ocultada no Handover');
+  return { ok: true, novoNome: novoNome };
+}
+
+/**
+ * FASE 6 — MANUAL: limpa apenas o conteúdo de dados (linhas 2+) das abas operacionais do Handover.
+ * NÃO apaga cabeçalhos, NÃO usa sheet.clear(), NÃO deleta linhas.
+ * Abas limpas: Geral, Medicamentos, Arquivo_Resolvidos, Checklist_Turnos, Auditoria_Handover.
+ * Chamar SOMENTE após backup (backupHandoverPlanilha) confirmado.
+ */
+function zerarHandoverParaProducao() {
+  var ss = getSpreadsheet_();
+  var abas = [
+    SHEET_NAMES.GERAL,
+    SHEET_NAMES.MEDICAMENTOS,
+    SHEET_NAMES.ARQUIVO,
+    SHEET_NAMES.CHECKLIST,
+    SHEET_NAMES.AUDITORIA,
+  ];
+  var resultados = {};
+  for (var i = 0; i < abas.length; i++) {
+    var nome = abas[i];
+    var sheet = ss.getSheetByName(nome);
+    if (!sheet) {
+      resultados[nome] = 'nao_encontrada';
+      Logger.log('zerarHandoverParaProducao: ' + nome + ' nao encontrada');
+      continue;
+    }
+    var lastRow = sheet.getLastRow();
+    var lastCol = Math.max(sheet.getLastColumn(), 1);
+    if (lastRow <= 1) {
+      resultados[nome] = 'ja_vazia';
+      Logger.log('zerarHandoverParaProducao: ' + nome + ' ja vazia');
+      continue;
+    }
+    sheet.getRange(2, 1, lastRow - 1, lastCol).clearContent();
+    resultados[nome] = 'limpa_' + (lastRow - 1) + '_linhas';
+    Logger.log('zerarHandoverParaProducao: ' + nome + ' limpa (' + (lastRow - 1) + ' linhas)');
+  }
+  Logger.log('zerarHandoverParaProducao: ' + JSON.stringify(resultados));
+  return { ok: true, resultados: resultados };
+}
+
 function setupSpreadsheet() {
   const ss = getSpreadsheet_();
 
   Object.keys(HEADERS).forEach(function (sheetName) {
-    const sheet = ensureSheetHeadersFor_(sheetName);
+    // Compras_Medicamentos agora fica em planilha separada (Compras_Drogarias_Conceito).
+    // Use setupComprasPlanilha() para criar/configurar essa planilha.
     if (sheetName === SHEET_NAMES.COMPRAS_MEDICAMENTOS) {
-      try {
-        applyComprasMedicamentosLayout_(sheet);
-      } catch (layoutErr) {
-        Logger.log('applyComprasMedicamentosLayout_: ' + layoutErr);
-      }
+      return;
     }
+    ensureSheetHeadersFor_(sheetName);
   });
 }
 
 function ensureSheetHeadersFor_(sheetName) {
   const ss = getSpreadsheet_();
   const sheet = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
+  // Compras_Medicamentos foi migrada para planilha separada; não cria/atualiza headers aqui.
   if (
     sheetName === SHEET_NAMES.GERAL ||
     sheetName === SHEET_NAMES.ARQUIVO ||
     sheetName === SHEET_NAMES.MEDICAMENTOS ||
-    sheetName === SHEET_NAMES.COMPRAS_MEDICAMENTOS ||
     sheetName === SHEET_NAMES.CHECKLIST ||
     sheetName === SHEET_NAMES.AUDITORIA
   ) {
@@ -396,7 +544,13 @@ function ensureSheetHeadersFor_(sheetName) {
 }
 
 function getComprasMedicamentosSheet_() {
-  return ensureSheetHeadersFor_(SHEET_NAMES.COMPRAS_MEDICAMENTOS);
+  var ss = getComprasSpreadsheet_();
+  var sheet = ss.getSheetByName(SHEET_NAMES.COMPRAS_MEDICAMENTOS);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAMES.COMPRAS_MEDICAMENTOS);
+  }
+  ensureHeadersLegacyAdditive_(sheet, HEADERS.Compras_Medicamentos);
+  return sheet;
 }
 
 function getAuditoriaHandoverSheet_() {
@@ -1858,9 +2012,9 @@ function handleComprasMedicamentosEdit_(e) {
   var parentId = sheet.getParent().getId();
   var officialId;
   try {
-    officialId = getSpreadsheet_().getId();
+    officialId = getComprasSpreadsheet_().getId();
   } catch (ex) {
-    Logger.log('handleComprasMedicamentosEdit_: planilha ' + ex);
+    Logger.log('handleComprasMedicamentosEdit_: planilha Compras ' + ex);
     return;
   }
   if (parentId !== officialId) {
@@ -1934,7 +2088,7 @@ function testarProcessarStatusCompraPorIdHandover() {
  * Remove gatilhos duplicados do mesmo handler antes de criar.
  */
 function instalarTriggerComprasMedicamentos_() {
-  var ss = getSpreadsheet_();
+  var ss = getComprasSpreadsheet_();
   var all = ScriptApp.getProjectTriggers();
   var toDelete = [];
   var i;
