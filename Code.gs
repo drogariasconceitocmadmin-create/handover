@@ -2212,22 +2212,6 @@ function handleComprasMedicamentosStatusEdit_(sheet, rowNumber, newValue, oldVal
  */
 var CHECKLIST_TEMPLATE_MANHA_ = [
   {
-    item_id: 'manha_trava_saida',
-    horario_referencia: '07:00',
-    categoria: 'Caixa e Financeiro',
-    item: 'TRAVA DE SAÍDA',
-    descricao: [
-      '1. Conferir caixa físico vs. sistema.',
-      '2. Executar fechamento do PDV (quando aplicável).',
-      '3. Conciliar TEF (cartão) com o sistema.',
-      '4. Conferir PIX/links (valores e comprovantes).',
-      '5. Registrar estornos/cancelamentos com motivo.',
-      '6. Guardar valores e trancar o cofre.',
-      '',
-      'Critério de aprovação: saldo bate ou divergência registrada (valor + possível causa + ação).',
-    ].join('\n'),
-  },
-  {
     item_id: 'manha_climatizacao',
     horario_referencia: '07:00',
     categoria: 'Estrutura e Ambiente',
@@ -2501,6 +2485,22 @@ var CHECKLIST_TEMPLATE_MANHA_ = [
     ].join('\n'),
   },
   {
+    item_id: 'manha_trava_saida',
+    horario_referencia: '07:00',
+    categoria: 'Caixa e Financeiro',
+    item: 'TRAVA DE SAÍDA',
+    descricao: [
+      '1. Conferir caixa físico vs. sistema.',
+      '2. Executar fechamento do PDV (quando aplicável).',
+      '3. Conciliar TEF (cartão) com o sistema.',
+      '4. Conferir PIX/links (valores e comprovantes).',
+      '5. Registrar estornos/cancelamentos com motivo.',
+      '6. Guardar valores e trancar o cofre.',
+      '',
+      'Critério de aprovação: saldo bate ou divergência registrada (valor + possível causa + ação).',
+    ].join('\n'),
+  },
+  {
     item_id: 'manha_fechamento_abertura',
     horario_referencia: '07:00',
     categoria: 'Fechamento da abertura',
@@ -2521,22 +2521,6 @@ var CHECKLIST_TEMPLATE_MANHA_ = [
  * Template Tarde — Passagem de turno / continuidade (13:40, 9 itens).
  */
 var CHECKLIST_TEMPLATE_TARDE_ = [
-  {
-    item_id: 'tarde_trava_saida',
-    horario_referencia: '13:40',
-    categoria: 'Caixa e Financeiro',
-    item: 'TRAVA DE SAÍDA',
-    descricao: [
-      '1. Conferir caixa físico vs. sistema.',
-      '2. Executar fechamento do PDV (quando aplicável).',
-      '3. Conciliar TEF (cartão) com o sistema.',
-      '4. Conferir PIX/links (valores e comprovantes).',
-      '5. Registrar estornos/cancelamentos com motivo.',
-      '6. Guardar valores e trancar o cofre.',
-      '',
-      'Critério de aprovação: saldo bate ou divergência registrada (valor + possível causa + ação).',
-    ].join('\n'),
-  },
   {
     item_id: 'tarde_leitura_rapida',
     horario_referencia: '13:40',
@@ -2637,6 +2621,22 @@ var CHECKLIST_TEMPLATE_TARDE_ = [
     ].join('\n'),
   },
   {
+    item_id: 'tarde_trava_saida',
+    horario_referencia: '17:00',
+    categoria: 'Caixa e Financeiro',
+    item: 'TRAVA DE SAÍDA',
+    descricao: [
+      '1. Conferir caixa físico vs. sistema.',
+      '2. Executar fechamento do PDV (quando aplicável).',
+      '3. Conciliar TEF (cartão) com o sistema.',
+      '4. Conferir PIX/links (valores e comprovantes).',
+      '5. Registrar estornos/cancelamentos com motivo.',
+      '6. Guardar valores e trancar o cofre.',
+      '',
+      'Critério de aprovação: saldo bate ou divergência registrada (valor + possível causa + ação).',
+    ].join('\n'),
+  },
+  {
     item_id: 'tarde_validacao_final',
     horario_referencia: '17:00',
     categoria: 'Fechamento (validação final)',
@@ -2656,22 +2656,6 @@ var CHECKLIST_TEMPLATE_TARDE_ = [
  * Template Noite — Fechamento noturno (10 blocos operacionais).
  */
 var CHECKLIST_TEMPLATE_NOITE_ = [
-  {
-    item_id: 'noite_caixa_financeiro_trava_saida',
-    horario_referencia: '22:00',
-    categoria: 'Caixa e Financeiro',
-    item: 'TRAVA DE SAÍDA',
-    descricao: [
-      '1. Conferir caixa físico vs. sistema.',
-      '2. Executar fechamento do PDV (quando aplicável).',
-      '3. Conciliar TEF (cartão) com o sistema.',
-      '4. Conferir PIX/links (valores e comprovantes).',
-      '5. Registrar estornos/cancelamentos com motivo.',
-      '6. Guardar valores e trancar o cofre.',
-      '',
-      'Critério de aprovação: saldo bate ou divergência registrada (valor + possível causa + ação).',
-    ].join('\n'),
-  },
   {
     item_id: 'noite_handover_passar_jogo_limpo',
     horario_referencia: '22:00',
@@ -2780,6 +2764,22 @@ var CHECKLIST_TEMPLATE_NOITE_ = [
       '4. Conferir área externa (fachada) sem itens expostos indevidamente.',
       '',
       'Critério de aprovação: loja segura após saída da equipe.',
+    ].join('\n'),
+  },
+  {
+    item_id: 'noite_caixa_financeiro_trava_saida',
+    horario_referencia: '22:15',
+    categoria: 'Caixa e Financeiro',
+    item: 'TRAVA DE SAÍDA',
+    descricao: [
+      '1. Conferir caixa físico vs. sistema.',
+      '2. Executar fechamento do PDV (quando aplicável).',
+      '3. Conciliar TEF (cartão) com o sistema.',
+      '4. Conferir PIX/links (valores e comprovantes).',
+      '5. Registrar estornos/cancelamentos com motivo.',
+      '6. Guardar valores e trancar o cofre.',
+      '',
+      'Critério de aprovação: saldo bate ou divergência registrada (valor + possível causa + ação).',
     ].join('\n'),
   },
   {
