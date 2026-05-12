@@ -18,7 +18,7 @@ const COMPRAS_STATUS_COMPRA = {
 
 /** Encomenda: preço e data obrigatórios (criação e edição). */
 var ENCOMENDA_PRECO_DATA_MSG_ =
-  'Para registrar uma encomenda, informe o preço de venda e a data prevista de entrega.';
+  'Para registrar uma encomenda, informe a data prevista de entrega.';
 
 const FORMAS_RECEBIMENTO = {
   A_COMBINAR: 'A combinar',
@@ -2872,10 +2872,7 @@ function appendHandoverRecord_(tab, data, authorLabel) {
     if (!previsaoEntrega) {
       throw new Error(ENCOMENDA_PRECO_DATA_MSG_);
     }
-    const precoVenda = parseSalePrice_(data.precoVenda);
-    if (precoVenda === '' || precoVenda === null || precoVenda === undefined) {
-      throw new Error(ENCOMENDA_PRECO_DATA_MSG_);
-    }
+    const precoVenda = parseSalePrice_(data.precoVenda); // opcional para Encomenda
     const formaRecebimento = normalizeFormaRecebimento_(data.formaRecebimento);
 
     const rowValues = buildAppendRowValuesFromNamedMap_(sheet, {
@@ -3018,9 +3015,7 @@ function buildAllowedEditPatch_(sheetName, current, payload) {
     if (!out.Previsao_Entrega) {
       throw new Error(ENCOMENDA_PRECO_DATA_MSG_);
     }
-    if (out.Preco_Venda === '' || out.Preco_Venda === null || out.Preco_Venda === undefined) {
-      throw new Error(ENCOMENDA_PRECO_DATA_MSG_);
-    }
+    // Preco_Venda é opcional para Encomenda
   }
 
   return out;
