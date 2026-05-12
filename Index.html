@@ -2142,6 +2142,15 @@
         background: linear-gradient(180deg, #f8fafc 0%, #e8eef5 100%);
       }
 
+      .checklist-category-head-static {
+        cursor: default;
+        box-sizing: border-box;
+      }
+
+      .checklist-category-head-static:hover {
+        background: linear-gradient(180deg, #fbfcfe 0%, #f1f5f9 100%);
+      }
+
       .checklist-category-meta {
         color: var(--muted);
         font-size: 11px;
@@ -7785,31 +7794,22 @@
         }
 
         const grouped = groupChecklistByCategory_(items);
+        const collapsibleCats = activeChecklistTurno === 'Manhã';
         checklistCategories.innerHTML = Object.keys(grouped)
           .map(function (category) {
-            const categoryKey = encodeURIComponent(category);
             const categoryItems = grouped[category];
             const summaryByCategory = buildChecklistSummary_(categoryItems);
-            const isOpen = openChecklistCategories.has(category);
+            const isOpen = collapsibleCats ? openChecklistCategories.has(category) : true;
             const visibleItems = filterChecklistItemsForView_(categoryItems);
-            const itemsHtml = isOpen
-              ? visibleItems.length > 0
+            const itemsHtml =
+              visibleItems.length > 0
                 ? visibleItems
                     .map(function (item) {
                       return buildChecklistItemHtml_(item, checklist.isAfterDeadline);
                     })
                     .join('')
-                : '<div class="empty-box">Nenhum item neste filtro nesta categoria.</div>'
-              : '';
-
-            return (
-              '<section class="checklist-category">' +
-              '<button type="button" class="checklist-category-head" onclick="toggleChecklistCategory(\'' +
-              escapeAttribute(categoryKey) +
-              "')\">" +
-              '<span>' +
-              escapeHtml(category) +
-              '</span>' +
+                : '<div class="empty-box">Nenhum item neste filtro nesta categoria.</div>';
+            const metaHtml =
               '<span class="checklist-category-meta">' +
               escapeHtml(summaryByCategory.itensFeitos) +
               '/' +
@@ -7818,9 +7818,36 @@
               escapeHtml(summaryByCategory.itensPendentes) +
               ' pend. • ' +
               escapeHtml(summaryByCategory.itensNaoAplicaveis) +
-              ' N/A</span>' +
-              '</button>' +
-              (isOpen ? '<div class="checklist-items">' + itemsHtml + '</div>' : '') +
+              ' N/A</span>';
+
+            if (collapsibleCats) {
+              const categoryKey = encodeURIComponent(category);
+              return (
+                '<section class="checklist-category">' +
+                '<button type="button" class="checklist-category-head" onclick="toggleChecklistCategory(\'' +
+                escapeAttribute(categoryKey) +
+                "')\">" +
+                '<span>' +
+                escapeHtml(category) +
+                '</span>' +
+                metaHtml +
+                '</button>' +
+                (isOpen ? '<div class="checklist-items">' + itemsHtml + '</div>' : '') +
+                '</section>'
+              );
+            }
+
+            return (
+              '<section class="checklist-category checklist-category-flat">' +
+              '<div class="checklist-category-head checklist-category-head-static">' +
+              '<span>' +
+              escapeHtml(category) +
+              '</span>' +
+              metaHtml +
+              '</div>' +
+              '<div class="checklist-items">' +
+              itemsHtml +
+              '</div>' +
               '</section>'
             );
           })
@@ -8167,6 +8194,9 @@
       }
 
       function toggleChecklistCategory(encodedCategory) {
+        if (activeChecklistTurno !== 'Manhã') {
+          return;
+        }
         const category = decodeURIComponent(encodedCategory);
         if (openChecklistCategories.has(category)) {
           openChecklistCategories.delete(category);

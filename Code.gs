@@ -2207,10 +2207,26 @@ function handleComprasMedicamentosStatusEdit_(sheet, rowNumber, newValue, oldVal
 }
 
 /**
- * Template Manhã — Instrução de Abertura / checklist do turno da manhã (07:00, 22 itens).
+ * Template Manhã — Instrução de Abertura / checklist do turno da manhã (07:00, 23 itens).
  * Conteúdo alinhado ao documento oficial da loja; item_id estável para ordenação.
  */
 var CHECKLIST_TEMPLATE_MANHA_ = [
+  {
+    item_id: 'manha_trava_saida',
+    horario_referencia: '07:00',
+    categoria: 'Caixa e Financeiro',
+    item: 'TRAVA DE SAÍDA',
+    descricao: [
+      '1. Conferir caixa físico vs. sistema.',
+      '2. Executar fechamento do PDV (quando aplicável).',
+      '3. Conciliar TEF (cartão) com o sistema.',
+      '4. Conferir PIX/links (valores e comprovantes).',
+      '5. Registrar estornos/cancelamentos com motivo.',
+      '6. Guardar valores e trancar o cofre.',
+      '',
+      'Critério de aprovação: saldo bate ou divergência registrada (valor + possível causa + ação).',
+    ].join('\n'),
+  },
   {
     item_id: 'manha_climatizacao',
     horario_referencia: '07:00',
@@ -2502,9 +2518,25 @@ var CHECKLIST_TEMPLATE_MANHA_ = [
 ];
 
 /**
- * Template Tarde — Passagem de turno / continuidade (13:40, 8 itens).
+ * Template Tarde — Passagem de turno / continuidade (13:40, 9 itens).
  */
 var CHECKLIST_TEMPLATE_TARDE_ = [
+  {
+    item_id: 'tarde_trava_saida',
+    horario_referencia: '13:40',
+    categoria: 'Caixa e Financeiro',
+    item: 'TRAVA DE SAÍDA',
+    descricao: [
+      '1. Conferir caixa físico vs. sistema.',
+      '2. Executar fechamento do PDV (quando aplicável).',
+      '3. Conciliar TEF (cartão) com o sistema.',
+      '4. Conferir PIX/links (valores e comprovantes).',
+      '5. Registrar estornos/cancelamentos com motivo.',
+      '6. Guardar valores e trancar o cofre.',
+      '',
+      'Critério de aprovação: saldo bate ou divergência registrada (valor + possível causa + ação).',
+    ].join('\n'),
+  },
   {
     item_id: 'tarde_leitura_rapida',
     horario_referencia: '13:40',
@@ -2621,7 +2653,7 @@ var CHECKLIST_TEMPLATE_TARDE_ = [
 ];
 
 /**
- * Template Noite — Fechamento noturno (9 blocos operacionais).
+ * Template Noite — Fechamento noturno (10 blocos operacionais).
  */
 var CHECKLIST_TEMPLATE_NOITE_ = [
   {
@@ -2680,6 +2712,16 @@ var CHECKLIST_TEMPLATE_NOITE_ = [
       '4. Guardar moto.',
       '',
       'Critério de aprovação: nenhuma entrega sem status e próximo passo.',
+    ].join('\n'),
+  },
+  {
+    item_id: 'noite_fechamento_moto',
+    horario_referencia: '22:00',
+    categoria: 'Entregas',
+    item: 'Fechamento da Moto',
+    descricao: [
+      'Preencher sistema da moto com entregador e guardar chaves em local pré estipulado.',
+      'Guardar moto no interior da loja.',
     ].join('\n'),
   },
   {
