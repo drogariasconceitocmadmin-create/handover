@@ -2788,6 +2788,16 @@ function getChecklistTemplateOrderMap_(turnoParam) {
   }, {});
 }
 
+/** Chaves normalizadas dos textos de Item permitidos no template do turno (exclui linhas legadas na leitura). */
+function getChecklistTemplateAllowedItemKeys_(turnoParam) {
+  var tmpl = getChecklistTemplateForTurno_(turnoParam);
+  var map = {};
+  for (var i = 0; i < tmpl.length; i++) {
+    map[buildChecklistIdentityKey_(sanitizeText_(tmpl[i].item))] = true;
+  }
+  return map;
+}
+
 /**
  * Remove linhas em Checklist_Turnos para a data e o turno dados quando o texto de Item
  * não existe no template atual daquele turno (ex.: Noite com 21 itens antigos da Manhã).
@@ -2980,6 +2990,7 @@ function fetchChecklistItems_(dateKey, turno) {
 
   const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, lastCol).getValues();
   const orderMap = getChecklistTemplateOrderMap_(filterTurno);
+  const allowedItemKeys = getChecklistTemplateAllowedItemKeys_(filterTurno);
 
   return values
     .map(function (row) {
@@ -2988,7 +2999,11 @@ function fetchChecklistItems_(dateKey, turno) {
       return item;
     })
     .filter(function (item) {
-      return item.Data === filterDateKey && item.Turno === filterTurno;
+      if (item.Data !== filterDateKey || item.Turno !== filterTurno) {
+        return false;
+      }
+      var itemKey = buildChecklistIdentityKey_(sanitizeText_(item.Item));
+      return !!allowedItemKeys[itemKey];
     })
     .sort(function (a, b) {
       const orderA = orderMap[buildChecklistIdentityKey_(a.Item)];

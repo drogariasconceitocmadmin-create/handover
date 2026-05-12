@@ -3953,6 +3953,7 @@
             dashboardData.medicamentos.unshift(row);
           }
         });
+        checklistCacheByTurno_ = Object.create(null);
         dashboardData.checklistTurno = normalizeChecklistData_(bundle.checklistTurno);
         if (bundle.bundleTurno) {
           activeChecklistTurno = bundle.bundleTurno;
