@@ -8599,11 +8599,16 @@
                   upsertMedicamento_(response.record);
                 }
                 perfLog_('saveData', started);
-                closeFormModal_();
                 setFormLoading_(false);
-                saveButton.textContent = 'Salvar';
-                renderAll();
-                showToast_('Salvo');
+                closeFormModal_();
+                showToast_('Registro salvo.');
+                window.setTimeout(function () {
+                  try {
+                    renderAll();
+                  } catch (err) {
+                    showToast_('Registro salvo, mas a tela não atualizou. Use Atualizar agora se necessário.', false);
+                  }
+                }, 0);
               })
               .withFailureHandler(function (error) {
                 handleSaveFailure_(error);
@@ -8642,10 +8647,16 @@
                 upsertMedicamento_(response.itemAtualizado);
               }
               perfLog_('updateHandoverItem', started);
-              closeFormModal_();
               setFormLoading_(false);
-              renderAll();
-              showToast_('Edição salva');
+              closeFormModal_();
+              showToast_('Edição salva.');
+              window.setTimeout(function () {
+                try {
+                  renderAll();
+                } catch (err) {
+                  showToast_('Edição salva, mas a tela não atualizou. Use Atualizar agora se necessário.', false);
+                }
+              }, 0);
             })
             .withFailureHandler(function (error) {
               setFormLoading_(false);
