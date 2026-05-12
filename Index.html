@@ -3166,6 +3166,21 @@
       if (formModalCancelBtn) {
         formModalCancelBtn.addEventListener('click', closeFormModal_);
       }
+      var precoVendaInput = document.getElementById('precoVenda');
+      if (precoVendaInput) {
+        precoVendaInput.addEventListener('blur', function () {
+          var r = normalizePriceInput_(precoVendaInput.value);
+          if (!r.error && r.value !== '') {
+            precoVendaInput.value = formatCurrencyBr_(r.value);
+          }
+        });
+        precoVendaInput.addEventListener('focus', function () {
+          var r = normalizePriceInput_(precoVendaInput.value);
+          if (!r.error && r.value !== '') {
+            precoVendaInput.value = String(r.value).replace('.', ',');
+          }
+        });
+      }
       document.addEventListener('keydown', function (event) {
         if (event.key !== 'Escape') {
           return;
@@ -8588,15 +8603,17 @@
           try {
             getScriptRunner_()
               .withSuccessHandler(function (response) {
-                if (!response || response.success === false || !response.record || !response.record.ID) {
+                if (!response || response.success === false) {
                   handleSaveFailure_(response && response.message ? { message: response.message } : { message: 'O servidor não confirmou o salvamento.' });
                   return;
                 }
                 removeOptimisticPlaceholder_(optimisticId, tab);
-                if (tab === 'Geral') {
-                  upsertGeral_(response.record);
-                } else {
-                  upsertMedicamento_(response.record);
+                if (response.record && response.record.ID) {
+                  if (tab === 'Geral') {
+                    upsertGeral_(response.record);
+                  } else {
+                    upsertMedicamento_(response.record);
+                  }
                 }
                 perfLog_('saveData', started);
                 setFormLoading_(false);
