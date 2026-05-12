@@ -2987,7 +2987,7 @@
     <script>
       const OPERADOR_STORAGE_KEY = 'handover_operador_atual_v14';
       const ENCOMENDA_PRECO_DATA_MSG =
-        'Para registrar uma encomenda, informe o preço de venda e a data prevista de entrega.';
+        'Para registrar uma encomenda, informe a data prevista de entrega.';
       const HANDOVER_SESSION_STORAGE_KEY = 'handover_auth_session_v41';
       const HANDOVER_LOGO_HEADER_URL =
         'https://drive.google.com/thumbnail?id=1IdmH4FBrd6mRqFVyhdJlN_1208DJWmQm&sz=w320';
@@ -4020,13 +4020,10 @@
           renderSummary();
           setChecklistSyncStatus_('cached');
         } else {
+          dashboardData.checklistTurno = normalizeChecklistData_({ turno: activeChecklistTurno, items: [] });
           setChecklistSyncStatus_('loading');
-          if (checklistCategories) {
-            checklistCategories.innerHTML =
-              '<div class="empty-box">Carregando checklist de ' +
-              escapeHtml(activeChecklistTurno) +
-              '...</div>';
-          }
+          renderChecklistSection();
+          renderSummary();
         }
         refreshChecklistForTurno_(true);
       }
@@ -4318,12 +4315,10 @@
           return null;
         }
         var dataOk = !!String(payload.previsaoEntrega || '').trim();
-        var pv = payload.precoVenda;
-        var preOk = !(pv === '' || pv === null || pv === undefined);
-        if (dataOk && preOk) {
+        if (dataOk) {
           return null;
         }
-        return { preco: !preOk, data: !dataOk };
+        return { preco: false, data: true };
       }
 
       function updateMedicinePriceVisibility_() {
@@ -7624,7 +7619,11 @@
 
         if (items.length === 0) {
           checklistCategories.innerHTML =
-            '<div class="empty-box">Sem itens para o turno. Clique em "Gerar checklist de hoje".</div>';
+            '<div class="empty-box">' +
+            (checklistSyncing_
+              ? 'Carregando checklist de ' + escapeHtml(activeChecklistTurno) + '...'
+              : 'Sem itens para o turno. Clique em "Sincronizar checklist".') +
+            '</div>';
           return;
         }
 
@@ -8585,19 +8584,17 @@
             postMainTabDomSync_();
           }
 
-          setFormLoading_(true);
-          saveButton.textContent = 'Salvando...';
-          renderAll();
+          // Fecha modal imediatamente — card mostra __syncState:'syncing' em background
+          closeFormModal_();
+          showToast_('Salvando...');
+          window.setTimeout(function () { try { renderAll(); } catch (e) {} }, 0);
 
           var started = Date.now();
           function handleSaveFailure_(error) {
             removeOptimisticPlaceholder_(optimisticId, tab);
             perfLog_('saveData_fail', started);
-            renderAll();
-            setFormLoading_(false);
-            saveButton.textContent = 'Salvar';
-            setStatus(formStatus, getErrorMessage(error), true);
-            showToast_('Erro ao salvar', true);
+            window.setTimeout(function () { try { renderAll(); } catch (e) {} }, 0);
+            showToast_('Não foi possível salvar: ' + getErrorMessage(error), true);
           }
 
           try {
@@ -8616,16 +8613,7 @@
                   }
                 }
                 perfLog_('saveData', started);
-                setFormLoading_(false);
-                closeFormModal_();
-                showToast_('Registro salvo.');
-                window.setTimeout(function () {
-                  try {
-                    renderAll();
-                  } catch (err) {
-                    showToast_('Registro salvo, mas a tela não atualizou. Use Atualizar agora se necessário.', false);
-                  }
-                }, 0);
+                window.setTimeout(function () { try { renderAll(); } catch (e) {} }, 0);
               })
               .withFailureHandler(function (error) {
                 handleSaveFailure_(error);
@@ -8756,12 +8744,7 @@
             if (!payload.cliente.trim()) return 'Informe o cliente.';
             if (!payload.telefone.trim()) return 'Informe o telefone do cliente.';
             var dataOkEnc = !!String(payload.previsaoEntrega || '').trim();
-            var preOkEnc = !(
-              payload.precoVenda === '' ||
-              payload.precoVenda === null ||
-              payload.precoVenda === undefined
-            );
-            if (!dataOkEnc || !preOkEnc) {
+            if (!dataOkEnc) {
               return ENCOMENDA_PRECO_DATA_MSG;
             }
           }
