@@ -3457,6 +3457,62 @@ function writeArchiveReopenAudit_(archiveSheet, rowNumber, operador, motivo, nov
     .setValue(sanitizeText_(novoIdAtivo));
 }
 
+/**
+ * Medicamento cancelado ainda na aba Medicamentos (fallback do histórico): reabre na mesma linha como Pendente.
+ */
+function reopenMedicamentoCanceladoFromHistorico_(location, sess, op, mot, rid) {
+  var sheet = location.sheet;
+  var rn = location.rowNumber;
+  var rowObj = rowToObjectFromSheetRow_(sheet, rn);
+  normalizeItemForClient_(rowObj);
+  if (sanitizeText_(rowObj.Status).toLowerCase() !== 'cancelado') {
+    throw new Error('Medicamento encontrado na fila, mas nao esta cancelado; nao e possivel reabrir por este fluxo.');
+  }
+
+  sheet.getRange(rn, getColumnIndex_(sheet, 'Comprado')).setValue(false);
+  sheet.getRange(rn, getColumnIndex_(sheet, 'Entregue')).setValue(false);
+  sheet.getRange(rn, getColumnIndex_(sheet, 'Status')).setValue('Pendente');
+  try {
+    sheet.getRange(rn, getColumnIndex_(sheet, 'Cancelado_Por')).setValue('');
+  } catch (e0) {}
+  try {
+    sheet.getRange(rn, getColumnIndex_(sheet, 'Data_Cancelamento')).setValue('');
+  } catch (e1) {}
+  try {
+    sheet.getRange(rn, getColumnIndex_(sheet, 'Motivo_Cancelamento')).setValue('');
+  } catch (e2) {}
+
+  syncMedicationStatus_(sheet, rn);
+  writeMedicationUltimaAcao_(sheet, rn, op);
+
+  try {
+    writeHandoverEditAudit_(SHEET_NAMES.MEDICAMENTOS, rid, sess, [
+      {
+        campo: 'Status',
+        anterior: 'Cancelado',
+        novo: 'Pendente',
+        resumo: op + ' reabriu o pedido a partir do historico.' + (sanitizeText_(mot) ? ' Motivo: ' + sanitizeText_(mot) : ''),
+      },
+    ]);
+  } catch (audE) {
+    Logger.log('reopenMedicamentoCanceladoFromHistorico_ audit: ' + audE);
+  }
+
+  try {
+    mirrorComprasMedicamentosRowForMedicamentoId_(rid);
+  } catch (ce) {
+    Logger.log('reopenMedicamentoCanceladoFromHistorico_ mirror compras: ' + ce);
+  }
+
+  return {
+    success: true,
+    tipo: 'Medicamentos',
+    record: fetchMedicationRecordById_(rid),
+    arquivoId: rid,
+    novoId: rid,
+  };
+}
+
 function reopenHistoricoItem(archivedRecordId, sessionToken, motivo) {
   const started = Date.now();
   var rid = sanitizeText_(archivedRecordId);
@@ -3474,9 +3530,20 @@ function reopenHistoricoItem(archivedRecordId, sessionToken, motivo) {
   try {
     setupSpreadsheet();
 
-    var loc = findRowById_(SHEET_NAMES.ARQUIVO, rid);
+    var loc = findRowByIdWithOptionalIdHandover_(SHEET_NAMES.ARQUIVO, rid);
     if (!loc) {
-      throw new Error('Linha do arquivo nao encontrada para este ID.');
+      var locMed = findRowById_(SHEET_NAMES.MEDICAMENTOS, rid);
+      if (locMed) {
+        var peekMed = rowToObjectFromSheetRow_(locMed.sheet, locMed.rowNumber);
+        normalizeItemForClient_(peekMed);
+        if (sanitizeText_(peekMed.Status).toLowerCase() === 'cancelado') {
+          Logger.log('reopenHistoricoItem via Medicamentos cancelado id=' + rid);
+          return reopenMedicamentoCanceladoFromHistorico_(locMed, sess, op, mot, rid);
+        }
+      }
+      throw new Error(
+        'Nao foi possivel reabrir: item nao encontrado nem em Arquivo_Resolvidos nem em Medicamentos.'
+      );
     }
 
     var archived = rowToObjectFromSheetRow_(loc.sheet, loc.rowNumber);
@@ -3601,7 +3668,17 @@ function reopenHistoricoItem(archivedRecordId, sessionToken, motivo) {
 
     throw new Error('Origem nao suportada para reabertura: ' + origem);
   } catch (error) {
-    throw new Error(ctx + 'erro mensagem=' + error.message);
+    var inner = String(error.message || '');
+    if (
+      inner.indexOf('Nao foi possivel reabrir') === 0 ||
+      inner.indexOf('Este registro ja foi reaberto') === 0 ||
+      inner.indexOf('Medicamento encontrado na fila') === 0 ||
+      inner.indexOf('Registro sem ID') === 0 ||
+      inner.indexOf('Sessao sem nome') === 0
+    ) {
+      throw new Error(inner);
+    }
+    throw new Error(ctx + 'erro mensagem=' + inner);
   }
 }
 
@@ -3986,11 +4063,17 @@ function findRowById_(sheetName, id) {
     return null;
   }
 
+  var want = sanitizeText_(String(id == null ? '' : id));
+  if (!want) {
+    return null;
+  }
+
   var idCol = getIdColumnIndexSafe_(sheet);
   const ids = sheet.getRange(2, idCol, lastRow - 1, 1).getValues();
 
   for (var index = 0; index < ids.length; index++) {
-    if (ids[index][0] === id) {
+    var got = sanitizeText_(String(ids[index][0] == null ? '' : ids[index][0]));
+    if (got === want) {
       return {
         sheet: sheet,
         rowNumber: index + 2,
@@ -3998,6 +4081,35 @@ function findRowById_(sheetName, id) {
     }
   }
 
+  return null;
+}
+
+/** Localiza linha por coluna ID ou, se existir na aba, por ID_Handover (mesmo valor). */
+function findRowByIdWithOptionalIdHandover_(sheetName, id) {
+  var loc = findRowById_(sheetName, id);
+  if (loc) {
+    return loc;
+  }
+  var sheet = getSheetOrThrow_(getSpreadsheet_(), sheetName);
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    return null;
+  }
+  var want = sanitizeText_(String(id == null ? '' : id));
+  if (!want) {
+    return null;
+  }
+  try {
+    var colH = getColumnIndex_(sheet, 'ID_Handover');
+    var vals = sheet.getRange(2, colH, lastRow - 1, 1).getValues();
+    for (var i = 0; i < vals.length; i++) {
+      if (sanitizeText_(String(vals[i][0] == null ? '' : vals[i][0])) === want) {
+        return { sheet: sheet, rowNumber: i + 2 };
+      }
+    }
+  } catch (err) {
+    return null;
+  }
   return null;
 }
 

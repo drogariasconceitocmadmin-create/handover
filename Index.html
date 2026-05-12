@@ -3839,7 +3839,7 @@
                 dashboardData.medicamentos.unshift(response.record);
               }
               var arc = (historicoResolvidos || []).find(function (h) {
-                return h.ID === hid;
+                return String(h.ID || '') === String(hid || '');
               });
               var nomeSessao =
                 handoverSession &&
