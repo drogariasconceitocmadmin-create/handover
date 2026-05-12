@@ -7369,11 +7369,11 @@
             });
           case 'faltas':
             return items.filter(function (item) {
-              return item.type === 'medicamento' && item.medTipo === 'falta';
+              return item.type === 'medicamento' && item.medTipo === 'falta' && item.statusKey !== 'cancelado';
             });
           case 'encomendas':
             return items.filter(function (item) {
-              return item.type === 'medicamento' && item.medTipo === 'encomenda';
+              return item.type === 'medicamento' && item.medTipo === 'encomenda' && item.statusKey !== 'cancelado';
             });
           case 'pendentes':
             return items.filter(function (item) {
