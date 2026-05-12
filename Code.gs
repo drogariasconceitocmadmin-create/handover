@@ -3605,6 +3605,8 @@ function onEdit(e) {
   if (sheetName === SHEET_NAMES.MEDICAMENTOS) {
     const compradoColumn = getColumnIndex_(sheet, 'Comprado');
     const entregueColumn = getColumnIndex_(sheet, 'Entregue');
+    const statusColumn = getColumnIndex_(sheet, 'Status');
+
     if (e.range.getColumn() === compradoColumn || e.range.getColumn() === entregueColumn) {
       syncMedicationStatus_(sheet, rowNumber);
       try {
@@ -3615,6 +3617,29 @@ function onEdit(e) {
         }
       } catch (medEditMir) {
         Logger.log('onEdit Medicamentos mirror compras: ' + medEditMir);
+      }
+    }
+
+    // Cancelamento direto na planilha: arquivar igual ao cancelamento via UI.
+    if (e.range.getColumn() === statusColumn &&
+        sanitizeText_(String(e.value || '')).toLowerCase() === 'cancelado') {
+      try {
+        var medObj = rowToObjectFromSheetRow_(sheet, rowNumber);
+        var medId = sanitizeText_(medObj.ID || '');
+        if (medId) {
+          mirrorComprasMedicamentosRowForMedicamentoId_(medId);
+        }
+        SpreadsheetApp.flush();
+        moveRowToResolved(SHEET_NAMES.MEDICAMENTOS, rowNumber);
+        var archiveSheet = getSheetOrThrow_(getSpreadsheet_(), SHEET_NAMES.ARQUIVO);
+        var arcLoc = findRowById_(SHEET_NAMES.ARQUIVO, medId);
+        if (arcLoc) {
+          archiveSheet
+            .getRange(arcLoc.rowNumber, getColumnIndex_(archiveSheet, 'Estado_Arquivo'))
+            .setValue('Cancelado');
+        }
+      } catch (cancelEditErr) {
+        Logger.log('onEdit Medicamentos cancelamento: ' + cancelEditErr);
       }
     }
   }
