@@ -1,72 +1,96 @@
-# Handover v68 (oficial)
+# Handover v77 (oficial)
 
-Projeto: Handover - Drogarias Conceito
+Projeto: Handover — Drogarias Conceito
 
 Branch: `hotfix/handover-p0-save-medicamentos`
 
-Commit atual: `c79a025`
+Commit do código em produção (v77): `039a758` — `fix(handover): corrige reabertura de itens do historico`
 
-## Deployment Oficial (v68 — ativo)
+## Deployment oficial (v77 — ativo)
 
 Deployment: `AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw`
 
 URL: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec`
 
-Versão interna do deployment: `@71`
+Versão interna do deployment: `@77` — descrição: **Handover v77 reabrir historico**
 
-Status: **APROVADA EM PRODUÇÃO** (smoke 2026-05-12)
+Status: **APROVADA EM PRODUÇÃO** (validação manual 2026-05-07)
+
+Rollback: **NÃO**
 
 ---
 
-## Smoke v68 (oficial)
+## Validação manual v77 — reabertura no Histórico
 
 | Item | Resultado | Detalhe |
 |------|-----------|---------|
-| Login/PIN | OK | — |
-| Dashboard limpo | OK | Sem cards antigos |
-| Criar Pendência | OK | Card aparece |
-| Encomenda sem preço | OK | Preço não obrigatório |
-| Encomenda com data | OK | Data prevista obrigatória |
-| Medicamentos (Handover) | OK | Linha gravada corretamente |
-| Compras_Medicamentos (nova planilha) | OK | Linha espelhada na Compras_Drogarias_Conceito |
-| Aba antiga não recebe registro | OK | LEGACY_Compras_20260512 oculta e inativa |
-| Atualizar agora | OK | Sem erros |
-| Checklist Manhã | OK | Carrega limpo |
-| Trigger Compras → Handover | OK | Status_Compra atualiza Handover |
-| Falhas críticas | NENHUMA | — |
-| Falhas médias | NENHUMA | — |
+| Medicamento cancelado reabriu | OK | Fluxo fallback Medicamentos |
+| Voltou para Medicamentos | OK | Fila Pendente |
+| Histórico atualizado | OK | Após reabrir |
+| Atualizar agora preservou | OK | Sem regressão |
+| Trilha de auditoria | OK | Preservada / registrada |
+| Pendência comum reabriu | OK | Geral a partir do arquivo |
+| POP | NÃO tocado | — |
+| Compras / reset / runbooks destrutivos | NÃO tocados | Sem `sincronizarComprasMedicamentos_`, sem `zerarHandoverParaProducao` nesta entrega |
+
+### Escopo da correção v77
+
+- Reabrir / reverter itens do **Histórico** sem assumir que todo registro está só em **Arquivo_Resolvidos**.
+- **Fallback** para medicamentos **cancelados** ainda na aba **Medicamentos** (listados no histórico quando não há linha no arquivo).
+- Busca no arquivo por **ID** e, quando existir coluna, **ID_Handover** (aliases compatíveis com o sistema).
+- Mensagens de erro mais claras para o operador quando o item não for localizável.
+- **Auditoria** alinhada ao fluxo existente (sem PIN/token em relatório).
 
 ---
 
-## Virada de Produção — Concluída (2026-05-12)
+## Referência — Smoke v68 (virada 2026-05-12)
+
+Registro histórico da virada Compras / produção limpa. Não invalida a aprovação v77.
+
+| Item | Resultado (época v68) |
+|------|------------------------|
+| Login/PIN | OK |
+| Dashboard limpo | OK |
+| Criar Pendência | OK |
+| Encomenda sem preço | OK |
+| Encomenda com data | OK |
+| Medicamentos (Handover) | OK |
+| Compras_Medicamentos (nova planilha) | OK |
+| Aba antiga não recebe registro | OK |
+| Atualizar agora | OK |
+| Checklist Manhã | OK |
+| Trigger Compras → Handover | OK |
+| Falhas críticas / médias | NENHUMA |
+
+---
+
+## Virada de produção (v68) — concluída (2026-05-12)
 
 | # | Fase | Função GAS | Status |
 |---|------|-----------|--------|
-| 1 | Backup | `backupHandoverPlanilha` | ✅ BACKUP_20260512_1406 — id: 1lmItMfShNxeIEX01C27Qy5v5s9VnCiod88enkcMxdq0 |
-| 2 | Criar planilha Compras | `setupComprasPlanilha` | ✅ Compras_Drogarias_Conceito criada |
-| 3 | Verificar Script Properties | — | ✅ COMPRAS_SPREADSHEET_ID confirmado |
-| 4 | Migrar dados legados | `sincronizarComprasMedicamentos_` | ⛔ NÃO EXECUTADA — produção limpa, histórico não migrado |
-| 5 | Renomear aba legada | `renomearAbaComprasLegacy` | ✅ LEGACY_Compras_20260512 oculta no Handover |
-| 5.1 | Instalar trigger Compras | `instalarTriggerComprasMedicamentos` | ✅ Trigger ativo na Compras_Drogarias_Conceito |
-| 6 | Zerar Handover | `zerarHandoverParaProducao` | ✅ Geral(4) Medicamentos(24) Arquivo(8) Checklist(551) Auditoria(2) |
-| 7 | Smoke staging v70 | URL staging | ✅ APROVADO |
-| 8 | Deploy oficial | `clasp deploy` @71 | ✅ Deployment oficial atualizado |
+| 1 | Backup | `backupHandoverPlanilha` | ✅ BACKUP_20260512_1406 |
+| 2 | Criar planilha Compras | `setupComprasPlanilha` | ✅ Compras_Drogarias_Conceito |
+| 3 | Script Properties | — | ✅ COMPRAS_SPREADSHEET_ID |
+| 4 | Migrar dados legados | `sincronizarComprasMedicamentos_` | ⛔ NÃO EXECUTADA |
+| 5 | Renomear aba legada | `renomearAbaComprasLegacy` | ✅ LEGACY_Compras_20260512 |
+| 5.1 | Trigger Compras | `instalarTriggerComprasMedicamentos` | ✅ |
+| 6 | Zerar Handover | `zerarHandoverParaProducao` | ✅ (época v68) |
+| 7 | Smoke staging | URL staging | ✅ APROVADO |
+| 8 | Deploy oficial | `clasp deploy` | ✅ (época @71) |
 
 ---
 
-## Histórico de Versões
+## Histórico de versões (trecho)
 
 | Versão | Status |
 |--------|--------|
-| v57 | ROLLBACK TARGET (2026-05-11) — base estável |
-| v58 | APROVADO COM RESSALVAS (2026-05-11) |
-| v59 | REPROVADA (2026-05-11) — P0: constant variable / persistência |
-| v60 | criada em ciclo anterior |
-| v61 | demo checklist temporária (deployment separado, não oficial) |
-| v62 | REPROVADA (2026-05-11) — TypeError persistiu |
-| v63 | APROVADA (2026-05-11) — fix const→let em ensureTodayChecklistForTurno_ |
-| v64 | APROVADA (2026-05-11) — UX checklist: cache, sync status, botão renomeado |
-| v65 | APROVADA (2026-05-11) — modal fecha após sucesso real (v1) |
-| v66 | APROVADA (2026-05-12) — popup BRL, separação guarda success/record |
-| v67 | APROVADA (2026-05-12) — modal otimista, preço opcional, checklist rápido |
-| v68 | **ATIVA OFICIAL** (2026-05-12) — Compras planilha separada, virada produção limpa |
+| v57–v67 | Ver tabela histórica no repositório / JSON legado |
+| v68 | Virada produção — Compras separada, baseline 2026-05-12 |
+| v69–v76 | Evolução (histórico resolvidos/cancelados, filtros, etc.) — ver git |
+| **v77** | **ATIVA OFICIAL** (2026-05-07) — reabertura Histórico + fallback Medicamentos cancelados + busca ID/ID_Handover |
+
+---
+
+## Próximo passo
+
+Operação normal. Monitorar reaberturas no Histórico e feedback da loja.

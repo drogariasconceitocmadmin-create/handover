@@ -2,20 +2,43 @@
   "projeto": "Handover - Drogarias Conceito",
   "status_geral": "PRODUCAO",
   "branch_publicada": "hotfix/handover-p0-save-medicamentos",
-  "commit_publicado": "c79a025",
-  "versao_ativa": 68,
-  "versao_staging": null,
-  "versao_descricao": "Handover v68 producao (oficial) - Compras planilha separada, virada producao limpa",
+  "versao_ativa": 77,
+  "versao_descricao": "Handover v77 reabrir historico",
+  "commit_codigo_v77": "039a758",
+  "commit_publicado": "039a758",
+  "nota_commit": "039a758 e o commit do codigo Handover em producao (v77). O commit de atualizacao deste relatorio e o HEAD atual da branch apos docs(reports).",
   "rollback_feito": false,
   "deploymentId_oficial": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
-  "deploymentId_versao_interna": 71,
+  "deploymentId_versao_interna": 77,
   "deploymentId_staging_v68": "AKfycbwrk9JXS2-6XsIFan8ky7YCtBvGm3mhcfUptaKXe6iBm5XLO-tOQx2d8QTuN15aIcSo",
   "url_oficial": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
   "pop_tocado": false,
+  "compras_reset_runbooks_destrutivos_tocados": false,
+  "data_aprovacao_v77": "2026-05-07",
+  "validacao_v77_manual": {
+    "executado": true,
+    "tipo": "validacao manual (operador humano)",
+    "sessao": "2026-05-07",
+    "medicamento_cancelado_reabriu": "OK",
+    "voltou_para_medicamentos": "OK",
+    "historico_atualizado": "OK",
+    "atualizar_agora_preservou": "OK",
+    "trilha_auditoria": "OK",
+    "pendencia_comum_reabriu": "OK",
+    "resultado": "APROVADA"
+  },
+  "escopo_correcao_v77": [
+    "Correcao de reabertura a partir do Historico (nao assumir apenas Arquivo_Resolvidos)",
+    "Fallback para medicamentos cancelados ainda na aba Medicamentos",
+    "Busca no arquivo por ID e por ID_Handover quando a coluna existir",
+    "Auditoria preservada / alinhada ao fluxo existente",
+    "POP nao tocado",
+    "Compras e rotinas de reset nao tocadas nesta entrega"
+  ],
   "data_aprovacao_v68": "2026-05-12",
   "smoke_v68_oficial": {
     "executado": true,
-    "tipo": "smoke manual (operador humano)",
+    "tipo": "smoke manual (operador humano) — referencia virada",
     "sessao": "2026-05-12",
     "login_pin": "OK",
     "dashboard_limpo": "OK",
@@ -49,21 +72,16 @@
       "FASE 5.1 - instalarTriggerComprasMedicamentos: trigger ativo na Compras_Drogarias_Conceito",
       "FASE 6 - zerarHandoverParaProducao: Geral(4) Medicamentos(24) Arquivo(8) Checklist(551) Auditoria(2)",
       "FASE 7 - Smoke staging v70: APROVADO",
-      "FASE 8 - clasp deploy @71 no deployment oficial"
+      "FASE 8 - clasp deploy @71 no deployment oficial (epoca v68)"
     ]
   },
-  "observacoes_v68": [
+  "observacoes_v68_legado": [
     "Compras_Medicamentos movida para planilha separada Compras_Drogarias_Conceito",
     "Trigger onEdit instalado na planilha Compras — Status_Compra sincroniza com Handover",
     "Aba LEGACY_Compras_20260512 oculta no Handover (dados preservados)",
-    "Handover zerado: Geral, Medicamentos, Arquivo_Resolvidos, Checklist_Turnos, Auditoria_Handover",
-    "Historico de testes nao migrado — producao inicia limpa",
-    "Preco de venda nao obrigatorio em Encomenda (backend e frontend corrigidos)",
-    "Data prevista continua obrigatoria para Encomenda",
-    "Modal otimista: fecha imediatamente apos Salvar",
-    "Checklist placeholder instantaneo entregue"
+    "Registro de virada v68; v77 nao altera planilha Compras nem POP"
   ],
-  "proximo_passo": "Sistema em producao. Monitorar operacao normal.",
+  "proximo_passo": "Operacao normal. Monitorar reaberturas no Historico.",
   "historico_versoes": {
     "v57": "ROLLBACK TARGET (2026-05-11) - base estavel",
     "v58": "APROVADO COM RESSALVAS (2026-05-11)",
@@ -76,7 +94,9 @@
     "v65": "APROVADA (2026-05-11) - modal fecha apos sucesso real (v1)",
     "v66": "APROVADA (2026-05-12) - popup BRL, separacao guarda success/record",
     "v67": "APROVADA (2026-05-12) - modal otimista, preco opcional, checklist rapido",
-    "v68": "ATIVA OFICIAL (2026-05-12) - Compras planilha separada, virada producao limpa"
+    "v68": "Virada producao (2026-05-12) - Compras planilha separada, baseline",
+    "v69_v76": "Evolucao continua — historico resolvidos/cancelados, filtros; ver git",
+    "v77": "ATIVA OFICIAL (2026-05-07) - reabertura Historico, fallback Medicamentos cancelados, ID/ID_Handover, auditoria preservada"
   },
-  "veredito": "v68 APROVADA em producao. Virada concluida. Handover zerado e operando como novo."
+  "veredito": "v77 APROVADA em producao. Rollback NAO. POP e Compras/reset nao tocados nesta entrega."
 }
