@@ -4259,13 +4259,10 @@ function sendOrderEmail_(order) {
 
   var props = PropertiesService.getScriptProperties();
   var handoverId = sanitizeText_(props.getProperty(HANDOVER_SPREADSHEET_ID_KEY) || '');
-  var comprasId  = sanitizeText_(props.getProperty(COMPRAS_SPREADSHEET_ID_KEY) || '');
   var handoverUrl = handoverId
     ? 'https://docs.google.com/spreadsheets/d/' + handoverId + '/edit'
     : '';
-  var comprasUrl = comprasId
-    ? 'https://docs.google.com/spreadsheets/d/' + comprasId + '/edit'
-    : '';
+  var comprasUrl = 'https://docs.google.com/spreadsheets/d/1x5l0HcR_9RZGnuxwR8tL_WW7-6pKO3Obamucbnx8cqA/edit?usp=sharing';
 
   const subject = 'Nova encomenda de medicamento - ' + order.medicamento;
   var lines = [
