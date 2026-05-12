@@ -1,4 +1,4 @@
-# Incidente Handover — Rollback v62 → v57
+# Handover v67 — Aprovada
 
 Projeto: Handover - Drogarias Conceito
 
@@ -8,76 +8,76 @@ Deployment oficial: `AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYt
 
 URL oficial: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec`
 
-Data: 2026-05-11
+Commit publicado: `b70861f`
+
+Data: 2026-05-12
 
 ## Resultado
 
-Status geral: **ROLLBACK_V57**
+Status geral: **APROVADA**
 
-Versão antes: @62 (publicada como "v61 hotfix refresh/render")
+Versão ativa: **67** — Handover v67 modal otimista preco opcional checklist rapido
 
-Rollback: **SIM** — deployment voltou para @57
-
-Versão ativa final: **57**
+Rollback: **NÃO**
 
 POP tocado: **NÃO**
 
-## Smoke v62
+## Smoke v67
 
 | Item | Resultado | Detalhe |
 |------|-----------|---------|
-| TypeError na abertura | **FALHOU P0** | `TypeError: Assignment to constant variable` visível na tela |
-| Login | NÃO TESTADO | Bloqueado pelo TypeError |
-| Atualizar agora | NÃO TESTADO | — |
-| Medicamentos | NÃO TESTADO | — |
-| Checklist | NÃO TESTADO | — |
+| Login/PIN | OK | — |
+| Atualizar agora | OK | Sem TypeError |
+| Encomenda sem preço | OK | Preço deixou de ser obrigatório |
+| Data obrigatória | OK | Data prevista continua obrigatória |
+| Preço BRL | OK | Formatação R$ funcionando no formulário |
+| Modal Encomenda | OK | Fecha rapidamente após clique em Salvar |
+| Modal Pendência | OK | Fecha rapidamente após clique em Salvar |
+| Medicamentos | OK | Grava corretamente |
+| Compras_Medicamentos | OK | Espelha corretamente na planilha atual |
+| Checklist Manhã | OK | Carrega instantaneamente (cache) |
+| Checklist Tarde/Noite | LEVE | Ainda ~25s no primeiro carregamento; aceitável operacionalmente |
+| Falhas críticas | NENHUMA | — |
+| Falhas médias | NENHUMA | — |
 
-## Rollback
+## Observações
 
-```
-clasp deploy --versionNumber 57 --deploymentId AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw
-```
+- Preço de venda deixou de ser obrigatório em Encomenda.
+- Data prevista continua obrigatória para Encomenda.
+- Formatação BRL no campo Preço funcionando (blur/focus).
+- Modal de Encomenda fecha imediatamente após clique em Salvar (card otimista visível enquanto backend processa).
+- Modal de Pendência fecha imediatamente após clique em Salvar.
+- Falha do backend reverte/remove card otimista e exibe toast de erro.
+- Medicamentos grava corretamente na planilha atual.
+- Compras_Medicamentos espelha corretamente — comportamento esperado.
+- Atualizar agora sem TypeError (corrigido desde v63).
+- Planilha separada de Compras **NÃO foi implementada**; Compras_Medicamentos continua na planilha principal do Handover, conforme planejado.
+- Checklist Tarde/Noite ainda lento (~25s) no primeiro carregamento — melhoria visual entregue (placeholder instantâneo), mas RPC do backend ainda demora.
 
-Saída: `Deployed AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw @57`
+## Próximo Patch Recomendado
 
-Confirmado via `clasp deployments`: `@57`.
-
-## Histórico de Rollbacks
-
-| Versão | Data | Motivo | Rollback para |
-|--------|------|--------|---------------|
-| v59 | 2026-05-11 | Persistência pós-logout falhou. Erro "constant variable" ao Atualizar agora. | v57 |
-| v62 | 2026-05-11 | `TypeError: Assignment to constant variable` persistiu mesmo após hotfix refresh/render. | v57 |
-
-## Diagnóstico
-
-**Erro:** `TypeError: Assignment to constant variable`
-
-**Diagnóstico estático (realizado):** análise completa de `Index.html` e `Code.gs` não encontrou reatribuição direta de variável `const`. Nenhum `for (const i = ...)`, nenhuma reatribuição top-level encontrada.
-
-**Hipótese principal:** o erro ocorre dentro do callback `withSuccessHandler` de `google.script.run.refreshDashboardBundle`. O GAS API não envolve callbacks do `withSuccessHandler` em `try/catch` — qualquer `TypeError` dentro do callback propaga como exceção não capturada (visível no console do Chrome mas não tratada pela aplicação).
-
-## Próximos Passos Obrigatórios
-
-1. **Capturar stack trace** via Chrome DevTools (F12 → Console) clicando "Atualizar agora" na versão afetada. O stack trace apontará a linha exata.
-2. Identificar e corrigir cirurgicamente a linha com o `TypeError`.
-3. Publicar correção como v63+.
-4. Smoke completo antes de promover para produção.
+Otimizar carregamento do Checklist Tarde/Noite:
+- Reduzir round-trip do `generateChecklistForTurno` no backend (~25s).
+- Investigar cache server-side ou geração antecipada dos três turnos no bundle.
 
 ## Histórico de Versões
 
 | Versão | Status |
 |--------|--------|
-| v57 | **ATIVA** — produção após rollbacks de v59 e v62 |
+| v57 | ROLLBACK TARGET (2026-05-11) — base estável |
 | v58 | APROVADO COM RESSALVAS (2026-05-11) |
 | v59 | REPROVADA (2026-05-11) — P0: constant variable / persistência |
 | v60 | criada em ciclo anterior |
 | v61 | demo checklist temporária (deployment separado, não oficial) |
-| v62 | **REPROVADA** (2026-05-11) — TypeError persistiu |
+| v62 | REPROVADA (2026-05-11) — TypeError persistiu |
+| v63 | APROVADA (2026-05-11) — fix const→let em ensureTodayChecklistForTurno_ |
+| v64 | APROVADA (2026-05-11) — UX checklist: cache, sync status, botão renomeado |
+| v65 | APROVADA (2026-05-11) — modal fecha após sucesso real (v1) |
+| v66 | APROVADA (2026-05-12) — popup BRL, separação guarda success/record |
+| v67 | **ATIVA** (2026-05-12) — modal otimista, preço opcional, checklist rápido |
 
 ## Veredito
 
-v62 **REPROVADA**. Rollback imediato para v57 efetuado e confirmado.
-`TypeError: Assignment to constant variable` persiste entre versões.
-**Próxima ação obrigatória:** capturar stack trace no DevTools antes de qualquer novo patch.
-POP não tocado.
+v67 **APROVADA** e mantida em produção.
+Sem rollback. POP não tocado.
+Falha leve documentada: Checklist Tarde/Noite ainda ~25s — aceitável operacionalmente.

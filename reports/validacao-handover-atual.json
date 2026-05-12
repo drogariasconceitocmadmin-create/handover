@@ -1,71 +1,67 @@
 {
   "projeto": "Handover - Drogarias Conceito",
-  "status_geral": "ROLLBACK_V57",
+  "status_geral": "APROVADA",
   "branch_publicada": "hotfix/handover-p0-save-medicamentos",
-  "commit_publicado": "e7eccee",
-  "versao_tentada": 62,
-  "versao_ativa": 57,
-  "rollback_feito": true,
-  "rollback_motivo": "v62 (publicada como v61 hotfix refresh/render) reprovada em smoke manual. Erro persistente: TypeError: Assignment to constant variable. Rollback imediato para v57.",
+  "commit_publicado": "b70861f",
+  "versao_ativa": 67,
+  "versao_descricao": "Handover v67 modal otimista preco opcional checklist rapido",
+  "rollback_feito": false,
   "deploymentId": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
   "url": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
   "pop_tocado": false,
-  "data_incidente": "2026-05-11",
-  "historico_rollbacks": [
-    {
-      "versao": 59,
-      "data": "2026-05-11",
-      "motivo": "Persistencia apos logout/login falhou. Erro constant variable ao Atualizar agora.",
-      "rollback_para": 57
-    },
-    {
-      "versao": 62,
-      "descricao": "v61 hotfix refresh/render",
-      "data": "2026-05-11",
-      "motivo": "TypeError: Assignment to constant variable persistiu mesmo apos tentativa de hotfix.",
-      "rollback_para": 57
-    }
-  ],
-  "smoke_v62": {
+  "data_aprovacao": "2026-05-12",
+  "smoke_v67": {
     "executado": true,
     "tipo": "smoke manual (operador humano)",
-    "sessao": "2026-05-11",
-    "erro_observado": "TypeError: Assignment to constant variable",
-    "erro_local": "Tela principal / render pos-login",
-    "login": "NAO_TESTADO_BLOQUEADO_POR_TYPEERROR",
-    "atualizar_agora": "NAO_TESTADO",
-    "medicamentos": "NAO_TESTADO",
-    "checklist": "NAO_TESTADO",
-    "resultado": "REPROVADA"
+    "sessao": "2026-05-12",
+    "login_pin": "OK",
+    "atualizar_agora": "OK",
+    "encomenda_sem_preco": "OK",
+    "data_obrigatoria": "OK",
+    "preco_brl": "OK",
+    "modal_encomenda": "OK",
+    "modal_pendencia": "OK",
+    "medicamentos": "OK",
+    "compras_medicamentos": "OK",
+    "checklist_manha": "OK - instantaneo (cache)",
+    "checklist_tarde_noite": "LEVE - ~25s primeiro carregamento, aceitavel operacionalmente",
+    "falhas_criticas": "NENHUMA",
+    "falhas_medias": "NENHUMA",
+    "falhas_leves": "Checklist Tarde/Noite ainda lento (~25s), aceitavel",
+    "resultado": "APROVADA"
   },
-  "rollback_log": {
-    "versao_antes": 62,
-    "versao_apos": 57,
-    "comando": "clasp deploy --versionNumber 57 --deploymentId AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
-    "resultado": "Deployed AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw @57",
-    "confirmado_em": "2026-05-11",
-    "clasp_deployments_apos": "@57"
-  },
-  "causa_raiz": {
-    "erro": "TypeError: Assignment to constant variable",
-    "diagnostico_estatico": "Analise estatica completa de Index.html e Code.gs nao encontrou reatribuicao direta de const. Erro provavel em runtime no withSuccessHandler do refreshDashboardNow_, nao capturado pelo try/catch da aplicacao.",
-    "hipotese_principal": "Erro ocorre dentro do callback withSuccessHandler de google.script.run.refreshDashboardBundle — o GAS API nao envolve callbacks com try/catch, entao o TypeError propaga como excecao nao capturada.",
-    "proximo_passo": "Capturar stack trace completo no Chrome DevTools (F12 > Console) clicando Atualizar agora na versao afetada. O stack trace apontara a linha exata do TypeError."
-  },
-  "proximos_passos": {
-    "1": "Capturar stack trace do TypeError via Chrome DevTools F12 antes de qualquer novo patch.",
-    "2": "Identificar linha exata do erro no stack trace.",
-    "3": "Corrigir cirurgicamente. Publicar como v63+.",
-    "4": "Smoke completo antes de promover para producao.",
-    "pop_tocado": false
+  "observacoes": [
+    "Preco de venda deixou de ser obrigatorio em Encomenda",
+    "Data prevista continua obrigatoria para Encomenda",
+    "Formatacao BRL no campo Preco funcionando (blur/focus)",
+    "Modal de Encomenda fecha imediatamente apos clique em Salvar (card otimista visivel enquanto backend processa)",
+    "Modal de Pendencia fecha imediatamente apos clique em Salvar",
+    "Falha do backend reverte/remove card otimista e exibe toast de erro",
+    "Medicamentos grava corretamente",
+    "Compras_Medicamentos espelha corretamente na planilha atual - comportamento esperado",
+    "Atualizar agora sem TypeError (corrigido desde v63)",
+    "Planilha separada de Compras NAO foi implementada; Compras_Medicamentos continua na planilha principal do Handover",
+    "Checklist Tarde/Noite: placeholder instantaneo entregue, RPC backend ainda ~25s"
+  ],
+  "proximo_patch_recomendado": {
+    "descricao": "Otimizar carregamento do Checklist Tarde/Noite",
+    "detalhes": [
+      "Reduzir round-trip do generateChecklistForTurno no backend (~25s)",
+      "Investigar cache server-side ou geracao antecipada dos tres turnos no bundle"
+    ]
   },
   "historico_versoes": {
-    "v57": "ATIVA — versao de producao apos rollbacks de v59 e v62",
+    "v57": "ROLLBACK TARGET (2026-05-11) - base estavel",
     "v58": "APROVADO COM RESSALVAS (2026-05-11)",
-    "v59": "REPROVADA (2026-05-11) — P0: constant variable / persistencia",
+    "v59": "REPROVADA (2026-05-11) - P0: constant variable / persistencia",
     "v60": "criada em ciclo anterior",
-    "v61": "demo checklist temporario (deployment separado)",
-    "v62": "REPROVADA (2026-05-11) — TypeError persistiu mesmo apos hotfix refresh/render"
+    "v61": "demo checklist temporaria (deployment separado, nao oficial)",
+    "v62": "REPROVADA (2026-05-11) - TypeError persistiu",
+    "v63": "APROVADA (2026-05-11) - fix const->let em ensureTodayChecklistForTurno_",
+    "v64": "APROVADA (2026-05-11) - UX checklist: cache, sync status, botao renomeado",
+    "v65": "APROVADA (2026-05-11) - modal fecha apos sucesso real (v1)",
+    "v66": "APROVADA (2026-05-12) - popup BRL, separacao guarda success/record",
+    "v67": "ATIVA (2026-05-12) - modal otimista, preco opcional, checklist rapido"
   },
-  "veredito": "v62 REPROVADA. Rollback imediato para v57 efetuado e confirmado. TypeError: Assignment to constant variable persiste. Proxima acao obrigatoria: capturar stack trace antes de qualquer novo patch. POP nao tocado."
+  "veredito": "v67 APROVADA e mantida em producao. Sem rollback. POP nao tocado. Falha leve: Checklist Tarde/Noite ~25s - aceitavel operacionalmente."
 }
