@@ -2862,9 +2862,9 @@ function ensureTodayChecklistForTurno_(turnoParam) {
   const sheet = getSheetOrThrow_(ss, SHEET_NAMES.CHECKLIST);
   const lastCol = Math.max(sheet.getLastColumn(), 1);
   const headerCells = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  const template = getChecklistTemplateForTurno_(turno);
   const dateKey = getChecklistDateKey_();
   const turno = sanitizeChecklistTurno_(turnoParam);
+  const template = getChecklistTemplateForTurno_(turno);
   const horarioRef = horarioReferenciaForTurno_(turno);
   const identityPrefix = buildChecklistIdentityKey_(dateKey) + '|' + buildChecklistIdentityKey_(turno);
 
