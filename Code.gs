@@ -4265,7 +4265,8 @@ function sendOrderEmail_(order) {
   var comprasUrl = 'https://docs.google.com/spreadsheets/d/1x5l0HcR_9RZGnuxwR8tL_WW7-6pKO3Obamucbnx8cqA/edit?usp=sharing';
 
   const subject = 'Nova encomenda de medicamento - ' + order.medicamento;
-  var lines = [
+
+  var plainBody = [
     'Uma nova encomenda de medicamento foi cadastrada.',
     '',
     'ID: ' + order.id,
@@ -4275,21 +4276,34 @@ function sendOrderEmail_(order) {
     'Pre-pago: ' + (order.prePago ? 'Sim' : 'Nao'),
     'Previsao de entrega: ' + previsao,
     '',
-  ];
+    'Clique aqui para acessar a lista de compras: ' + comprasUrl,
+    handoverUrl ? 'Planilha Handover: ' + handoverUrl : '',
+    '',
+    'Este email e enviado apenas para registros com Tipo = Encomenda.',
+  ].filter(function(l) { return l !== null && l !== undefined; }).join('\n');
 
-  if (comprasUrl) {
-    lines.push('Planilha de Compras: ' + comprasUrl);
-  }
-  if (handoverUrl) {
-    lines.push('Planilha Handover: ' + handoverUrl);
-  }
-  if (comprasUrl || handoverUrl) {
-    lines.push('');
-  }
+  var htmlBody = [
+    '<p>Uma nova encomenda de medicamento foi cadastrada.</p>',
+    '<table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;">',
+    '  <tr><td style="padding:4px 12px 4px 0;color:#666;">ID</td><td style="padding:4px 0;">' + order.id + '</td></tr>',
+    '  <tr><td style="padding:4px 12px 4px 0;color:#666;">Medicamento</td><td style="padding:4px 0;font-weight:bold;">' + order.medicamento + '</td></tr>',
+    '  <tr><td style="padding:4px 12px 4px 0;color:#666;">Cliente</td><td style="padding:4px 0;">' + order.cliente + '</td></tr>',
+    '  <tr><td style="padding:4px 12px 4px 0;color:#666;">Atendente</td><td style="padding:4px 0;">' + order.atendente + '</td></tr>',
+    '  <tr><td style="padding:4px 12px 4px 0;color:#666;">Pré-pago</td><td style="padding:4px 0;">' + (order.prePago ? 'Sim' : 'Não') + '</td></tr>',
+    '  <tr><td style="padding:4px 12px 4px 0;color:#666;">Previsão de entrega</td><td style="padding:4px 0;">' + previsao + '</td></tr>',
+    '</table>',
+    '<br>',
+    '<p><a href="' + comprasUrl + '" style="background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;">Clique aqui para acessar a lista de compras</a></p>',
+    handoverUrl ? '<p style="font-size:12px;color:#888;">Handover: <a href="' + handoverUrl + '">' + handoverUrl + '</a></p>' : '',
+    '<p style="font-size:11px;color:#aaa;">Este email é enviado apenas para registros com Tipo = Encomenda.</p>',
+  ].filter(Boolean).join('\n');
 
-  lines.push('Este email e enviado apenas para registros com Tipo = Encomenda.');
-
-  MailApp.sendEmail(EMAIL_ENCOMENDAS, subject, lines.join('\n'));
+  MailApp.sendEmail({
+    to: EMAIL_ENCOMENDAS,
+    subject: subject,
+    body: plainBody,
+    htmlBody: htmlBody,
+  });
 }
 
 function registerWhatsAppAttempt(id, sessionToken) {
