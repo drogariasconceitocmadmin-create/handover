@@ -2,19 +2,51 @@
   "projeto": "Handover - Drogarias Conceito",
   "status_geral": "PRODUCAO",
   "branch_publicada": "hotfix/handover-p0-save-medicamentos",
-  "versao_ativa": 77,
-  "versao_descricao": "Handover v77 reabrir historico",
-  "commit_codigo_v77": "039a758",
-  "commit_publicado": "039a758",
-  "nota_commit": "039a758 e o commit do codigo Handover em producao (v77). O commit de atualizacao deste relatorio e o HEAD atual da branch apos docs(reports).",
+  "versao_ativa": 81,
+  "versao_descricao": "Handover v81 filtro compras ativas",
+  "commit_codigo_v81": "61f8fdd",
+  "commit_publicado": "61f8fdd",
+  "nota_commit": "61f8fdd e o commit do codigo Handover em producao (v81). O commit de atualizacao deste relatorio e o HEAD atual da branch apos docs(reports).",
   "rollback_feito": false,
   "deploymentId_oficial": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
-  "deploymentId_versao_interna": 77,
+  "deploymentId_versao_interna": 87,
   "deploymentId_staging_v68": "AKfycbwrk9JXS2-6XsIFan8ky7YCtBvGm3mhcfUptaKXe6iBm5XLO-tOQx2d8QTuN15aIcSo",
   "url_oficial": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
   "pop_tocado": false,
+  "dados_apagados": false,
   "compras_reset_runbooks_destrutivos_tocados": false,
-  "data_aprovacao_v77": "2026-05-07",
+  "data_aprovacao_v81": "2026-05-15",
+  "validacao_v81_manual": {
+    "executado": true,
+    "tipo": "validacao manual (operador humano)",
+    "sessao": "2026-05-15",
+    "funcao_administrativa": "aplicarFiltroComprasAtivas",
+    "filtro_aplicado": "OK",
+    "comprado_oculto_compras_medicamentos": "OK",
+    "cancelado_oculto_compras_medicamentos": "OK",
+    "pendente_visivel": "OK",
+    "nao_encontrado_visivel": "OK",
+    "dados_preservados": "OK",
+    "compras_compradas_intacta": "OK",
+    "compras_canceladas_intacta": "OK",
+    "webapp_oficial_alinhado": "OK",
+    "resultado": "APROVADA"
+  },
+  "escopo_entrega_v81": [
+    "Filtro operacional em Compras_Medicamentos oculta Status_Compra Comprado e Cancelado",
+    "Linhas permanecem na aba principal; ID_Handover preservado",
+    "Funcao aplicarFiltroComprasAtivas integrada ao applyComprasMedicamentosLayout_",
+    "Sem sheet.clear, sem deleteRow novo, sem apagar dados",
+    "Compras_Compradas e Compras_Canceladas nao alteradas (arquivo v80)",
+    "POP, Login/PIN, Checklist e Medicamentos nao tocados"
+  ],
+  "referencia_v80": {
+    "versao_rotulo": 80,
+    "versao_interna": 86,
+    "commit": "409e5cd",
+    "descricao": "Handover v80 compras por status",
+    "arquivamento_comprado_cancelado": "OK"
+  },
   "validacao_v77_manual": {
     "executado": true,
     "tipo": "validacao manual (operador humano)",
@@ -25,16 +57,9 @@
     "atualizar_agora_preservou": "OK",
     "trilha_auditoria": "OK",
     "pendencia_comum_reabriu": "OK",
-    "resultado": "APROVADA"
+    "resultado": "APROVADA",
+    "nota": "Historico; superseded por v81 como versao ativa oficial"
   },
-  "escopo_correcao_v77": [
-    "Correcao de reabertura a partir do Historico (nao assumir apenas Arquivo_Resolvidos)",
-    "Fallback para medicamentos cancelados ainda na aba Medicamentos",
-    "Busca no arquivo por ID e por ID_Handover quando a coluna existir",
-    "Auditoria preservada / alinhada ao fluxo existente",
-    "POP nao tocado",
-    "Compras e rotinas de reset nao tocadas nesta entrega"
-  ],
   "data_aprovacao_v68": "2026-05-12",
   "smoke_v68_oficial": {
     "executado": true,
@@ -79,9 +104,9 @@
     "Compras_Medicamentos movida para planilha separada Compras_Drogarias_Conceito",
     "Trigger onEdit instalado na planilha Compras — Status_Compra sincroniza com Handover",
     "Aba LEGACY_Compras_20260512 oculta no Handover (dados preservados)",
-    "Registro de virada v68; v77 nao altera planilha Compras nem POP"
+    "Registro de virada v68; v81 nao altera POP nem rotinas de reset"
   ],
-  "proximo_passo": "Operacao normal. Monitorar reaberturas no Historico.",
+  "proximo_passo": "Operacao normal. Reaplicar aplicarFiltroComprasAtivas se o filtro for removido na UI da planilha.",
   "historico_versoes": {
     "v57": "ROLLBACK TARGET (2026-05-11) - base estavel",
     "v58": "APROVADO COM RESSALVAS (2026-05-11)",
@@ -96,7 +121,9 @@
     "v67": "APROVADA (2026-05-12) - modal otimista, preco opcional, checklist rapido",
     "v68": "Virada producao (2026-05-12) - Compras planilha separada, baseline",
     "v69_v76": "Evolucao continua — historico resolvidos/cancelados, filtros; ver git",
-    "v77": "ATIVA OFICIAL (2026-05-07) - reabertura Historico, fallback Medicamentos cancelados, ID/ID_Handover, auditoria preservada"
+    "v77": "APROVADA (2026-05-07) - reabertura Historico (@77)",
+    "v80": "APROVADA - arquivamento Comprado/Cancelado (@86, commit 409e5cd)",
+    "v81": "ATIVA OFICIAL (2026-05-15) - filtro compras ativas Compras_Medicamentos (@87, commit 61f8fdd)"
   },
-  "veredito": "v77 APROVADA em producao. Rollback NAO. POP e Compras/reset nao tocados nesta entrega."
+  "veredito": "v81 APROVADA em producao. Rollback NAO. POP nao tocado. Dados nao apagados. Filtro Comprado/Cancelado oculto na aba principal; arquivos v80 intactos."
 }

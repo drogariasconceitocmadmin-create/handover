@@ -1,82 +1,80 @@
-# Handover v77 (oficial)
+# Handover v81 (oficial)
 
 Projeto: Handover — Drogarias Conceito
 
 Branch: `hotfix/handover-p0-save-medicamentos`
 
-Commit do código em produção (v77): `039a758` — `fix(handover): corrige reabertura de itens do historico`
+Commit do código em produção (v81): `61f8fdd` — `fix(handover): aplica filtro de compras ativas na planilha de compras`
 
-## Deployment oficial (v77 — ativo)
+## Deployment oficial (v81 — ativo)
 
 Deployment: `AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw`
 
 URL: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec`
 
-Versão interna do deployment: `@77` — descrição: **Handover v77 reabrir historico**
+Versão interna do deployment: `@87` — descrição: **Handover v81 filtro compras ativas**
 
-Status: **APROVADA EM PRODUÇÃO** (validação manual 2026-05-07)
+Status: **APROVADA EM PRODUÇÃO** (validação manual 2026-05-15)
 
 Rollback: **NÃO**
 
 ---
 
-## Validação manual v77 — reabertura no Histórico
+## Validação manual v81 — filtro operacional Compras_Medicamentos
 
 | Item | Resultado | Detalhe |
 |------|-----------|---------|
-| Medicamento cancelado reabriu | OK | Fluxo fallback Medicamentos |
-| Voltou para Medicamentos | OK | Fila Pendente |
-| Histórico atualizado | OK | Após reabrir |
-| Atualizar agora preservou | OK | Sem regressão |
-| Trilha de auditoria | OK | Preservada / registrada |
-| Pendência comum reabriu | OK | Geral a partir do arquivo |
+| Filtro aplicado (`aplicarFiltroComprasAtivas`) | OK | Executado no Apps Script Editor |
+| Comprado oculto na aba principal | OK | `Status_Compra = Comprado` |
+| Cancelado oculto na aba principal | OK | `Status_Compra = Cancelado` |
+| Pendente de compra visível | OK | Fluxo operacional de compras |
+| Não encontrado visível | OK | Fluxo operacional de compras |
+| Dados preservados | OK | Sem apagar linhas |
+| Compras_Compradas | OK | Intacta (arquivo v80) |
+| Compras_Canceladas | OK | Intacta (arquivo v80) |
+| Web App oficial alinhado | OK | Deployment @87 |
 | POP | NÃO tocado | — |
-| Compras / reset / runbooks destrutivos | NÃO tocados | Sem `sincronizarComprasMedicamentos_`, sem `zerarHandoverParaProducao` nesta entrega |
+| Login/PIN / Checklist / Medicamentos | NÃO tocados | — |
+| Reset / limpeza / smoke automático | NÃO executados | — |
 
-### Escopo da correção v77
+### Escopo da entrega v81
 
-- Reabrir / reverter itens do **Histórico** sem assumir que todo registro está só em **Arquivo_Resolvidos**.
-- **Fallback** para medicamentos **cancelados** ainda na aba **Medicamentos** (listados no histórico quando não há linha no arquivo).
-- Busca no arquivo por **ID** e, quando existir coluna, **ID_Handover** (aliases compatíveis com o sistema).
-- Mensagens de erro mais claras para o operador quando o item não for localizável.
-- **Auditoria** alinhada ao fluxo existente (sem PIN/token em relatório).
+- Função **`aplicarFiltroComprasAtivas()`** na planilha `Compras_Drogarias_Conceito`, aba **`Compras_Medicamentos`**.
+- Critério de filtro em **`Status_Compra`**: oculta **Comprado** e **Cancelado** via `hiddenValues`.
+- Linhas permanecem fisicamente na aba principal; **`ID_Handover`** preservado.
+- Integração ao reaplicar layout: chamada ao final de **`applyComprasMedicamentosLayout_`**.
+- Não usa `sheet.clear()`, não usa `deleteRow`, não move linhas.
+- Não altera abas **`Compras_Compradas`** / **`Compras_Canceladas`** (arquivamento v80 mantido).
+
+---
+
+## Referência — v80 arquivamento por status (@86)
+
+| Item | Resultado |
+|------|-----------|
+| Comprado → upsert em Compras_Compradas | OK (época v80) |
+| Cancelado → upsert em Compras_Canceladas | OK (época v80) |
+| Compras_Medicamentos como aba principal | OK |
+| Dados não apagados | OK |
+
+Commit v80: `409e5cd` — versão interna `@86` — *Handover v80 compras por status*
+
+---
+
+## Referência — v77 reabertura Histórico (@77)
+
+Registro histórico. Commit `039a758`. Não invalida a aprovação v81.
+
+| Item | Resultado (época v77) |
+|------|------------------------|
+| Reabertura Histórico + fallback Medicamentos cancelados | OK |
+| POP / Compras reset | NÃO tocados |
 
 ---
 
 ## Referência — Smoke v68 (virada 2026-05-12)
 
-Registro histórico da virada Compras / produção limpa. Não invalida a aprovação v77.
-
-| Item | Resultado (época v68) |
-|------|------------------------|
-| Login/PIN | OK |
-| Dashboard limpo | OK |
-| Criar Pendência | OK |
-| Encomenda sem preço | OK |
-| Encomenda com data | OK |
-| Medicamentos (Handover) | OK |
-| Compras_Medicamentos (nova planilha) | OK |
-| Aba antiga não recebe registro | OK |
-| Atualizar agora | OK |
-| Checklist Manhã | OK |
-| Trigger Compras → Handover | OK |
-| Falhas críticas / médias | NENHUMA |
-
----
-
-## Virada de produção (v68) — concluída (2026-05-12)
-
-| # | Fase | Função GAS | Status |
-|---|------|-----------|--------|
-| 1 | Backup | `backupHandoverPlanilha` | ✅ BACKUP_20260512_1406 |
-| 2 | Criar planilha Compras | `setupComprasPlanilha` | ✅ Compras_Drogarias_Conceito |
-| 3 | Script Properties | — | ✅ COMPRAS_SPREADSHEET_ID |
-| 4 | Migrar dados legados | `sincronizarComprasMedicamentos_` | ⛔ NÃO EXECUTADA |
-| 5 | Renomear aba legada | `renomearAbaComprasLegacy` | ✅ LEGACY_Compras_20260512 |
-| 5.1 | Trigger Compras | `instalarTriggerComprasMedicamentos` | ✅ |
-| 6 | Zerar Handover | `zerarHandoverParaProducao` | ✅ (época v68) |
-| 7 | Smoke staging | URL staging | ✅ APROVADO |
-| 8 | Deploy oficial | `clasp deploy` | ✅ (época @71) |
+Registro histórico da virada Compras / produção limpa.
 
 ---
 
@@ -84,13 +82,13 @@ Registro histórico da virada Compras / produção limpa. Não invalida a aprova
 
 | Versão | Status |
 |--------|--------|
-| v57–v67 | Ver tabela histórica no repositório / JSON legado |
-| v68 | Virada produção — Compras separada, baseline 2026-05-12 |
-| v69–v76 | Evolução (histórico resolvidos/cancelados, filtros, etc.) — ver git |
-| **v77** | **ATIVA OFICIAL** (2026-05-07) — reabertura Histórico + fallback Medicamentos cancelados + busca ID/ID_Handover |
+| v68 | Virada produção — Compras separada |
+| v77 | Reabertura Histórico (@77) |
+| v80 | Arquivamento Comprado/Cancelado (@86) |
+| **v81** | **ATIVA OFICIAL** (2026-05-15) — filtro compras ativas na aba principal (@87) |
 
 ---
 
 ## Próximo passo
 
-Operação normal. Monitorar reaberturas no Histórico e feedback da loja.
+Operação normal. Se o filtro for removido manualmente na UI da planilha, reaplicar `aplicarFiltroComprasAtivas()` ou `aplicarLayoutComprasMedicamentos()`.
