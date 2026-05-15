@@ -625,7 +625,7 @@ function applyComprasMedicamentosLayout_(sheet) {
   }
 
   var colStatus = getColumnIndex_(sheet, 'Status_Compra');
-  var numRowsValidation = Math.max(Math.max(sheet.getLastRow(), 2) - 1, 500);
+  var numRowsValidation = 5000;
   var list = [
     COMPRAS_STATUS_COMPRA.PENDENTE,
     COMPRAS_STATUS_COMPRA.COMPRADO,
@@ -689,11 +689,10 @@ function applyComprasMedicamentosLayout_(sheet) {
   } catch (eFmt4) {}
 
   // Formatação condicional por linha inteira baseada em Status_Compra (idempotente).
-  // Observação: regras antigas são limpas apenas nesta aba para evitar duplicação.
+  // Range fixo em 5000 linhas para cobrir preenchimento futuro automaticamente.
   try {
     sheet.clearConditionalFormatRules();
-    var lastRowForRules = Math.max(sheet.getLastRow(), 2);
-    var dataRange = sheet.getRange(2, 1, Math.max(lastRowForRules - 1, 1), lastCol);
+    var dataRange = sheet.getRange(2, 1, 5000, lastCol);
     var colLetter = (function (colNumber) {
       var temp = colNumber;
       var letter = '';
@@ -1832,7 +1831,6 @@ function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId, opt) {
     for (var i = 0; i < rowVals.length; i++) {
       cSheet.getRange(existingRow, i + 1).setValue(rowVals[i]);
     }
-    try { colorirLinhaCompraPorStatus_(cSheet, existingRow, named.Status_Compra); } catch (ce) {}
   } else {
     if (opt.fromRevertToPending) {
       named.Status_Compra = COMPRAS_STATUS_COMPRA.PENDENTE;
@@ -1849,7 +1847,6 @@ function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId, opt) {
       applyMedicamentoCancelamentoEspelhoComprasNamed_(medItem, named);
     }
     cSheet.appendRow(buildAppendRowValuesFromNamedMap_(cSheet, named));
-    try { colorirLinhaCompraPorStatus_(cSheet, cSheet.getLastRow(), named.Status_Compra); } catch (ce) {}
   }
 }
 
@@ -2101,12 +2098,6 @@ function handleComprasMedicamentosEdit_(e) {
       ' Status_Compra=' +
       statusCompra
   );
-  // Colorir linha imediatamente no onEdit (resposta visual instantânea na planilha).
-  try {
-    colorirLinhaCompraPorStatus_(sheet, rowNumber, statusCompra);
-  } catch (colorErr) {
-    Logger.log('handleComprasMedicamentosEdit_: colorir: ' + colorErr);
-  }
   if (!idHandover) {
     Logger.log('handleComprasMedicamentosEdit_: ID_Handover ausente');
     return;
@@ -2148,22 +2139,13 @@ function colorirLinhaCompraPorStatus_(sheet, rowNumber, status) {
 }
 
 /**
- * MANUAL: colore todas as linhas da aba Compras_Medicamentos conforme o Status_Compra atual.
- * Executar no editor GAS para aplicar cores a registros já existentes na planilha.
+ * MANUAL: (re)aplica formatação condicional de cores na aba Compras_Medicamentos
+ * cobrindo 5000 linhas — inclui registros já existentes e preenchimento futuro.
+ * Executar uma vez no editor GAS para ativar/corrigir as cores na planilha.
  */
 function colorirTodasLinhasCompras() {
-  var sheet = getComprasMedicamentosSheet_();
-  var lastRow = sheet.getLastRow();
-  if (lastRow <= 1) {
-    Logger.log('colorirTodasLinhasCompras: sem linhas de dados.');
-    return;
-  }
-  var colStatus = getColumnIndex_(sheet, 'Status_Compra');
-  var statuses = sheet.getRange(2, colStatus, lastRow - 1, 1).getValues();
-  for (var i = 0; i < statuses.length; i++) {
-    colorirLinhaCompraPorStatus_(sheet, i + 2, String(statuses[i][0] || '').trim());
-  }
-  Logger.log('colorirTodasLinhasCompras: ' + (lastRow - 1) + ' linha(s) colorida(s).');
+  aplicarLayoutComprasMedicamentos_();
+  Logger.log('colorirTodasLinhasCompras: formatação condicional aplicada (5000 linhas).');
 }
 
 /** Wrapper público para execução manual no Apps Script Editor (funções com "_" não aparecem bem no seletor). */
