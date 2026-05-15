@@ -16,6 +16,12 @@ const COMPRAS_STATUS_COMPRA = {
   CANCELADO: 'Cancelado',
 };
 
+/** Nomes das abas de arquivo histórico na planilha Compras_Drogarias_Conceito. */
+const COMPRAS_ARQUIVO_SHEET_NAMES = {
+  COMPRADAS: 'Compras_Compradas',
+  CANCELADAS: 'Compras_Canceladas',
+};
+
 /** Encomenda: preço e data obrigatórios (criação e edição). */
 var ENCOMENDA_PRECO_DATA_MSG_ =
   'Para registrar uma encomenda, informe a data prevista de entrega.';
@@ -457,6 +463,147 @@ function setupComprasPlanilha() {
 
   Logger.log('setupComprasPlanilha: OK id=' + ss.getId() + ' url=' + ss.getUrl());
   return { ok: true, id: ss.getId(), url: ss.getUrl(), nome: ss.getName() };
+}
+
+// =============================================================================
+// Compras — abas de arquivo histórico (Compras_Compradas / Compras_Canceladas)
+// =============================================================================
+
+/**
+ * MANUAL: cria as abas Compras_Compradas e Compras_Canceladas na planilha de Compras.
+ * Idempotente — não apaga dados, não usa sheet.clear(), não usa deleteRow.
+ * Apenas cria a aba (se não existir) e aplica headers + layout básico.
+ */
+function setupComprasArquivosStatus() {
+  var ss = getComprasSpreadsheet_();
+  var created = [];
+  var existing = [];
+  [COMPRAS_ARQUIVO_SHEET_NAMES.COMPRADAS, COMPRAS_ARQUIVO_SHEET_NAMES.CANCELADAS].forEach(function (nome) {
+    var sheet = ss.getSheetByName(nome);
+    if (!sheet) {
+      sheet = ss.insertSheet(nome);
+      created.push(nome);
+      Logger.log('setupComprasArquivosStatus: aba criada ' + nome);
+    } else {
+      existing.push(nome);
+      Logger.log('setupComprasArquivosStatus: aba existente ' + nome + ' (headers verificados)');
+    }
+    ensureHeadersLegacyAdditive_(sheet, HEADERS.Compras_Medicamentos);
+    applyComprasArchivoLayout_(sheet);
+  });
+  Logger.log('setupComprasArquivosStatus: criadas=' + JSON.stringify(created) + ' existentes=' + JSON.stringify(existing));
+  return { ok: true, created: created, existing: existing };
+}
+
+/**
+ * Aplica layout básico a uma aba de arquivo de Compras (Compradas/Canceladas).
+ * Header azul, freeze, filtro, formatos de data.
+ */
+function applyComprasArchivoLayout_(sheet) {
+  var lastCol = Math.max(sheet.getLastColumn(), HEADERS.Compras_Medicamentos.length, 1);
+  var headerRange = sheet.getRange(1, 1, 1, lastCol);
+  headerRange.setBackground('#1a73e8');
+  headerRange.setFontColor('#ffffff');
+  headerRange.setFontWeight('bold');
+  sheet.setFrozenRows(1);
+  try {
+    if (!sheet.getFilter()) { headerRange.createFilter(); }
+  } catch (eF) {}
+  var maxDataRows = Math.max(sheet.getMaxRows() - 1, 1);
+  try {
+    var colUlt = getColumnIndex_(sheet, 'Ultima_Atualizacao');
+    sheet.getRange(2, colUlt, maxDataRows, 1).setNumberFormat('dd/MM/yyyy HH:mm');
+  } catch (e0) {}
+  try {
+    var colSolic = getColumnIndex_(sheet, 'Data_Solicitacao');
+    sheet.getRange(2, colSolic, maxDataRows, 1).setNumberFormat('dd/MM/yyyy HH:mm');
+  } catch (e1) {}
+  try {
+    var colDc = getColumnIndex_(sheet, 'Data_Compra');
+    sheet.getRange(2, colDc, maxDataRows, 1).setNumberFormat('dd/MM/yyyy');
+  } catch (e2) {}
+  try {
+    var colPrev = getColumnIndex_(sheet, 'Previsao_Entrega');
+    sheet.getRange(2, colPrev, maxDataRows, 1).setNumberFormat('dd/MM/yyyy');
+  } catch (e3) {}
+}
+
+/**
+ * Abre uma aba de arquivo histórico da planilha de Compras pelo nome.
+ * Lança erro se a aba não existir — chame setupComprasArquivosStatus() primeiro.
+ */
+function getComprasArchivoSheet_(nomeAba) {
+  var ss = getComprasSpreadsheet_();
+  var sheet = ss.getSheetByName(nomeAba);
+  if (!sheet) {
+    throw new Error('Aba "' + nomeAba + '" não encontrada. Execute setupComprasArquivosStatus().');
+  }
+  return sheet;
+}
+
+/**
+ * Procura uma linha pelo ID_Handover em uma aba de arquivo histórico de Compras.
+ * Retorna o número da linha (1-based) ou null.
+ */
+function findComprasArchivoRowByHandoverId_(sheet, handoverId) {
+  var hid = sanitizeText_(handoverId);
+  if (!hid) { return null; }
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) { return null; }
+  var idCol = getColumnIndex_(sheet, 'ID_Handover');
+  var vals = sheet.getRange(2, idCol, lastRow - 1, 1).getValues();
+  for (var i = 0; i < vals.length; i++) {
+    if (sanitizeText_(vals[i][0]) === hid) { return i + 2; }
+  }
+  return null;
+}
+
+/**
+ * Copia/upsert a linha de Compras_Medicamentos para a aba de arquivo correspondente ao status.
+ *   Status_Compra = Comprado  → Compras_Compradas
+ *   Status_Compra = Cancelado → Compras_Canceladas
+ *   Outros status             → sem ação (Pendente/Não encontrado ficam só na aba principal)
+ *
+ * Chave de upsert: ID_Handover (atualiza se existir; insere se não existir).
+ * NÃO apaga da aba principal Compras_Medicamentos.
+ * NÃO usa sheet.clear() nem deleteRow.
+ *
+ * @param {Object} namedValues - mapa campo→valor com o mesmo schema de Compras_Medicamentos.
+ */
+function archiveCompraByStatus_(namedValues) {
+  var status = normalizeComprasStatusCompraInput_(namedValues.Status_Compra || '');
+  var targetSheetName;
+  if (status === COMPRAS_STATUS_COMPRA.COMPRADO) {
+    targetSheetName = COMPRAS_ARQUIVO_SHEET_NAMES.COMPRADAS;
+  } else if (status === COMPRAS_STATUS_COMPRA.CANCELADO) {
+    targetSheetName = COMPRAS_ARQUIVO_SHEET_NAMES.CANCELADAS;
+  } else {
+    return; // Pendente / Não encontrado: sem arquivo nesta rodada
+  }
+
+  var archSheet;
+  try {
+    archSheet = getComprasArchivoSheet_(targetSheetName);
+  } catch (eSheet) {
+    // Aba ainda não criada — silencioso; não bloqueia fluxo principal
+    Logger.log('archiveCompraByStatus_: aba nao encontrada (' + targetSheetName + ') — rode setupComprasArquivosStatus()');
+    return;
+  }
+
+  namedValues.Ultima_Atualizacao = new Date();
+  var hid = sanitizeText_(namedValues.ID_Handover || '');
+  var existingRow = hid ? findComprasArchivoRowByHandoverId_(archSheet, hid) : null;
+
+  if (existingRow) {
+    var rowVals = buildAppendRowValuesFromNamedMap_(archSheet, namedValues);
+    for (var i = 0; i < rowVals.length; i++) {
+      archSheet.getRange(existingRow, i + 1).setValue(rowVals[i]);
+    }
+    Logger.log('archiveCompraByStatus_: updated id=' + hid + ' aba=' + targetSheetName + ' linha=' + existingRow);
+  } else {
+    archSheet.appendRow(buildAppendRowValuesFromNamedMap_(archSheet, namedValues));
+    Logger.log('archiveCompraByStatus_: inserted id=' + hid + ' aba=' + targetSheetName);
+  }
 }
 
 /**
@@ -1832,6 +1979,8 @@ function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId, opt) {
     for (var i = 0; i < rowVals.length; i++) {
       cSheet.getRange(existingRow, i + 1).setValue(rowVals[i]);
     }
+    // Espelhar para aba de arquivo histórico se comprado/cancelado (upsert, não move).
+    try { archiveCompraByStatus_(named); } catch (archE) { Logger.log('mirror archiveCompraByStatus_ update: ' + archE); }
   } else {
     if (opt.fromRevertToPending) {
       named.Status_Compra = COMPRAS_STATUS_COMPRA.PENDENTE;
@@ -1848,6 +1997,8 @@ function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId, opt) {
       applyMedicamentoCancelamentoEspelhoComprasNamed_(medItem, named);
     }
     cSheet.appendRow(buildAppendRowValuesFromNamedMap_(cSheet, named));
+    // Espelhar para aba de arquivo histórico se comprado/cancelado (upsert, não move).
+    try { archiveCompraByStatus_(named); } catch (archE) { Logger.log('mirror archiveCompraByStatus_ insert: ' + archE); }
   }
 }
 
@@ -1988,6 +2139,8 @@ function processarStatusCompraPorIdHandover_(idHandover) {
     }
     cSheet.getRange(rCompras, colStatusH).setValue(finalC);
     cSheet.getRange(rCompras, colUltima).setValue(now);
+    // Arquivo histórico Compras_Compradas (upsert; não remove da aba principal).
+    try { archiveCompraByStatus_(rowToObjectFromSheetRow_(cSheet, rCompras)); } catch (archE) { Logger.log('processarStatus archive COMPRADO: ' + archE); }
     Logger.log(
       'processarStatusCompraPorIdHandover_: id=' +
         id +
@@ -2029,6 +2182,8 @@ function processarStatusCompraPorIdHandover_(idHandover) {
     sh.getRange(rn, statusCol).setValue('Cancelado');
     cSheet.getRange(rCompras, colStatusH).setValue('Cancelado');
     cSheet.getRange(rCompras, colUltima).setValue(now);
+    // Arquivo histórico Compras_Canceladas (upsert; não remove da aba principal).
+    try { archiveCompraByStatus_(rowToObjectFromSheetRow_(cSheet, rCompras)); } catch (archE) { Logger.log('processarStatus archive CANCELADO: ' + archE); }
     Logger.log(
       'processarStatusCompraPorIdHandover_: id=' +
         id +
