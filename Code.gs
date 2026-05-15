@@ -625,7 +625,7 @@ function applyComprasMedicamentosLayout_(sheet) {
   }
 
   var colStatus = getColumnIndex_(sheet, 'Status_Compra');
-  var numRowsValidation = 5000;
+  var numRowsValidation = Math.max(sheet.getMaxRows() - 1, 1);
   var list = [
     COMPRAS_STATUS_COMPRA.PENDENTE,
     COMPRAS_STATUS_COMPRA.COMPRADO,
@@ -689,10 +689,11 @@ function applyComprasMedicamentosLayout_(sheet) {
   } catch (eFmt4) {}
 
   // Formatação condicional por linha inteira baseada em Status_Compra (idempotente).
-  // Range fixo em 5000 linhas para cobrir preenchimento futuro automaticamente.
+  // Usa getMaxRows()-1 para cobrir toda a aba sem ultrapassar o limite (evita exceção silenciosa).
   try {
     sheet.clearConditionalFormatRules();
-    var dataRange = sheet.getRange(2, 1, 5000, lastCol);
+    var maxDataRows = Math.max(sheet.getMaxRows() - 1, 1);
+    var dataRange = sheet.getRange(2, 1, maxDataRows, lastCol);
     var colLetter = (function (colNumber) {
       var temp = colNumber;
       var letter = '';
