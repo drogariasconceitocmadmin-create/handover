@@ -1832,6 +1832,7 @@ function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId, opt) {
     for (var i = 0; i < rowVals.length; i++) {
       cSheet.getRange(existingRow, i + 1).setValue(rowVals[i]);
     }
+    try { colorirLinhaCompraPorStatus_(cSheet, existingRow, named.Status_Compra); } catch (ce) {}
   } else {
     if (opt.fromRevertToPending) {
       named.Status_Compra = COMPRAS_STATUS_COMPRA.PENDENTE;
@@ -1848,6 +1849,7 @@ function mirrorComprasMedicamentosRowForMedicamentoId_(handoverId, opt) {
       applyMedicamentoCancelamentoEspelhoComprasNamed_(medItem, named);
     }
     cSheet.appendRow(buildAppendRowValuesFromNamedMap_(cSheet, named));
+    try { colorirLinhaCompraPorStatus_(cSheet, cSheet.getLastRow(), named.Status_Compra); } catch (ce) {}
   }
 }
 
@@ -2099,6 +2101,12 @@ function handleComprasMedicamentosEdit_(e) {
       ' Status_Compra=' +
       statusCompra
   );
+  // Colorir linha imediatamente no onEdit (resposta visual instantânea na planilha).
+  try {
+    colorirLinhaCompraPorStatus_(sheet, rowNumber, statusCompra);
+  } catch (colorErr) {
+    Logger.log('handleComprasMedicamentosEdit_: colorir: ' + colorErr);
+  }
   if (!idHandover) {
     Logger.log('handleComprasMedicamentosEdit_: ID_Handover ausente');
     return;
@@ -2110,6 +2118,52 @@ function handleComprasMedicamentosEdit_(e) {
       'handleComprasMedicamentosEdit_: erro processar id=' + idHandover + ' msg=' + (procErr && procErr.message ? procErr.message : procErr)
     );
   }
+}
+
+/**
+ * Colore a linha inteira da aba Compras_Medicamentos conforme o Status_Compra.
+ * Cores: Pendente = amarelo, Comprado = verde, Não encontrado = vermelho, Cancelado = cinza, vazio = branco.
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+ * @param {number} rowNumber - Linha 1-based; deve ser > 1.
+ * @param {string} status - Valor de Status_Compra.
+ */
+function colorirLinhaCompraPorStatus_(sheet, rowNumber, status) {
+  if (!sheet || rowNumber <= 1) { return; }
+  var s = String(status || '').trim();
+  var cor;
+  if (s === COMPRAS_STATUS_COMPRA.COMPRADO) {
+    cor = '#D9EAD3'; // verde claro
+  } else if (s === COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO) {
+    cor = '#F4CCCC'; // vermelho claro
+  } else if (s === COMPRAS_STATUS_COMPRA.CANCELADO) {
+    cor = '#EFEFEF'; // cinza claro
+  } else if (s === COMPRAS_STATUS_COMPRA.PENDENTE) {
+    cor = '#FFF2CC'; // amarelo claro
+  } else {
+    cor = '#FFFFFF'; // branco (padrão)
+  }
+  var lastCol = sheet.getLastColumn();
+  if (lastCol < 1) { return; }
+  sheet.getRange(rowNumber, 1, 1, lastCol).setBackground(cor);
+}
+
+/**
+ * MANUAL: colore todas as linhas da aba Compras_Medicamentos conforme o Status_Compra atual.
+ * Executar no editor GAS para aplicar cores a registros já existentes na planilha.
+ */
+function colorirTodasLinhasCompras() {
+  var sheet = getComprasMedicamentosSheet_();
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    Logger.log('colorirTodasLinhasCompras: sem linhas de dados.');
+    return;
+  }
+  var colStatus = getColumnIndex_(sheet, 'Status_Compra');
+  var statuses = sheet.getRange(2, colStatus, lastRow - 1, 1).getValues();
+  for (var i = 0; i < statuses.length; i++) {
+    colorirLinhaCompraPorStatus_(sheet, i + 2, String(statuses[i][0] || '').trim());
+  }
+  Logger.log('colorirTodasLinhasCompras: ' + (lastRow - 1) + ' linha(s) colorida(s).');
 }
 
 /** Wrapper público para execução manual no Apps Script Editor (funções com "_" não aparecem bem no seletor). */
@@ -2657,19 +2711,6 @@ var CHECKLIST_TEMPLATE_TARDE_ = [
  */
 var CHECKLIST_TEMPLATE_NOITE_ = [
   {
-    item_id: 'noite_handover_passar_jogo_limpo',
-    horario_referencia: '22:00',
-    categoria: 'Handover',
-    item: 'PASSAR O JOGO LIMPO',
-    descricao: [
-      '1. Registrar todas as pendências reais.',
-      '2. Marcar como resolvido apenas o que está concluído.',
-      '3. Para cada pendência, registrar: o que é + impacto + próxima ação + prazo.',
-      '',
-      'Critério de aprovação: qualquer pessoa consegue assumir sabendo o que fazer agora.',
-    ].join('\n'),
-  },
-  {
     item_id: 'noite_medicamentos_risco_cliente',
     horario_referencia: '21:30',
     categoria: 'Medicamentos',
@@ -2780,6 +2821,19 @@ var CHECKLIST_TEMPLATE_NOITE_ = [
       '6. Guardar valores e trancar o cofre.',
       '',
       'Critério de aprovação: saldo bate ou divergência registrada (valor + possível causa + ação).',
+    ].join('\n'),
+  },
+  {
+    item_id: 'noite_handover_passar_jogo_limpo',
+    horario_referencia: '22:00',
+    categoria: 'Handover',
+    item: 'PASSAR O JOGO LIMPO',
+    descricao: [
+      '1. Registrar todas as pendências reais.',
+      '2. Marcar como resolvido apenas o que está concluído.',
+      '3. Para cada pendência, registrar: o que é + impacto + próxima ação + prazo.',
+      '',
+      'Critério de aprovação: qualquer pessoa consegue assumir sabendo o que fazer agora.',
     ].join('\n'),
   },
   {
