@@ -726,6 +726,59 @@ function aplicarLayoutComprasMedicamentos_() {
   return { ok: true };
 }
 
+/**
+ * MANUAL: filtro operacional na aba Compras_Medicamentos — oculta Comprado e Cancelado.
+ * Linhas permanecem na aba; ID_Handover e abas de arquivo não são alterados.
+ * Não usa sheet.clear(), deleteRow nem apaga dados.
+ */
+function aplicarFiltroComprasAtivas() {
+  var sheet = getComprasMedicamentosSheet_();
+  return aplicarFiltroComprasAtivas_(sheet);
+}
+
+/**
+ * Aplica critério de filtro em Status_Compra (hiddenValues: Comprado, Cancelado).
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet Aba Compras_Medicamentos.
+ */
+function aplicarFiltroComprasAtivas_(sheet) {
+  var lastCol = Math.max(sheet.getLastColumn(), HEADERS.Compras_Medicamentos.length, 1);
+  var colStatus = getColumnIndex_(sheet, 'Status_Compra');
+  var hidden = [COMPRAS_STATUS_COMPRA.COMPRADO, COMPRAS_STATUS_COMPRA.CANCELADO];
+  var criteria = SpreadsheetApp.newFilterCriteria().setHiddenValues(hidden).build();
+
+  var filter = sheet.getFilter();
+  if (!filter) {
+    var filterLastRow = Math.max(sheet.getLastRow(), sheet.getMaxRows(), 1);
+    try {
+      sheet.getRange(1, 1, filterLastRow, lastCol).createFilter();
+    } catch (eCreate) {
+      sheet.getRange(1, 1, 1, lastCol).createFilter();
+    }
+    filter = sheet.getFilter();
+  }
+  if (!filter) {
+    throw new Error('aplicarFiltroComprasAtivas_: não foi possível criar o filtro na aba.');
+  }
+
+  var filterStartCol = filter.getRange().getColumn();
+  var columnIndexInFilter = colStatus - filterStartCol + 1;
+  if (columnIndexInFilter < 1) {
+    throw new Error(
+      'aplicarFiltroComprasAtivas_: Status_Compra (col ' +
+        colStatus +
+        ') está fora do intervalo do filtro.'
+    );
+  }
+  filter.setColumnFilterCriteria(columnIndexInFilter, criteria);
+  Logger.log(
+    'aplicarFiltroComprasAtivas_: OK coluna=' +
+      colStatus +
+      ' ocultos=' +
+      JSON.stringify(hidden)
+  );
+  return { ok: true, column: colStatus, hiddenValues: hidden };
+}
+
 function applyComprasMedicamentosLayout_(sheet) {
   var lastCol = Math.max(sheet.getLastColumn(), HEADERS.Compras_Medicamentos.length, 1);
   var headerRange = sheet.getRange(1, 1, 1, lastCol);
@@ -887,6 +940,12 @@ function applyComprasMedicamentosLayout_(sheet) {
     );
     sheet.setConditionalFormatRules(rules);
   } catch (eCf) {}
+
+  try {
+    aplicarFiltroComprasAtivas_(sheet);
+  } catch (eFiltro) {
+    Logger.log('applyComprasMedicamentosLayout_: filtro ativas ' + eFiltro);
+  }
 }
 
 // =============================================================================
