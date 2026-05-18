@@ -1,11 +1,23 @@
 const SHEET_NAMES = {
   GERAL: 'Geral',
   MEDICAMENTOS: 'Medicamentos',
+  COMPRAS_REPOSICAO: 'Compras_Reposicao',
   COMPRAS_MEDICAMENTOS: 'Compras_Medicamentos',
   ARQUIVO: 'Arquivo_Resolvidos',
   CHECKLIST: 'Checklist_Turnos',
   USUARIOS: 'Usuarios_Handover',
   AUDITORIA: 'Auditoria_Handover',
+};
+
+/** Valor da coluna Origem na planilha de Compras (aba Compras_Reposicao). */
+const COMPRAS_REPOSICAO_ORIGEM = 'Compra e reposição';
+
+/** Prioridades da aba Compras_Reposicao (Handover + planilha Compras). */
+const COMPRAS_REPOSICAO_PRIORIDADE = {
+  BAIXA: 'Baixa',
+  NORMAL: 'Normal',
+  ALTA: 'Alta',
+  URGENTE: 'Urgente',
 };
 
 /** Valores exatos da coluna Status_Compra (dropdown na aba operacional). */
@@ -175,6 +187,34 @@ const HEADERS = {
     'Codigo_Compra_Fornecedor',
     'Forma_Recebimento',
     'Observacao_Solicitacao',
+  ],
+  Compras_Reposicao: [
+    'ID',
+    'Data_Solicitacao',
+    'Categoria_Compra',
+    'Item',
+    'Quantidade',
+    'Unidade',
+    'Prioridade',
+    'Motivo',
+    'Solicitante',
+    'Observacao',
+    'Fornecedor_Sugerido',
+    'Previsao_Desejada',
+    'Status_Compra',
+    'Status_Handover',
+    'Comprado',
+    'Comprado_Por',
+    'Data_Compra',
+    'Cancelado',
+    'Cancelado_Por',
+    'Data_Cancelamento',
+    'Motivo_Cancelamento',
+    'Ultima_Acao_Por',
+    'Ultima_Acao_Em',
+    'Excluido',
+    'Excluido_Por',
+    'Excluido_Em',
   ],
   Compras_Medicamentos: [
     'ID_Compra',           // UUID gerado na criação da linha de compras (novo)
@@ -495,6 +535,189 @@ function setupComprasArquivosStatus() {
   return { ok: true, created: created, existing: existing };
 }
 
+/** Headers da aba Compras_Reposicao na planilha externa Compras_Drogarias_Conceito. */
+var COMPRAS_PLANILHA_REPOSICAO_HEADERS_ = [
+  'ID_Compra',
+  'ID_Handover',
+  'Data_Solicitacao',
+  'Origem',
+  'Categoria_Compra',
+  'Item',
+  'Quantidade',
+  'Unidade',
+  'Prioridade',
+  'Motivo',
+  'Solicitante',
+  'Observacao',
+  'Fornecedor_Sugerido',
+  'Previsao_Desejada',
+  'Status_Compra',
+  'Status_Handover',
+  'Comprado',
+  'Comprado_Por',
+  'Data_Compra',
+  'Cancelado',
+  'Cancelado_Por',
+  'Data_Cancelamento',
+  'Motivo_Cancelamento',
+  'Ultima_Atualizacao',
+];
+
+/**
+ * MANUAL: cria/formata a aba Compras_Reposicao na planilha de Compras (COMPRAS_SPREADSHEET_ID).
+ * Idempotente — não apaga dados, não usa sheet.clear(), não usa deleteRow.
+ */
+function setupComprasReposicaoPlanilha() {
+  var sheet = getComprasReposicaoPlanilhaSheet_();
+  applyComprasReposicaoPlanilhaLayout_(sheet);
+  Logger.log('setupComprasReposicaoPlanilha: OK aba=' + sheet.getName());
+  return { ok: true, sheetName: sheet.getName() };
+}
+
+function getComprasReposicaoPlanilhaSheet_() {
+  var ss = getComprasSpreadsheet_();
+  var sheet = ss.getSheetByName(SHEET_NAMES.COMPRAS_REPOSICAO);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAMES.COMPRAS_REPOSICAO);
+  }
+  ensureHeadersLegacyAdditive_(sheet, COMPRAS_PLANILHA_REPOSICAO_HEADERS_);
+  return sheet;
+}
+
+function findComprasReposicaoPlanilhaRowByHandoverId_(sheet, handoverId) {
+  return findComprasRowByHandoverId_(sheet, handoverId);
+}
+
+function normalizeComprasReposicaoPrioridade_(value) {
+  var s = String(value || '').trim();
+  var allowed = [
+    COMPRAS_REPOSICAO_PRIORIDADE.BAIXA,
+    COMPRAS_REPOSICAO_PRIORIDADE.NORMAL,
+    COMPRAS_REPOSICAO_PRIORIDADE.ALTA,
+    COMPRAS_REPOSICAO_PRIORIDADE.URGENTE,
+  ];
+  for (var i = 0; i < allowed.length; i++) {
+    if (s.toLowerCase() === allowed[i].toLowerCase()) {
+      return allowed[i];
+    }
+  }
+  return COMPRAS_REPOSICAO_PRIORIDADE.NORMAL;
+}
+
+function buildComprasReposicaoNamedValues_(handoverItem, existingStatusCompra) {
+  var item = handoverItem || {};
+  var statusCompra = normalizeComprasStatusCompraInput_(
+    existingStatusCompra || item.Status_Compra || COMPRAS_STATUS_COMPRA.PENDENTE
+  );
+  var statusHandover = sanitizeText_(item.Status_Handover || 'Pendente') || 'Pendente';
+  if (statusCompra === COMPRAS_STATUS_COMPRA.CANCELADO) {
+    statusHandover = 'Cancelado';
+  } else if (statusCompra === COMPRAS_STATUS_COMPRA.COMPRADO) {
+    statusHandover = 'Comprado';
+  }
+  return {
+    ID_Compra: sanitizeText_(item.ID_Compra || Utilities.getUuid()),
+    ID_Handover: sanitizeText_(item.ID),
+    Data_Solicitacao: item.Data_Solicitacao || new Date(),
+    Origem: COMPRAS_REPOSICAO_ORIGEM,
+    Categoria_Compra: sanitizeText_(item.Categoria_Compra),
+    Item: sanitizeText_(item.Item),
+    Quantidade: sanitizeText_(item.Quantidade),
+    Unidade: sanitizeText_(item.Unidade),
+    Prioridade: normalizeComprasReposicaoPrioridade_(item.Prioridade),
+    Motivo: sanitizeText_(item.Motivo),
+    Solicitante: sanitizeText_(item.Solicitante),
+    Observacao: sanitizeText_(item.Observacao),
+    Fornecedor_Sugerido: sanitizeText_(item.Fornecedor_Sugerido),
+    Previsao_Desejada: item.Previsao_Desejada || '',
+    Status_Compra: statusCompra,
+    Status_Handover: statusHandover,
+    Comprado: toBoolean_(item.Comprado),
+    Comprado_Por: sanitizeText_(item.Comprado_Por || ''),
+    Data_Compra: item.Data_Compra || '',
+    Cancelado: toBoolean_(item.Cancelado),
+    Cancelado_Por: sanitizeText_(item.Cancelado_Por || ''),
+    Data_Cancelamento: item.Data_Cancelamento || '',
+    Motivo_Cancelamento: sanitizeText_(item.Motivo_Cancelamento || ''),
+    Ultima_Atualizacao: new Date(),
+  };
+}
+
+function mirrorComprasReposicaoRowForId_(handoverId) {
+  var id = sanitizeText_(handoverId);
+  if (!id) {
+    return;
+  }
+  var loc = findRowById_(SHEET_NAMES.COMPRAS_REPOSICAO, id);
+  if (!loc) {
+    return;
+  }
+  var handoverItem = rowToObjectFromSheetRow_(loc.sheet, loc.rowNumber);
+  normalizeItemForClient_(handoverItem);
+  handoverItem.ID = id;
+  var cSheet = getComprasReposicaoPlanilhaSheet_();
+  var existingRow = findComprasReposicaoPlanilhaRowByHandoverId_(cSheet, id);
+  var existingStatus = '';
+  var prevObj = null;
+  if (existingRow) {
+    prevObj = rowToObjectFromSheetRow_(cSheet, existingRow);
+    existingStatus = prevObj.Status_Compra;
+    if (prevObj.ID_Compra) {
+      handoverItem.ID_Compra = prevObj.ID_Compra;
+    }
+  }
+  var named = buildComprasReposicaoNamedValues_(handoverItem, existingStatus);
+  if (existingRow && prevObj) {
+    if (named.Status_Compra === COMPRAS_STATUS_COMPRA.COMPRADO && prevObj.Data_Compra) {
+      named.Data_Compra = prevObj.Data_Compra;
+    }
+    if (named.Status_Compra === COMPRAS_STATUS_COMPRA.COMPRADO && sanitizeText_(prevObj.Comprado_Por)) {
+      named.Comprado_Por = sanitizeText_(prevObj.Comprado_Por);
+    }
+    var rowVals = buildAppendRowValuesFromNamedMap_(cSheet, named);
+    for (var i = 0; i < rowVals.length; i++) {
+      cSheet.getRange(existingRow, i + 1).setValue(rowVals[i]);
+    }
+  } else {
+    if (!named.ID_Compra) {
+      named.ID_Compra = Utilities.getUuid();
+    }
+    cSheet.appendRow(buildAppendRowValuesFromNamedMap_(cSheet, named));
+  }
+}
+
+/**
+ * Layout básico da aba Compras_Reposicao na planilha de Compras (sem filtro nesta rodada).
+ */
+function applyComprasReposicaoPlanilhaLayout_(sheet) {
+  var lastCol = Math.max(sheet.getLastColumn(), COMPRAS_PLANILHA_REPOSICAO_HEADERS_.length, 1);
+  var headerRange = sheet.getRange(1, 1, 1, lastCol);
+  headerRange.setBackground('#1a73e8');
+  headerRange.setFontColor('#ffffff');
+  headerRange.setFontWeight('bold');
+  sheet.setFrozenRows(1);
+  try {
+    var colStatus = getColumnIndex_(sheet, 'Status_Compra');
+    var numRowsValidation = Math.max(sheet.getMaxRows() - 1, 1);
+    var list = [
+      COMPRAS_STATUS_COMPRA.PENDENTE,
+      COMPRAS_STATUS_COMPRA.COMPRADO,
+      COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO,
+      COMPRAS_STATUS_COMPRA.CANCELADO,
+    ];
+    var rule = SpreadsheetApp.newDataValidation()
+      .requireValueInList(list, true)
+      .setAllowInvalid(false)
+      .build();
+    sheet.getRange(2, colStatus, numRowsValidation, 1).setDataValidation(rule);
+  } catch (eVal) {}
+  try {
+    if (!sheet.getFilter()) {
+      sheet.getRange(1, 1, 1, lastCol).createFilter();
+    }
+  } catch (eF) {}
+}
+
 /**
  * Aplica layout básico a uma aba de arquivo de Compras (Compradas/Canceladas).
  * Header azul, freeze, filtro, formatos de data.
@@ -686,6 +909,7 @@ function ensureSheetHeadersFor_(sheetName) {
     sheetName === SHEET_NAMES.GERAL ||
     sheetName === SHEET_NAMES.ARQUIVO ||
     sheetName === SHEET_NAMES.MEDICAMENTOS ||
+    sheetName === SHEET_NAMES.COMPRAS_REPOSICAO ||
     sheetName === SHEET_NAMES.CHECKLIST ||
     sheetName === SHEET_NAMES.AUDITORIA
   ) {
@@ -3437,6 +3661,9 @@ function refreshDashboardBundle(checklistTurnoOpt, sessionToken) {
     medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS).filter(function (m) {
       return String(m.Status || '').trim().toLowerCase() !== 'cancelado';
     }),
+    comprasReposicao: fetchSheetItems_(SHEET_NAMES.COMPRAS_REPOSICAO).filter(function (r) {
+      return !toBoolean_(r.Excluido) && String(r.Status_Handover || '').trim().toLowerCase() !== 'cancelado';
+    }),
     checklistTurno: checklistPayload,
     bundleTurno: turno,
   };
@@ -3469,10 +3696,15 @@ function saveData(tab, data, sessionToken) {
   try {
     var novoId = result && result.record && result.record.ID ? result.record.ID : '';
     if (novoId) {
-      var sheetNameAudit = tab === 'Medicamentos' ? SHEET_NAMES.MEDICAMENTOS : SHEET_NAMES.GERAL;
-      var titulo = tab === 'Medicamentos'
-        ? sanitizeText_(data.medicamento || data.tipo || 'Medicamento')
-        : sanitizeText_(data.titulo || data.descricao || 'Pendência');
+      var sheetNameAudit = SHEET_NAMES.GERAL;
+      var titulo = sanitizeText_(data.titulo || data.descricao || 'Pendência');
+      if (tab === SHEET_NAMES.MEDICAMENTOS) {
+        sheetNameAudit = SHEET_NAMES.MEDICAMENTOS;
+        titulo = sanitizeText_(data.medicamento || data.tipo || 'Medicamento');
+      } else if (tab === SHEET_NAMES.COMPRAS_REPOSICAO) {
+        sheetNameAudit = SHEET_NAMES.COMPRAS_REPOSICAO;
+        titulo = sanitizeText_(data.item || data.categoriaCompra || 'Compra e reposição');
+      }
       writeHandoverEditAudit_(sheetNameAudit, novoId, sess, [
         { campo: 'Status', anterior: '', novo: 'Criado', resumo: authorLabel + ' criou: ' + titulo },
       ]);
@@ -3600,7 +3832,11 @@ function getHandoverAuditTrail(id, sessionToken) {
 function appendHandoverRecord_(tab, data, authorLabel) {
   const started = Date.now();
 
-  if (tab !== SHEET_NAMES.GERAL && tab !== SHEET_NAMES.MEDICAMENTOS) {
+  if (
+    tab !== SHEET_NAMES.GERAL &&
+    tab !== SHEET_NAMES.MEDICAMENTOS &&
+    tab !== SHEET_NAMES.COMPRAS_REPOSICAO
+  ) {
     throw new Error('Aba invalida: ' + tab);
   }
 
@@ -3767,6 +4003,62 @@ function appendHandoverRecord_(tab, data, authorLabel) {
     return {
       success: true,
       record: fetchMedicationRecordById_(id),
+    };
+  }
+
+  if (tab === SHEET_NAMES.COMPRAS_REPOSICAO) {
+    var categoria = sanitizeText_(data.categoriaCompra);
+    var itemNome = sanitizeText_(data.item);
+    var quantidade = sanitizeText_(data.quantidade);
+    if (!categoria) {
+      throw new Error('Informe a categoria.');
+    }
+    if (!itemNome) {
+      throw new Error('Informe o item ou produto.');
+    }
+    if (!quantidade) {
+      throw new Error('Informe a quantidade ou descrição da necessidade.');
+    }
+    var prioridade = normalizeComprasReposicaoPrioridade_(data.prioridade);
+    var previsaoDesejada = parseDate_(data.previsaoDesejada);
+    var namedRepos = {
+      ID: id,
+      Data_Solicitacao: timestamp,
+      Categoria_Compra: categoria,
+      Item: itemNome,
+      Quantidade: quantidade,
+      Unidade: sanitizeText_(data.unidade),
+      Prioridade: prioridade,
+      Motivo: sanitizeText_(data.motivo),
+      Solicitante: authorLabel,
+      Observacao: sanitizeText_(data.observacao),
+      Fornecedor_Sugerido: sanitizeText_(data.fornecedorSugerido),
+      Previsao_Desejada: previsaoDesejada || '',
+      Status_Compra: COMPRAS_STATUS_COMPRA.PENDENTE,
+      Status_Handover: 'Pendente',
+      Comprado: false,
+      Comprado_Por: '',
+      Data_Compra: '',
+      Cancelado: false,
+      Cancelado_Por: '',
+      Data_Cancelamento: '',
+      Motivo_Cancelamento: '',
+      Ultima_Acao_Por: op,
+      Ultima_Acao_Em: op ? nowAcao : '',
+      Excluido: false,
+      Excluido_Por: '',
+      Excluido_Em: '',
+    };
+    sheet.appendRow(buildAppendRowValuesFromNamedMap_(sheet, namedRepos));
+    try {
+      mirrorComprasReposicaoRowForId_(id);
+    } catch (mirrorRepErr) {
+      Logger.log('saveData mirror Compras_Reposicao: ' + mirrorRepErr);
+    }
+    Logger.log('saveData Compras_Reposicao ms=' + (Date.now() - started));
+    return {
+      success: true,
+      record: fetchComprasReposicaoRecordById_(id),
     };
   }
 
@@ -4135,6 +4427,89 @@ function revertMedicationToPending(id, sessionToken, motivo) {
  * Cancela solicitação de medicamento diretamente pelo Handover (qualquer operador).
  * Atualiza Medicamentos por ID e espelha para Compras_Medicamentos por ID_Handover.
  */
+/**
+ * Cancela solicitação de Compra e reposição (sem deleteRow; mantém linha na aba).
+ */
+function cancelComprasReposicaoRequest(id, sessionToken, motivo) {
+  setupSpreadsheet();
+  var sess = requireSessionHandover_(sessionToken);
+  var op = getSessionDisplayName_(sess);
+  if (!op) {
+    throw new Error('Sessão sem nome de usuário.');
+  }
+  var itemId = sanitizeText_(id);
+  var location = findRowById_(SHEET_NAMES.COMPRAS_REPOSICAO, itemId);
+  if (!location) {
+    throw new Error('Solicitação de compra e reposição não encontrada.');
+  }
+  var sheet = location.sheet;
+  var rn = location.rowNumber;
+  var now = new Date();
+  setCellByHeader_(sheet, rn, 'Status_Compra', COMPRAS_STATUS_COMPRA.CANCELADO);
+  setCellByHeader_(sheet, rn, 'Status_Handover', 'Cancelado');
+  setCellByHeader_(sheet, rn, 'Cancelado', true);
+  setCellByHeader_(sheet, rn, 'Cancelado_Por', op);
+  setCellByHeader_(sheet, rn, 'Data_Cancelamento', now);
+  setCellByHeader_(sheet, rn, 'Motivo_Cancelamento', sanitizeText_(motivo));
+  setCellByHeader_(sheet, rn, 'Ultima_Acao_Por', op);
+  setCellByHeader_(sheet, rn, 'Ultima_Acao_Em', now);
+  try {
+    writeHandoverEditAudit_(SHEET_NAMES.COMPRAS_REPOSICAO, itemId, sess, [
+      {
+        campo: 'Status_Compra',
+        anterior: '',
+        novo: COMPRAS_STATUS_COMPRA.CANCELADO,
+        resumo: op + ' cancelou a solicitação.' + (sanitizeText_(motivo) ? ' Motivo: ' + sanitizeText_(motivo) : ''),
+      },
+    ]);
+  } catch (auditErr) {
+    Logger.log('cancelComprasReposicaoRequest audit: ' + auditErr);
+  }
+  try {
+    mirrorComprasReposicaoRowForId_(itemId);
+  } catch (mirrorErr) {
+    Logger.log('cancelComprasReposicaoRequest mirror: ' + mirrorErr);
+  }
+  return { success: true, record: fetchComprasReposicaoRecordById_(itemId) };
+}
+
+/**
+ * Marca Compra e reposição como comprada (Handover + espelho na planilha Compras).
+ */
+function markComprasReposicaoPurchased(id, sessionToken) {
+  setupSpreadsheet();
+  var sess = requireSessionHandover_(sessionToken);
+  var op = getSessionDisplayName_(sess);
+  var itemId = sanitizeText_(id);
+  var location = findRowById_(SHEET_NAMES.COMPRAS_REPOSICAO, itemId);
+  if (!location) {
+    throw new Error('Solicitação não encontrada.');
+  }
+  var sheet = location.sheet;
+  var rn = location.rowNumber;
+  var now = new Date();
+  setCellByHeader_(sheet, rn, 'Status_Compra', COMPRAS_STATUS_COMPRA.COMPRADO);
+  setCellByHeader_(sheet, rn, 'Status_Handover', 'Comprado');
+  setCellByHeader_(sheet, rn, 'Comprado', true);
+  setCellByHeader_(sheet, rn, 'Comprado_Por', op);
+  setCellByHeader_(sheet, rn, 'Data_Compra', now);
+  setCellByHeader_(sheet, rn, 'Ultima_Acao_Por', op);
+  setCellByHeader_(sheet, rn, 'Ultima_Acao_Em', now);
+  try {
+    writeHandoverEditAudit_(SHEET_NAMES.COMPRAS_REPOSICAO, itemId, sess, [
+      { campo: 'Status_Compra', anterior: '', novo: COMPRAS_STATUS_COMPRA.COMPRADO, resumo: op + ' marcou como comprado.' },
+    ]);
+  } catch (auditErr) {
+    Logger.log('markComprasReposicaoPurchased audit: ' + auditErr);
+  }
+  try {
+    mirrorComprasReposicaoRowForId_(itemId);
+  } catch (mirrorErr) {
+    Logger.log('markComprasReposicaoPurchased mirror: ' + mirrorErr);
+  }
+  return { success: true, record: fetchComprasReposicaoRecordById_(itemId) };
+}
+
 function cancelMedicationRequest(id, sessionToken, motivo) {
   const started = Date.now();
   setupSpreadsheet();
@@ -4766,6 +5141,17 @@ function fetchMedicationRecordById_(id) {
 
   const item = rowToObjectFromSheetRow_(location.sheet, location.rowNumber);
   item.Origem = SHEET_NAMES.MEDICAMENTOS;
+  normalizeItemForClient_(item);
+  return item;
+}
+
+function fetchComprasReposicaoRecordById_(id) {
+  var location = findRowById_(SHEET_NAMES.COMPRAS_REPOSICAO, id);
+  if (!location) {
+    return null;
+  }
+  var item = rowToObjectFromSheetRow_(location.sheet, location.rowNumber);
+  item.Origem = SHEET_NAMES.COMPRAS_REPOSICAO;
   normalizeItemForClient_(item);
   return item;
 }

@@ -2625,11 +2625,18 @@
                     <span class="dropdown-help">Registrar uma tarefa ou pendência</span>
                   </span>
                 </button>
-                <button type="button" class="dropdown-dd-item" role="menuitem" onclick="openNovoRegistroMedicamento_()">
+                <button type="button" class="dropdown-dd-item" role="menuitem" onclick="openNovoRegistroEncomenda_()">
                   <span class="dropdown-dd-ico" aria-hidden="true"><svg class="ico-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><rect x="5.5" y="9.5" width="13" height="5" rx="2.5" transform="rotate(-45 12 12)"/></svg></span>
                   <span>
                     <strong>Medicamento solicitado</strong>
-                    <span class="dropdown-help">Registrar uma solicitação de medicamento</span>
+                    <span class="dropdown-help">Registrar uma encomenda ou falta de medicamento</span>
+                  </span>
+                </button>
+                <button type="button" class="dropdown-dd-item" role="menuitem" onclick="openNovoRegistroCompraReposicao_()">
+                  <span class="dropdown-dd-ico" aria-hidden="true"><svg class="ico-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+                  <span>
+                    <strong>Compra e reposição</strong>
+                    <span class="dropdown-help">Solicitar compra de estoque, limpeza, sacolas, papelaria e outros</span>
                   </span>
                 </button>
               </div>
@@ -2648,8 +2655,13 @@
         </button>
         <button type="button" class="main-tab" data-main-tab="medicamentos">
           <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><rect x="5.5" y="9.5" width="13" height="5" rx="2.5" transform="rotate(-45 12 12)"/></svg></span>
-          <span>Medicamentos</span>
+          <span>Encomendas</span>
           <span class="tab-badge" id="tab-badge-medicamentos">0</span>
+        </button>
+        <button type="button" class="main-tab" data-main-tab="compras_reposicao">
+          <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+          <span>Compras e reposição</span>
+          <span class="tab-badge" id="tab-badge-compras-reposicao">0</span>
         </button>
         <button type="button" class="main-tab" data-main-tab="checklist">
           <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M20 6 9 17l-5-5"/></svg></span>
@@ -2937,6 +2949,60 @@
             </div>
           </div>
 
+          <div id="reposicao-fields" class="hidden">
+            <div class="field">
+              <label for="reposicao-categoria">Categoria</label>
+              <select id="reposicao-categoria" name="reposicaoCategoria">
+                <option value="">Selecione...</option>
+                <option value="Reposição de estoque">Reposição de estoque</option>
+                <option value="Perfumaria">Perfumaria</option>
+                <option value="Produtos de limpeza">Produtos de limpeza</option>
+                <option value="Sacolas e embalagens">Sacolas e embalagens</option>
+                <option value="Papelaria">Papelaria</option>
+                <option value="Material de escritório">Material de escritório</option>
+                <option value="Manutenção">Manutenção</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="reposicao-item">Item / produto</label>
+              <input id="reposicao-item" name="reposicaoItem" type="text" placeholder="Ex.: Detergente, sacola P, papel A4">
+            </div>
+            <div class="field">
+              <label for="reposicao-quantidade">Quantidade ou descrição da necessidade</label>
+              <input id="reposicao-quantidade" name="reposicaoQuantidade" type="text" placeholder="Ex.: 10 un, 2 caixas">
+            </div>
+            <div class="field">
+              <label for="reposicao-prioridade">Prioridade</label>
+              <select id="reposicao-prioridade" name="reposicaoPrioridade">
+                <option value="Baixa">Baixa</option>
+                <option value="Normal" selected>Normal</option>
+                <option value="Alta">Alta</option>
+                <option value="Urgente">Urgente</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="reposicao-unidade">Unidade (opcional)</label>
+              <input id="reposicao-unidade" name="reposicaoUnidade" type="text">
+            </div>
+            <div class="field">
+              <label for="reposicao-motivo">Motivo (opcional)</label>
+              <input id="reposicao-motivo" name="reposicaoMotivo" type="text">
+            </div>
+            <div class="field">
+              <label for="reposicao-observacao">Observação (opcional)</label>
+              <textarea id="reposicao-observacao" name="reposicaoObservacao" rows="2" style="min-height:56px;resize:vertical;"></textarea>
+            </div>
+            <div class="field">
+              <label for="reposicao-fornecedor">Fornecedor sugerido (opcional)</label>
+              <input id="reposicao-fornecedor" name="reposicaoFornecedor" type="text">
+            </div>
+            <div class="field">
+              <label for="reposicao-previsao">Previsão desejada (opcional)</label>
+              <input id="reposicao-previsao" name="reposicaoPrevisao" type="date">
+            </div>
+          </div>
+
           <div class="form-actions">
             <button id="save-button" type="submit">Salvar</button>
             <button type="button" id="form-modal-cancel" class="light">Cancelar</button>
@@ -3035,6 +3101,7 @@
       var HANDOVER_SESSION_CHECK_TIMEOUT_MS = 15000;
 
       const QUEUE_FILTERS_PENDENCIAS = ['pendentes', 'todos', 'urgentes', 'vencidos_hoje'];
+      const QUEUE_FILTERS_COMPRAS_REPOSICAO = ['pendentes', 'todos', 'comprados', 'cancelados', 'nao_encontrados'];
       const QUEUE_FILTERS_MEDICAMENTOS = [
         'pendentes',
         'todos',
@@ -3047,7 +3114,7 @@
         'vencidos_hoje',
         'resolvidos_parcialmente',
       ];
-      const QUEUE_FILTERS_ALL = QUEUE_FILTERS_PENDENCIAS.concat(QUEUE_FILTERS_MEDICAMENTOS).concat(['resolvidos']);
+      const QUEUE_FILTERS_ALL = QUEUE_FILTERS_PENDENCIAS.concat(QUEUE_FILTERS_MEDICAMENTOS).concat(QUEUE_FILTERS_COMPRAS_REPOSICAO).concat(['resolvidos']);
 
       const CHECKLIST_VIEW_FILTERS = ['todos', 'pendentes', 'feitos', 'na', 'feitos_hoje'];
 
@@ -3100,6 +3167,8 @@
       const tipoSelect = document.getElementById('tipo');
       const generalFields = document.getElementById('general-fields');
       const medicineFields = document.getElementById('medicine-fields');
+      const reposicaoFields = document.getElementById('reposicao-fields');
+      const categoryFieldWrap = categorySelect ? categorySelect.closest('.field') : null;
       const precoVendaField = document.getElementById('preco-venda-field');
       const formStatus = document.getElementById('form-status');
       const saveButton = document.getElementById('save-button');
@@ -5430,6 +5499,7 @@
             : 0;
         setText('tab-badge-pendencias', String(pend));
         setText('tab-badge-medicamentos', String(med));
+        setText('tab-badge-compras-reposicao', String(rep));
         setText('tab-badge-checklist', String(ck));
         if (historicoLoadState === 'ready') {
           setText('tab-badge-historico', String(Math.min(999, historicoResolvidos.length)));
@@ -5482,7 +5552,7 @@
           buildSummaryCard_('urgentes', 'Urgentes', String(urgentesCount), 'Prioridade na loja', 'kpi-red', 'bang'),
           buildSummaryCard_(
             'medicamentos',
-            'Medicamentos solicitados',
+            'Encomendas',
             String(medicationPending.length),
             'Faltas e encomendas',
             'kpi-green',
@@ -7516,7 +7586,50 @@
           };
         });
 
-        return generalItems.concat(medicationItems).sort(function (a, b) {
+        const reposicaoItems = (data.comprasReposicao || []).map(function (item) {
+          var st = normalizeComprasReposicaoStatus_(item);
+          var actions = [];
+          if (item.__syncState !== 'syncing' && st.key !== 'cancelado') {
+            if (!item.Comprado && st.key === 'pendente') {
+              actions.push({
+                label: 'Marcar como comprado',
+                handler: 'markComprasReposicaoPurchased_',
+                className: 'secondary',
+              });
+            }
+          }
+          var metaUltimaRep = '';
+          if (item.Ultima_Acao_Por) {
+            metaUltimaRep =
+              item.Ultima_Acao_Por +
+              (item.Ultima_Acao_Em ? ' · ' + formatDateTime(item.Ultima_Acao_Em) : '');
+          }
+          return {
+            id: item.ID,
+            type: 'compras_reposicao',
+            originLabel: 'Compras e reposição',
+            statusLabel: st.label,
+            statusKey: st.key,
+            title: item.Item || 'Item sem nome',
+            description:
+              String(item.Categoria_Compra || '').trim() +
+              (item.Quantidade ? ' · ' + String(item.Quantidade).trim() : ''),
+            metaCategoria: item.Categoria_Compra || '',
+            metaQuantidade: item.Quantidade || '',
+            metaPrioridade: item.Prioridade || '',
+            metaSolicitante: item.Solicitante || '',
+            metaObservacao: item.Observacao || '',
+            metaUltimaAcao: metaUltimaRep,
+            person: item.Solicitante || '-',
+            timeLabel: formatDateTime(item.Data_Solicitacao || item.Timestamp),
+            timeSort: parseDateTime_(item.Data_Solicitacao || item.Timestamp),
+            syncState: item.__syncState || '',
+            syncError: item.__syncError || '',
+            actions: actions,
+          };
+        });
+
+        return generalItems.concat(medicationItems).concat(reposicaoItems).sort(function (a, b) {
           if (a.isOverdue !== b.isOverdue) {
             return a.isOverdue ? -1 : 1;
           }
@@ -7625,6 +7738,20 @@
           vencidos_hoje: 'Vencidos/Hoje',
         };
         return mapping[filterKey] || 'Todos';
+      }
+
+      function normalizeComprasReposicaoStatus_(item) {
+        var sc = String(item.Status_Compra || '').trim();
+        if (sc === 'Comprado') {
+          return { key: 'comprado', label: 'Comprado' };
+        }
+        if (sc === 'Cancelado') {
+          return { key: 'cancelado', label: 'Cancelado' };
+        }
+        if (sc === 'Não encontrado') {
+          return { key: 'nao_encontrado', label: 'Não encontrado' };
+        }
+        return { key: 'pendente', label: sc || 'Pendente de compra' };
       }
 
       function normalizeMedicationStatus_(item) {
@@ -8881,6 +9008,20 @@
         };
       }
 
+      function getReposicaoPayload() {
+        return {
+          categoriaCompra: document.getElementById('reposicao-categoria').value,
+          item: document.getElementById('reposicao-item').value,
+          quantidade: document.getElementById('reposicao-quantidade').value,
+          prioridade: document.getElementById('reposicao-prioridade').value,
+          unidade: document.getElementById('reposicao-unidade').value,
+          motivo: document.getElementById('reposicao-motivo').value,
+          observacao: document.getElementById('reposicao-observacao').value,
+          fornecedorSugerido: document.getElementById('reposicao-fornecedor').value,
+          previsaoDesejada: document.getElementById('reposicao-previsao').value,
+        };
+      }
+
       function getMedicinePayload() {
         var fcEl = document.getElementById('fornecedorCompra');
         var codEl = document.getElementById('codigoCompraFornecedor');
@@ -9094,6 +9235,67 @@
           medCancelOverlay.classList.add('hidden');
           medCancelOverlay.setAttribute('aria-hidden', 'true');
         }
+      }
+
+      function markComprasReposicaoPurchased_(id) {
+        runWithOperador_(function () {
+          var tok = ensureSessionTokenForAction_();
+          if (!tok) return;
+          var list = dashboardData.comprasReposicao || [];
+          var item = list.find(function (r) {
+            return r.ID === id;
+          });
+          if (!item || item.__syncState === 'syncing') return;
+          item.__syncState = 'syncing';
+          renderAll();
+          getScriptRunner_()
+            .withSuccessHandler(function (response) {
+              delete item.__syncState;
+              if (response && response.record) upsertComprasReposicao_(response.record);
+              renderAll();
+              showToast_('Marcado como comprado');
+            })
+            .withFailureHandler(function (error) {
+              delete item.__syncState;
+              renderAll();
+              showToast_(getErrorMessage(error), true);
+            })
+            .markComprasReposicaoPurchased(id, tok);
+        });
+      }
+
+      function cancelComprasReposicaoRequest_(id) {
+        var list = dashboardData.comprasReposicao || [];
+        var item = list.find(function (r) {
+          return r.ID === id;
+        });
+        if (!item || item.__syncState === 'syncing') return;
+        var motivo = window.prompt('Motivo do cancelamento (opcional):', '') || '';
+        runWithOperador_(function () {
+          var tok = ensureSessionTokenForAction_();
+          if (!tok) return;
+          item.__syncState = 'syncing';
+          renderAll();
+          getScriptRunner_()
+            .withSuccessHandler(function (response) {
+              delete item.__syncState;
+              if (response && response.record) {
+                upsertComprasReposicao_(response.record);
+              } else {
+                dashboardData.comprasReposicao = (dashboardData.comprasReposicao || []).filter(function (r) {
+                  return r.ID !== id;
+                });
+              }
+              renderAll();
+              showToast_('Solicitação cancelada');
+            })
+            .withFailureHandler(function (error) {
+              delete item.__syncState;
+              renderAll();
+              showToast_(getErrorMessage(error), true);
+            })
+            .cancelComprasReposicaoRequest(id, tok, motivo);
+        });
       }
 
       function cancelMedicationRequest_(id) {
