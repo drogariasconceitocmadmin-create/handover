@@ -2819,6 +2819,7 @@
             <select id="category" name="category">
               <option value="Geral">Geral</option>
               <option value="Medicamentos">Medicamentos</option>
+              <option value="Compras_Reposicao">Compras_Reposicao</option>
             </select>
           </div>
 
@@ -4510,6 +4511,22 @@
         dashboardData.geral = list;
       }
 
+      function upsertComprasReposicao_(record) {
+        if (!record || !record.ID) {
+          return;
+        }
+        var list = dashboardData.comprasReposicao || [];
+        var idx = list.findIndex(function (r) {
+          return r.ID === record.ID;
+        });
+        if (idx >= 0) {
+          list[idx] = record;
+        } else {
+          list.unshift(record);
+        }
+        dashboardData.comprasReposicao = list;
+      }
+
       function removeGeralById_(id) {
         dashboardData.geral = (dashboardData.geral || []).filter(function (g) {
           return g.ID !== id;
@@ -4662,6 +4679,7 @@
           var showQueue =
             activeMainTab === 'pendencias' ||
             activeMainTab === 'medicamentos' ||
+            activeMainTab === 'compras_reposicao' ||
             activeMainTab === 'historico';
           panelQueueWrap.classList.toggle('hidden', !showQueue);
         }
@@ -4676,6 +4694,8 @@
             ? QUEUE_FILTERS_PENDENCIAS.indexOf(activeQueueFilter) >= 0
             : activeMainTab === 'medicamentos'
             ? QUEUE_FILTERS_MEDICAMENTOS.indexOf(activeQueueFilter) >= 0
+            : activeMainTab === 'compras_reposicao'
+            ? QUEUE_FILTERS_COMPRAS_REPOSICAO.indexOf(activeQueueFilter) >= 0
             : true;
         if (!ok) {
           activeQueueFilter = 'pendentes';
@@ -4835,6 +4855,11 @@
         openFormModal_('Medicamentos');
       }
 
+      function openNovoRegistroCompraReposicao_() {
+        closeNovoRegistroDropdown_();
+        openFormModal_('Compras_Reposicao');
+      }
+
       function bindMedQueueSearch_() {
         if (!medQueueSearchInput || medQueueSearchInput.dataset.bound === '1') {
           return;
@@ -4855,26 +4880,35 @@
           host.innerHTML = '';
           return;
         }
-        var spec =
-          activeMainTab === 'pendencias'
-            ? [
-                ['pendentes', 'Pendentes'],
-                ['todos', 'Todos'],
-                ['urgentes', 'Urgentes'],
-                ['vencidos_hoje', 'Vencidos/Hoje'],
-              ]
-            : [
-                ['pendentes', 'Pendentes'],
-                ['todos', 'Todos'],
-                ['faltas', 'Faltas'],
-                ['encomendas', 'Encomendas'],
-                ['comprados', 'Comprados'],
-                ['comprados_sem_aviso', 'Comprados sem aviso'],
-                ['entregues', 'Entregues'],
-                ['cancelados', 'Cancelados'],
-                ['vencidos_hoje', 'Vencidos/Hoje'],
-                ['resolvidos_parcialmente', 'Resolvidos parcialmente'],
-              ];
+        var spec;
+        if (activeMainTab === 'pendencias') {
+          spec = [
+            ['pendentes', 'Pendentes'],
+            ['todos', 'Todos'],
+            ['urgentes', 'Urgentes'],
+            ['vencidos_hoje', 'Vencidos/Hoje'],
+          ];
+        } else if (activeMainTab === 'compras_reposicao') {
+          spec = [
+            ['pendentes', 'Pendentes'],
+            ['todos', 'Todos'],
+            ['comprados', 'Comprados'],
+            ['cancelados', 'Cancelados'],
+          ];
+        } else {
+          spec = [
+            ['pendentes', 'Pendentes'],
+            ['todos', 'Todos'],
+            ['faltas', 'Faltas'],
+            ['encomendas', 'Encomendas'],
+            ['comprados', 'Comprados'],
+            ['comprados_sem_aviso', 'Comprados sem aviso'],
+            ['entregues', 'Entregues'],
+            ['cancelados', 'Cancelados'],
+            ['vencidos_hoje', 'Vencidos/Hoje'],
+            ['resolvidos_parcialmente', 'Resolvidos parcialmente'],
+          ];
+        }
 
         var mergedBase = buildWorkQueueItems(dashboardData);
         mergedBase = filterItemsByMainTab_(mergedBase);
@@ -4928,6 +4962,11 @@
           if (medSearchWrap) {
             medSearchWrap.classList.remove('hidden');
           }
+        } else if (activeMainTab === 'compras_reposicao') {
+          queueSectionHeading.textContent = 'Compras e reposição';
+          if (medSearchWrap) {
+            medSearchWrap.classList.add('hidden');
+          }
         } else if (activeMainTab === 'historico') {
           queueSectionHeading.textContent = 'Histórico / Resolvidos';
           if (medSearchWrap) {
@@ -4945,6 +4984,11 @@
         if (activeMainTab === 'medicamentos') {
           return items.filter(function (i) {
             return i.type === 'medicamento';
+          });
+        }
+        if (activeMainTab === 'compras_reposicao') {
+          return items.filter(function (i) {
+            return i.type === 'compras_reposicao';
           });
         }
         return items;
@@ -5132,6 +5176,14 @@
             return { type: 'medicamento', origem: 'Medicamentos', row: m };
           }
         }
+        if (!typeOpt || typeOpt === 'compras_reposicao') {
+          var r = (dashboardData.comprasReposicao || []).find(function (row) {
+            return String(row.ID || '') === sid;
+          });
+          if (r) {
+            return { type: 'compras_reposicao', origem: 'Compras_Reposicao', row: r };
+          }
+        }
         return null;
       }
 
@@ -5168,6 +5220,20 @@
           if (item.metaUltimaAcao) {
             lines.push('Última ação: ' + item.metaUltimaAcao);
           }
+        } else if (item.type === 'compras_reposicao') {
+          lines.push('Categoria: ' + (item.metaCategoria || '-'));
+          lines.push('Quantidade: ' + (item.metaQuantidade || '-'));
+          lines.push('Prioridade: ' + (item.metaPrioridade || '-'));
+          lines.push('Solicitante: ' + (item.metaSolicitante || '-'));
+          if (item.metaStatusCompra) {
+            lines.push('Status compra: ' + item.metaStatusCompra);
+          }
+          if (item.metaObservacao) {
+            lines.push('Observação: ' + item.metaObservacao);
+          }
+          if (item.metaUltimaAcao) {
+            lines.push('Última ação: ' + item.metaUltimaAcao);
+          }
         }
         return lines.length ? '\n\n' + lines.join('\n') : '';
       }
@@ -5188,6 +5254,8 @@
         var html;
         if (item.type === 'medicamento') {
           html = buildMedicamentoDetailHtml_(row);
+        } else if (item.type === 'compras_reposicao') {
+          html = buildComprasReposicaoDetailHtml_(row);
         } else {
           html = buildGeralDetailHtml_(row);
         }
@@ -5199,6 +5267,10 @@
         var ctx = findActiveRawById_(id);
         if (!ctx || !ctx.row) {
           showToast_('Item não encontrado para edição.', true);
+          return;
+        }
+        if (ctx.type === 'compras_reposicao') {
+          showToast_('Edição de compra e reposição ainda não disponível.', true);
           return;
         }
         if (ctx.type === 'medicamento' && String(ctx.row.Status || '').trim().toLowerCase() === 'cancelado') {
@@ -5492,6 +5564,9 @@
         }).length;
         var med = all.filter(function (i) {
           return i.type === 'medicamento' && i.statusKey === 'pendente';
+        }).length;
+        var rep = all.filter(function (i) {
+          return i.type === 'compras_reposicao' && i.statusKey === 'pendente';
         }).length;
         var ck =
           dashboardData.checklistTurno && dashboardData.checklistTurno.summary
@@ -6035,6 +6110,35 @@
         return solicitacao + vencimento + ultimaAcao;
       }
       // ── fim helpers detalhes ─────────────────────────────────────────────
+
+      function buildComprasReposicaoDetailHtml_(row) {
+        if (!row) return '<p>Sem dados.</p>';
+        var solicitacao = detailSectionHtml_('Solicitação', [
+          detailRowAlways_('Item / produto', row.Item),
+          detailRowAlways_('Categoria', row.Categoria_Compra),
+          detailRowAlways_('Quantidade', row.Quantidade),
+          detailRowAlways_('Prioridade', row.Prioridade),
+          detailRowIf_('Solicitante', row.Solicitante),
+          detailRowIf_('Data da solicitação', row.Data_Solicitacao ? formatDateTime(row.Data_Solicitacao) : ''),
+        ]);
+
+        var compra = detailSectionHtml_('Compra', [
+          detailRowAlways_('Status compra', row.Status_Compra || 'Pendente de compra'),
+          detailRowAlways_('Status Handover', row.Status_Handover || 'Pendente'),
+          detailRowIf_('Unidade', row.Unidade),
+          detailRowIf_('Motivo', row.Motivo),
+          detailRowIf_('Observação', row.Observacao),
+          detailRowIf_('Fornecedor sugerido', row.Fornecedor_Sugerido),
+          detailRowIf_('Previsão desejada', row.Previsao_Desejada ? formatDate(row.Previsao_Desejada) : ''),
+        ]);
+
+        var ultimaAcao = detailSectionHtml_('Última ação', [
+          detailRowIf_('Por', row.Ultima_Acao_Por),
+          detailRowIf_('Em', row.Ultima_Acao_Em ? formatDateTime(row.Ultima_Acao_Em) : ''),
+        ]);
+
+        return solicitacao + compra + ultimaAcao;
+      }
 
       function detailDlRow_(label, value) {
         var v = value == null ? '' : String(value).trim();
@@ -7142,6 +7246,9 @@
         if (item.type === 'medicamento') {
           return 'qk-stripe-med';
         }
+        if (item.type === 'compras_reposicao') {
+          return 'qk-stripe-med';
+        }
         return 'qk-stripe-geral';
       }
 
@@ -7185,6 +7292,14 @@
           }
           chunks.push(row('WhatsApp', item.metaWhatsapp));
           chunks.push(row('Última ação', item.metaUltimaAcao));
+        } else if (item.type === 'compras_reposicao') {
+          chunks.push(row('Categoria', item.metaCategoria));
+          chunks.push(row('Quantidade', item.metaQuantidade));
+          chunks.push(row('Prioridade', item.metaPrioridade));
+          chunks.push(row('Solicitante', item.metaSolicitante));
+          chunks.push(row('Status compra', item.metaStatusCompra));
+          chunks.push(row('Observação', item.metaObservacao));
+          chunks.push(row('Última ação', item.metaUltimaAcao));
         } else if (item.type === 'historico') {
           return '';
         }
@@ -7203,7 +7318,7 @@
         if (cn === 'light') return 'btn-queue-light';
         if (cn === 'secondary') return 'btn-queue-secondary';
         if (h === 'markResolved' || h === 'markDelivered') return 'btn-queue-primary';
-        if (h === 'markPurchased') return 'btn-queue-secondary';
+        if (h === 'markPurchased' || h === 'markComprasReposicaoPurchased_') return 'btn-queue-secondary';
         if (h === 'notifyClientWhatsApp') return 'whatsapp';
         if (h === 'revertMedicationToPending_' || h === 'openReopenHistoricoModal_') return 'warning';
         return cn === '' ? 'btn-queue-primary' : cn + ' btn-queue-secondary';
@@ -7307,7 +7422,7 @@
           '\')"><span class="card-menu-ico" aria-hidden="true">' +
           iconSvg_('eye', 15) +
           '</span>Ver detalhes</button>' +
-          (item.statusKey !== 'cancelado'
+          (item.type !== 'compras_reposicao' && item.statusKey !== 'cancelado'
             ? '<button type="button" onclick="openEditHandoverItem_(\'' +
               escapeJsSingleQuoted_(item.id) +
               '\')"><span class="card-menu-ico" aria-hidden="true">' +
@@ -7330,6 +7445,13 @@
               '\')"><span class="card-menu-ico" aria-hidden="true">' +
               iconSvg_('minus', 15) +
               '</span>Cancelar pedido</button>'
+            : '') +
+          (item.type === 'compras_reposicao' && item.statusKey !== 'cancelado'
+            ? '<button type="button" onclick="cancelComprasReposicaoRequest_(\'' +
+              escapeJsSingleQuoted_(item.id) +
+              '\')"><span class="card-menu-ico" aria-hidden="true">' +
+              iconSvg_('minus', 15) +
+              '</span>Cancelar</button>'
             : '') +
           '</div>' +
           '</div>' +
@@ -7597,6 +7719,11 @@
                 className: 'secondary',
               });
             }
+            actions.push({
+              label: 'Cancelar',
+              handler: 'cancelComprasReposicaoRequest_',
+              className: 'warning',
+            });
           }
           var metaUltimaRep = '';
           if (item.Ultima_Acao_Por) {
@@ -7618,6 +7745,7 @@
             metaQuantidade: item.Quantidade || '',
             metaPrioridade: item.Prioridade || '',
             metaSolicitante: item.Solicitante || '',
+            metaStatusCompra: item.Status_Compra || '',
             metaObservacao: item.Observacao || '',
             metaUltimaAcao: metaUltimaRep,
             person: item.Solicitante || '-',
@@ -7716,6 +7844,7 @@
         var mapping = {
           pendencias: 'Pendências',
           medicamentos: 'Medicamentos',
+          compras_reposicao: 'Compras e reposição',
           historico: 'Histórico',
           checklist: 'Checklist',
         };
@@ -8596,10 +8725,14 @@
         var cat =
           initialCategory === 'Medicamentos'
             ? 'Medicamentos'
+            : initialCategory === 'Compras_Reposicao'
+            ? 'Compras_Reposicao'
             : initialCategory === 'Geral'
             ? 'Geral'
             : 'Geral';
         categorySelect.value = cat;
+        document.getElementById('form-modal-title').textContent =
+          cat === 'Compras_Reposicao' ? 'Nova compra e reposição' : 'Novo registro';
         updateVisibleFields();
         updateMedicinePriceVisibility_();
         syncAutorFieldFromOperador_();
@@ -8616,6 +8749,11 @@
             var med = document.getElementById('medicamento');
             if (med) {
               med.focus();
+            }
+          } else if (categorySelect.value === 'Compras_Reposicao') {
+            var rep = document.getElementById('reposicao-categoria');
+            if (rep) {
+              rep.focus();
             }
           } else {
             var tg = document.getElementById('tituloGeral');
@@ -8641,8 +8779,12 @@
 
       function updateVisibleFields() {
         const isMedication = categorySelect.value === 'Medicamentos';
-        generalFields.classList.toggle('hidden', isMedication);
+        const isReposicao = categorySelect.value === 'Compras_Reposicao';
+        generalFields.classList.toggle('hidden', isMedication || isReposicao);
         medicineFields.classList.toggle('hidden', !isMedication);
+        if (reposicaoFields) {
+          reposicaoFields.classList.toggle('hidden', !isReposicao);
+        }
         clearStatus(formStatus);
         clearEncomendaRequiredHints_();
         updateMedicinePriceVisibility_();
@@ -8667,6 +8809,10 @@
           dashboardData.geral = (dashboardData.geral || []).filter(function (g) {
             return g.ID !== optimisticId;
           });
+        } else if (tab === 'Compras_Reposicao') {
+          dashboardData.comprasReposicao = (dashboardData.comprasReposicao || []).filter(function (r) {
+            return r.ID !== optimisticId;
+          });
         } else {
           dashboardData.medicamentos = (dashboardData.medicamentos || []).filter(function (m) {
             return m.ID !== optimisticId;
@@ -8680,6 +8826,9 @@
             return x.ID === id;
           }) ||
           (dashboardData.medicamentos || []).find(function (x) {
+            return x.ID === id;
+          }) ||
+          (dashboardData.comprasReposicao || []).find(function (x) {
             return x.ID === id;
           });
         if (!row || !row.__pendingSave) {
@@ -8704,6 +8853,8 @@
               removeOptimisticPlaceholder_(id, ps.tab);
               if (ps.tab === 'Geral') {
                 upsertGeral_(response.record);
+              } else if (ps.tab === 'Compras_Reposicao') {
+                upsertComprasReposicao_(response.record);
               } else {
                 upsertMedicamento_(response.record);
               }
@@ -8734,6 +8885,9 @@
           }) ||
           (dashboardData.medicamentos || []).find(function (x) {
             return x.ID === id && x.__pendingSave;
+          }) ||
+          (dashboardData.comprasReposicao || []).find(function (x) {
+            return x.ID === id && x.__pendingSave;
           });
         if (!row || !row.__pendingSave) {
           showToast_('Registro não encontrado.', true);
@@ -8762,6 +8916,16 @@
             gh.value = pl.horaVencimento || '';
           }
           toggleGeralVencimentoFields_();
+        } else if (ps.tab === 'Compras_Reposicao') {
+          document.getElementById('reposicao-categoria').value = pl.categoriaCompra || '';
+          document.getElementById('reposicao-item').value = pl.item || '';
+          document.getElementById('reposicao-quantidade').value = pl.quantidade || '';
+          document.getElementById('reposicao-prioridade').value = pl.prioridade || 'Normal';
+          document.getElementById('reposicao-unidade').value = pl.unidade || '';
+          document.getElementById('reposicao-motivo').value = pl.motivo || '';
+          document.getElementById('reposicao-observacao').value = pl.observacao || '';
+          document.getElementById('reposicao-fornecedor').value = pl.fornecedorSugerido || '';
+          document.getElementById('reposicao-previsao').value = pl.previsaoDesejada || '';
         } else {
           document.getElementById('tipo').value = pl.tipo || '';
           document.getElementById('medicamento').value = pl.medicamento || '';
@@ -8798,7 +8962,12 @@
           syncAutorFieldFromOperador_();
 
           const tab = categorySelect.value;
-          const payload = tab === 'Geral' ? getGeneralPayload() : getMedicinePayload();
+          const payload =
+            tab === 'Geral'
+              ? getGeneralPayload()
+              : tab === 'Compras_Reposicao'
+              ? getComprasReposicaoPayload()
+              : getMedicinePayload();
           var isFalta = false;
 
           if (tab === 'Medicamentos') {
@@ -8862,6 +9031,33 @@
               __syncState: 'syncing',
               __pendingSave: pendingCtx,
             });
+          } else if (tab === 'Compras_Reposicao') {
+            dashboardData.comprasReposicao = dashboardData.comprasReposicao || [];
+            dashboardData.comprasReposicao.unshift({
+              ID: optimisticId,
+              Origem: 'Compras_Reposicao',
+              Data_Solicitacao: new Date().toISOString(),
+              Categoria_Compra: payload.categoriaCompra,
+              Item: payload.item,
+              Quantidade: payload.quantidade,
+              Unidade: payload.unidade,
+              Prioridade: payload.prioridade,
+              Motivo: payload.motivo,
+              Solicitante: operador,
+              Observacao: payload.observacao,
+              Fornecedor_Sugerido: payload.fornecedorSugerido,
+              Previsao_Desejada: payload.previsaoDesejada,
+              Status_Compra: 'Pendente de compra',
+              Status_Handover: 'Pendente',
+              Comprado: false,
+              Cancelado: false,
+              Ultima_Acao_Por: operador,
+              __syncState: 'syncing',
+              __pendingSave: pendingCtx,
+            });
+            activeMainTab = 'compras_reposicao';
+            activeQueueFilter = 'pendentes';
+            postMainTabDomSync_();
           } else {
             dashboardData.medicamentos.unshift({
               ID: optimisticId,
@@ -8922,6 +9118,8 @@
                 if (response.record && response.record.ID) {
                   if (tab === 'Geral') {
                     upsertGeral_(response.record);
+                  } else if (tab === 'Compras_Reposicao') {
+                    upsertComprasReposicao_(response.record);
                   } else {
                     upsertMedicamento_(response.record);
                   }
@@ -9008,7 +9206,7 @@
         };
       }
 
-      function getReposicaoPayload() {
+      function getComprasReposicaoPayload() {
         return {
           categoriaCompra: document.getElementById('reposicao-categoria').value,
           item: document.getElementById('reposicao-item').value,
@@ -9020,6 +9218,10 @@
           fornecedorSugerido: document.getElementById('reposicao-fornecedor').value,
           previsaoDesejada: document.getElementById('reposicao-previsao').value,
         };
+      }
+
+      function getReposicaoPayload() {
+        return getComprasReposicaoPayload();
       }
 
       function getMedicinePayload() {
@@ -9075,6 +9277,17 @@
             if (!dataOkEnc) {
               return ENCOMENDA_PRECO_DATA_MSG;
             }
+          }
+        }
+
+        if (tab === 'Compras_Reposicao') {
+          if (
+            !String(payload.categoriaCompra || '').trim() ||
+            !String(payload.item || '').trim() ||
+            !String(payload.prioridade || '').trim() ||
+            !String(payload.quantidade || '').trim()
+          ) {
+            return 'Informe categoria, item, prioridade e quantidade ou descrição da necessidade.';
           }
         }
 
