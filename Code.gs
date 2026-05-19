@@ -3662,7 +3662,7 @@ function refreshDashboardBundle(checklistTurnoOpt, sessionToken) {
       return String(m.Status || '').trim().toLowerCase() !== 'cancelado';
     }),
     comprasReposicao: fetchSheetItems_(SHEET_NAMES.COMPRAS_REPOSICAO).filter(function (r) {
-      return !toBoolean_(r.Excluido) && String(r.Status_Handover || '').trim().toLowerCase() !== 'cancelado';
+      return isComprasReposicaoAtiva_(r);
     }),
     checklistTurno: checklistPayload,
     bundleTurno: turno,
@@ -4075,8 +4075,73 @@ function fetchData() {
     medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS).filter(function (m) {
       return String(m.Status || '').trim().toLowerCase() !== 'cancelado';
     }),
+    comprasReposicao: fetchSheetItems_(SHEET_NAMES.COMPRAS_REPOSICAO).filter(function (r) {
+      return isComprasReposicaoAtiva_(r);
+    }),
     checklistTurno: buildChecklistTurnoPayload_(inferDefaultChecklistTurno_()),
   };
+}
+
+function normalizeComprasReposicaoStatusKey_(item) {
+  var statusCompra = sanitizeText_(item && item.Status_Compra).toLowerCase();
+  var statusHandover = sanitizeText_(item && item.Status_Handover).toLowerCase();
+  if (statusCompra === 'comprado' || statusHandover === 'comprado' || toBoolean_(item && item.Comprado)) {
+    return 'comprado';
+  }
+  if (statusCompra === 'cancelado' || statusHandover === 'cancelado' || toBoolean_(item && item.Cancelado)) {
+    return 'cancelado';
+  }
+  if (statusHandover === 'resolvido') {
+    return 'resolvido';
+  }
+  if (statusCompra === 'não encontrado' || statusCompra === 'nao encontrado' || statusCompra.indexOf('encontrado') >= 0) {
+    return 'nao_encontrado';
+  }
+  return 'pendente';
+}
+
+function isComprasReposicaoAtiva_(item) {
+  if (!item || toBoolean_(item.Excluido)) {
+    return false;
+  }
+  var key = normalizeComprasReposicaoStatusKey_(item);
+  return key !== 'comprado' && key !== 'cancelado' && key !== 'resolvido';
+}
+
+function isComprasReposicaoHistorico_(item) {
+  if (!item || toBoolean_(item.Excluido)) {
+    return false;
+  }
+  var key = normalizeComprasReposicaoStatusKey_(item);
+  return key === 'comprado' || key === 'cancelado' || key === 'resolvido';
+}
+
+function historicoEstadoComprasReposicao_(item) {
+  var key = normalizeComprasReposicaoStatusKey_(item);
+  if (key === 'cancelado') {
+    return 'Cancelado';
+  }
+  if (key === 'comprado') {
+    return 'Comprado';
+  }
+  return 'Resolvido';
+}
+
+function historicoSortTime_(item) {
+  var raw =
+    item.Arquivado_Em ||
+    item.Data_Compra ||
+    item.Data_Cancelamento ||
+    item.Ultima_Acao_Em ||
+    item.Data_Resolucao ||
+    item.Timestamp ||
+    item.Data_Solicitacao ||
+    '';
+  if (raw instanceof Date) {
+    return raw.getTime();
+  }
+  var t = new Date(raw).getTime();
+  return isNaN(t) ? 0 : t;
 }
 
 function normalizeEditOrigem_(origem) {
@@ -4222,35 +4287,28 @@ function fetchHistoricoResolvidos(limit, sessionToken) {
 
   const sheet = getSheetOrThrow_(getSpreadsheet_(), SHEET_NAMES.ARQUIVO);
   const lastRow = sheet.getLastRow();
-
-  if (lastRow <= 1) {
-    Logger.log('fetchHistoricoResolvidos ms=' + (Date.now() - started));
-    return {
-      success: true,
-      historico: [],
-    };
-  }
-
-  const lastCol = Math.max(sheet.getLastColumn(), 1);
-  const headerCells = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
   var lim = Number(limit);
   if (isNaN(lim) || lim < 1) {
     lim = 80;
   }
   lim = Math.min(Math.max(lim, 1), 350);
 
-  const firstRow = Math.max(2, lastRow - lim + 1);
-  const numRows = lastRow - firstRow + 1;
-  const values = sheet.getRange(firstRow, 1, numRows, lastCol).getValues();
-
-  const historico = values
-    .map(function (row) {
-      const archived = rowCellsToObject_(headerCells, row);
-      archived.Origem = sanitizeText_(archived.Origem) || SHEET_NAMES.ARQUIVO;
-      normalizeItemForClient_(archived);
-      return archived;
-    })
-    .reverse();
+  var historico = [];
+  if (lastRow > 1) {
+    const lastCol = Math.max(sheet.getLastColumn(), 1);
+    const headerCells = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    const firstRow = Math.max(2, lastRow - lim + 1);
+    const numRows = lastRow - firstRow + 1;
+    const values = sheet.getRange(firstRow, 1, numRows, lastCol).getValues();
+    historico = values
+      .map(function (row) {
+        const archived = rowCellsToObject_(headerCells, row);
+        archived.Origem = sanitizeText_(archived.Origem) || SHEET_NAMES.ARQUIVO;
+        normalizeItemForClient_(archived);
+        return archived;
+      })
+      .reverse();
+  }
 
   // Incluir medicamentos cancelados que ainda estejam na aba Medicamentos
   // (fallback: archive pode ter falhado — não aparecem em Arquivo_Resolvidos).
@@ -4267,11 +4325,32 @@ function fetchHistoricoResolvidos(limit, sessionToken) {
     return m;
   });
 
+  var historicoComprasReposicao = fetchSheetItems_(SHEET_NAMES.COMPRAS_REPOSICAO).filter(function (r) {
+    return isComprasReposicaoHistorico_(r) && !archivedIds[r.ID];
+  }).map(function (r) {
+    r.Origem = SHEET_NAMES.COMPRAS_REPOSICAO;
+    r.Estado_Arquivo = historicoEstadoComprasReposicao_(r);
+    r.Arquivado_Em = r.Data_Compra || r.Data_Cancelamento || r.Ultima_Acao_Em || r.Data_Solicitacao || '';
+    normalizeItemForClient_(r);
+    return r;
+  });
+
+  historicoComprasReposicao.sort(function (a, b) {
+    return historicoSortTime_(b) - historicoSortTime_(a);
+  });
+
+  var combinado = historicoComprasReposicao.concat(canceladosMed).concat(historico);
+  combinado.sort(function (a, b) {
+    return historicoSortTime_(b) - historicoSortTime_(a);
+  });
+
   Logger.log('fetchHistoricoResolvidos ms=' + (Date.now() - started) +
-    ' arquivo=' + historico.length + ' cancelados_med=' + canceladosMed.length);
+    ' arquivo=' + historico.length +
+    ' cancelados_med=' + canceladosMed.length +
+    ' compras_reposicao=' + historicoComprasReposicao.length);
   return {
     success: true,
-    historico: canceladosMed.concat(historico),
+    historico: combinado,
   };
 }
 

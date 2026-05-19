@@ -3085,7 +3085,7 @@
       var HANDOVER_SESSION_CHECK_TIMEOUT_MS = 15000;
 
       const QUEUE_FILTERS_PENDENCIAS = ['pendentes', 'todos', 'urgentes', 'vencidos_hoje'];
-      const QUEUE_FILTERS_COMPRAS_REPOSICAO = ['pendentes', 'todos', 'comprados', 'cancelados', 'nao_encontrados'];
+      const QUEUE_FILTERS_COMPRAS_REPOSICAO = ['pendentes', 'todos', 'nao_encontrados'];
       const QUEUE_FILTERS_MEDICAMENTOS = [
         'pendentes',
         'todos',
@@ -4889,8 +4889,7 @@
           spec = [
             ['pendentes', 'Pendentes'],
             ['todos', 'Todos'],
-            ['comprados', 'Comprados'],
-            ['cancelados', 'Cancelados'],
+            ['nao_encontrados', 'Não encontrados'],
           ];
         } else {
           spec = [
@@ -5803,7 +5802,7 @@
       }
 
       function historicoTsDay_(item) {
-        var s = String(item.Timestamp || '');
+        var s = String(item.Timestamp || item.Data_Solicitacao || '');
         if (!s) return '';
         return s.indexOf('T') >= 0 ? s.split('T')[0] : s.slice(0, 10);
       }
@@ -5819,6 +5818,13 @@
         var r = historicoResDay_(item);
         if (r) {
           return r;
+        }
+        var dc = String(item.Data_Compra || '').trim();
+        if (dc.indexOf('T') >= 0) {
+          return dc.split('T')[0];
+        }
+        if (dc.length >= 10) {
+          return dc.substring(0, 10);
         }
         var c = String(item.Data_Cancelamento || '').trim();
         if (c.indexOf('T') >= 0) {
@@ -5860,6 +5866,9 @@
           if (historicoFilterState.categoria === 'medicamentos' && String(item.Origem) !== 'Medicamentos') {
             return false;
           }
+          if (historicoFilterState.categoria === 'compras_reposicao' && String(item.Origem) !== 'Compras_Reposicao') {
+            return false;
+          }
 
           if (historicoFilterState.estado === 'reaberto' && String(item.Estado_Arquivo || '') !== 'Reaberto') {
             return false;
@@ -5869,7 +5878,7 @@
             if (eaRes === 'reaberto') {
               return false;
             }
-            if (eaRes !== 'resolvido' && eaRes !== 'cancelado') {
+            if (eaRes !== 'resolvido' && eaRes !== 'cancelado' && eaRes !== 'comprado') {
               return false;
             }
           }
@@ -5884,7 +5893,13 @@
                 ' ' +
                 String(item.Autor || '') +
                 ' ' +
-                String(item.Atendente || '')
+                String(item.Atendente || '') +
+                ' ' +
+                String(item.Solicitante || '') +
+                ' ' +
+                String(item.Comprado_Por || '') +
+                ' ' +
+                String(item.Cancelado_Por || '')
               ).toLowerCase();
             if (hay.indexOf(opNeed) === -1) {
               return false;
@@ -5942,6 +5957,10 @@
             historicoFilterState.categoria = 'medicamentos';
             historicoFilterState.estado = 'todos';
             break;
+          case 'compras_reposicao':
+            historicoFilterState.categoria = 'compras_reposicao';
+            historicoFilterState.estado = 'todos';
+            break;
           case 'resolvidos':
             historicoFilterState.categoria = 'todos';
             historicoFilterState.estado = 'resolvido';
@@ -5966,6 +5985,8 @@
             return st.categoria === 'geral';
           case 'medicamentos':
             return st.categoria === 'medicamentos';
+          case 'compras_reposicao':
+            return st.categoria === 'compras_reposicao';
           case 'resolvidos':
             return st.categoria === 'todos' && st.estado === 'resolvido';
           case 'reabertos':
@@ -5997,6 +6018,9 @@
         var o = String(item.Origem || '');
         if (o === 'Geral') {
           return 'Geral';
+        }
+        if (o === 'Compras_Reposicao') {
+          return 'Compra e reposição';
         }
         var t = medicationTipoFromRecord_(item);
         if (t === 'falta') {
@@ -6157,6 +6181,21 @@
         }
         var origem = String(raw.Origem || '');
         var chunks = [];
+        if (origem === 'Compras_Reposicao') {
+          chunks.push(detailDlRow_('Origem', 'Compra e reposição'));
+          chunks.push(detailDlRow_('Item/produto', raw.Item));
+          chunks.push(detailDlRow_('Quantidade ou descrição', raw.Quantidade));
+          chunks.push(detailDlRow_('Prioridade', raw.Prioridade));
+          chunks.push(detailDlRow_('Solicitante', raw.Solicitante));
+          chunks.push(detailDlRow_('Status da compra', raw.Status_Compra || raw.Status_Handover));
+          chunks.push(detailDlRow_('Data da solicitação', raw.Data_Solicitacao ? formatDateTime(raw.Data_Solicitacao) : ''));
+          chunks.push(detailDlRow_('Data da compra', raw.Data_Compra ? formatDateTime(raw.Data_Compra) : ''));
+          chunks.push(detailDlRow_('Data do cancelamento', raw.Data_Cancelamento ? formatDateTime(raw.Data_Cancelamento) : ''));
+          chunks.push(detailDlRow_('Observação', raw.Observacao));
+          chunks.push(detailDlRow_('Fornecedor sugerido', raw.Fornecedor_Sugerido));
+          chunks.push(detailDlRow_('Última ação', raw.Ultima_Acao_Por ? raw.Ultima_Acao_Por + (raw.Ultima_Acao_Em ? ' · ' + formatDateTime(raw.Ultima_Acao_Em) : '') : ''));
+          return '<dl>' + chunks.filter(Boolean).join('') + '</dl>';
+        }
         if (origem === 'Geral') {
           chunks.push(detailDlRow_('Tipo', 'Geral'));
           chunks.push(detailDlRow_('Título', geralQueueTitleFromItem_(raw)));
@@ -6220,6 +6259,18 @@
         }
         var origem = String(raw.Origem || '');
         var lines = [];
+        if (origem === 'Compras_Reposicao') {
+          lines.push('Handover - Compra e reposição');
+          lines.push('Item: ' + (raw.Item || '-'));
+          lines.push('Quantidade: ' + (raw.Quantidade || '-'));
+          lines.push('Prioridade: ' + (raw.Prioridade || '-'));
+          lines.push('Solicitante: ' + (raw.Solicitante || '-'));
+          lines.push('Status: ' + (raw.Status_Compra || raw.Status_Handover || '-'));
+          if (raw.Observacao) {
+            lines.push('Observação: ' + raw.Observacao);
+          }
+          return lines.join('\n');
+        }
         if (origem === 'Geral') {
           lines.push('Handover — Pendência');
           lines.push('Título: ' + geralQueueTitleFromItem_(raw));
@@ -6785,6 +6836,9 @@
           (historicoQuickPillActive_('medicamentos') ? ' active' : '') +
           '" onclick="applyHistoricoQuickPill_(\'medicamentos\')">Medicamentos</button>' +
           '<button type="button" class="hq-pill' +
+          (historicoQuickPillActive_('compras_reposicao') ? ' active' : '') +
+          '" onclick="applyHistoricoQuickPill_(\'compras_reposicao\')">Compras e reposição</button>' +
+          '<button type="button" class="hq-pill' +
           (historicoQuickPillActive_('resolvidos') ? ' active' : '') +
           '" onclick="applyHistoricoQuickPill_(\'resolvidos\')">Resolvidos</button>' +
           '<button type="button" class="hq-pill' +
@@ -6829,6 +6883,7 @@
           optSel('categoria', 'todos', 'Todos') +
           optSel('categoria', 'geral', 'Geral') +
           optSel('categoria', 'medicamentos', 'Medicamentos') +
+          optSel('categoria', 'compras_reposicao', 'Compras e reposição') +
           '</select>' +
           '</div>' +
           '<div>' +
@@ -6968,6 +7023,40 @@
               price: '',
               timeLabel: formatDateTime(item.Timestamp),
               timeSort: parseDateTime_(item.Timestamp),
+            });
+          }
+
+          if (origem === 'Compras_Reposicao') {
+            var statusCompra = String(item.Status_Compra || item.Status_Handover || estadoArq || '').trim();
+            var dataSolic = item.Data_Solicitacao || item.Timestamp || '';
+            var dataFim = item.Data_Compra || item.Data_Cancelamento || item.Ultima_Acao_Em || item.Arquivado_Em || dataSolic;
+            return Object.assign({}, base, {
+              originLabel: 'Compra e reposição',
+              statusLabel: statusCompra || arquivoStatusLabel,
+              statusKey: estadoArq === 'Cancelado' ? 'historico_med' : 'historico_resolvido',
+              title: item.Item || 'Item sem nome',
+              description:
+                'Quantidade: ' +
+                (item.Quantidade || '-') +
+                ' · Prioridade: ' +
+                (item.Prioridade || '-') +
+                ' · Status: ' +
+                (statusCompra || '-'),
+              histResumoExtra:
+                (item.Observacao ? 'Obs: ' + item.Observacao : '') +
+                (item.Fornecedor_Sugerido ? (item.Observacao ? ' · ' : '') + 'Fornecedor: ' + item.Fornecedor_Sugerido : ''),
+              histCriadoPor: item.Solicitante || '—',
+              histCriadoEm: dataSolic ? formatDateTime(dataSolic) : '—',
+              histResolvidoPor: item.Comprado_Por || item.Cancelado_Por || item.Ultima_Acao_Por || '',
+              histResolvidoEm: dataFim ? formatDateTime(dataFim) : '',
+              histReabertoPor: '',
+              histReabertoEm: '',
+              histUltimaAcao: ua,
+              person: item.Solicitante || '-',
+              forecast: '',
+              price: '',
+              timeLabel: dataFim ? formatDateTime(dataFim) : formatDateTime(dataSolic),
+              timeSort: parseDateTime_(dataFim || dataSolic),
             });
           }
 
@@ -7795,6 +7884,10 @@
             return items.filter(function (item) {
               return item.statusKey === 'cancelado';
             });
+          case 'nao_encontrados':
+            return items.filter(function (item) {
+              return item.statusKey === 'nao_encontrado';
+            });
           case 'resolvidos_parcialmente':
             return items.filter(function (item) {
               return item.statusKey === 'resolvido_parcialmente';
@@ -7862,6 +7955,7 @@
           comprados_sem_aviso: 'Comprados sem aviso',
           cancelados: 'Cancelados',
           vencidos_hoje: 'Vencidos/Hoje',
+          nao_encontrados: 'Não encontrados',
         };
         return mapping[filterKey] || 'Todos';
       }
@@ -8782,9 +8876,9 @@
         if (reposicaoFields) {
           reposicaoFields.classList.toggle('hidden', !isReposicao);
         }
-        // Ocultar campo técnico de Categoria quando não é modo Geral
+        // Categoria é técnica: o menu define o valor interno e o operador não vê o campo.
         if (categoryFieldWrap) {
-          categoryFieldWrap.classList.toggle('hidden', isMedication || isReposicao);
+          categoryFieldWrap.classList.add('hidden');
         }
         // Ocultar campo Tipo em Medicamentos (preenchido internamente como Encomenda)
         var tipoFieldWrap = tipoSelect ? tipoSelect.closest('.field') : null;
