@@ -2629,7 +2629,7 @@
                   <span class="dropdown-dd-ico" aria-hidden="true"><svg class="ico-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><rect x="5.5" y="9.5" width="13" height="5" rx="2.5" transform="rotate(-45 12 12)"/></svg></span>
                   <span>
                     <strong>Encomenda de medicamentos</strong>
-                    <span class="dropdown-help">Registrar uma encomenda ou falta de medicamento</span>
+                    <span class="dropdown-help">Registrar encomenda de medicamentos</span>
                   </span>
                 </button>
                 <button type="button" class="dropdown-dd-item" role="menuitem" onclick="openNovoRegistroCompraReposicao_()">
@@ -2952,20 +2952,6 @@
 
           <div id="reposicao-fields" class="hidden">
             <div class="field">
-              <label for="reposicao-categoria">Categoria</label>
-              <select id="reposicao-categoria" name="reposicaoCategoria">
-                <option value="">Selecione...</option>
-                <option value="Reposição de estoque">Reposição de estoque</option>
-                <option value="Perfumaria">Perfumaria</option>
-                <option value="Produtos de limpeza">Produtos de limpeza</option>
-                <option value="Sacolas e embalagens">Sacolas e embalagens</option>
-                <option value="Papelaria">Papelaria</option>
-                <option value="Material de escritório">Material de escritório</option>
-                <option value="Manutenção">Manutenção</option>
-                <option value="Outros">Outros</option>
-              </select>
-            </div>
-            <div class="field">
               <label for="reposicao-item">Item / produto</label>
               <input id="reposicao-item" name="reposicaoItem" type="text" placeholder="Ex.: Detergente, sacola P, papel A4">
             </div>
@@ -2983,14 +2969,6 @@
               </select>
             </div>
             <div class="field">
-              <label for="reposicao-unidade">Unidade (opcional)</label>
-              <input id="reposicao-unidade" name="reposicaoUnidade" type="text">
-            </div>
-            <div class="field">
-              <label for="reposicao-motivo">Motivo (opcional)</label>
-              <input id="reposicao-motivo" name="reposicaoMotivo" type="text">
-            </div>
-            <div class="field">
               <label for="reposicao-observacao">Observação (opcional)</label>
               <textarea id="reposicao-observacao" name="reposicaoObservacao" rows="2" style="min-height:56px;resize:vertical;"></textarea>
             </div>
@@ -3001,6 +2979,11 @@
             <div class="field">
               <label for="reposicao-previsao">Previsão desejada (opcional)</label>
               <input id="reposicao-previsao" name="reposicaoPrevisao" type="date">
+              <div class="date-shortcuts">
+                <button type="button" class="light" onclick="setReposicaoPrevisaoOffsetDays_(1)">Amanhã</button>
+                <button type="button" class="light" onclick="setReposicaoPrevisaoOffsetDays_(2)">Depois de amanhã</button>
+                <button type="button" class="light" onclick="setReposicaoPrevisaoOffsetDays_(7)">Semana que vem</button>
+              </div>
             </div>
           </div>
 
@@ -4855,9 +4838,23 @@
         openFormModal_('Medicamentos');
       }
 
+      // Alias público chamado pelo menu "Encomenda de medicamentos"
+      function openNovoRegistroEncomenda_() {
+        closeNovoRegistroDropdown_();
+        openFormModal_('Medicamentos');
+      }
+
       function openNovoRegistroCompraReposicao_() {
         closeNovoRegistroDropdown_();
         openFormModal_('Compras_Reposicao');
+      }
+
+      function setReposicaoPrevisaoOffsetDays_(days) {
+        var el = document.getElementById('reposicao-previsao');
+        if (!el) { return; }
+        var d = new Date();
+        d.setDate(d.getDate() + Number(days));
+        el.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
       }
 
       function bindMedQueueSearch_() {
@@ -8751,7 +8748,7 @@
               med.focus();
             }
           } else if (categorySelect.value === 'Compras_Reposicao') {
-            var rep = document.getElementById('reposicao-categoria');
+            var rep = document.getElementById('reposicao-item');
             if (rep) {
               rep.focus();
             }
@@ -8784,6 +8781,15 @@
         medicineFields.classList.toggle('hidden', !isMedication);
         if (reposicaoFields) {
           reposicaoFields.classList.toggle('hidden', !isReposicao);
+        }
+        // Ocultar campo técnico de Categoria quando não é modo Geral
+        if (categoryFieldWrap) {
+          categoryFieldWrap.classList.toggle('hidden', isMedication || isReposicao);
+        }
+        // Ocultar campo Tipo em Medicamentos (preenchido internamente como Encomenda)
+        var tipoFieldWrap = tipoSelect ? tipoSelect.closest('.field') : null;
+        if (tipoFieldWrap) {
+          tipoFieldWrap.classList.toggle('hidden', isMedication);
         }
         clearStatus(formStatus);
         clearEncomendaRequiredHints_();
@@ -8917,12 +8923,9 @@
           }
           toggleGeralVencimentoFields_();
         } else if (ps.tab === 'Compras_Reposicao') {
-          document.getElementById('reposicao-categoria').value = pl.categoriaCompra || '';
           document.getElementById('reposicao-item').value = pl.item || '';
           document.getElementById('reposicao-quantidade').value = pl.quantidade || '';
           document.getElementById('reposicao-prioridade').value = pl.prioridade || 'Normal';
-          document.getElementById('reposicao-unidade').value = pl.unidade || '';
-          document.getElementById('reposicao-motivo').value = pl.motivo || '';
           document.getElementById('reposicao-observacao').value = pl.observacao || '';
           document.getElementById('reposicao-fornecedor').value = pl.fornecedorSugerido || '';
           document.getElementById('reposicao-previsao').value = pl.previsaoDesejada || '';
@@ -9208,12 +9211,10 @@
 
       function getComprasReposicaoPayload() {
         return {
-          categoriaCompra: document.getElementById('reposicao-categoria').value,
+          categoriaCompra: 'Compras', // preenchido internamente — não exibido ao usuário
           item: document.getElementById('reposicao-item').value,
           quantidade: document.getElementById('reposicao-quantidade').value,
           prioridade: document.getElementById('reposicao-prioridade').value,
-          unidade: document.getElementById('reposicao-unidade').value,
-          motivo: document.getElementById('reposicao-motivo').value,
           observacao: document.getElementById('reposicao-observacao').value,
           fornecedorSugerido: document.getElementById('reposicao-fornecedor').value,
           previsaoDesejada: document.getElementById('reposicao-previsao').value,
@@ -9282,12 +9283,11 @@
 
         if (tab === 'Compras_Reposicao') {
           if (
-            !String(payload.categoriaCompra || '').trim() ||
             !String(payload.item || '').trim() ||
-            !String(payload.prioridade || '').trim() ||
-            !String(payload.quantidade || '').trim()
+            !String(payload.quantidade || '').trim() ||
+            !String(payload.prioridade || '').trim()
           ) {
-            return 'Informe categoria, item, prioridade e quantidade ou descrição da necessidade.';
+            return 'Informe item, quantidade ou descrição e prioridade.';
           }
         }
 
