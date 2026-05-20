@@ -574,6 +574,13 @@ function setupComprasReposicaoPlanilha() {
   return { ok: true, sheetName: sheet.getName() };
 }
 
+function aplicarLayoutComprasReposicao() {
+  var sheet = getComprasReposicaoPlanilhaSheet_();
+  applyComprasReposicaoPlanilhaLayout_(sheet);
+  Logger.log('aplicarLayoutComprasReposicao: OK aba=' + sheet.getName());
+  return { ok: true, sheetName: sheet.getName() };
+}
+
 function getComprasReposicaoPlanilhaSheet_() {
   var ss = getComprasSpreadsheet_();
   var sheet = ss.getSheetByName(SHEET_NAMES.COMPRAS_REPOSICAO);
@@ -696,9 +703,9 @@ function applyComprasReposicaoPlanilhaLayout_(sheet) {
   headerRange.setFontColor('#ffffff');
   headerRange.setFontWeight('bold');
   sheet.setFrozenRows(1);
+  var colStatus = getColumnIndex_(sheet, 'Status_Compra');
+  var maxDataRows = Math.max(sheet.getMaxRows() - 1, 1);
   try {
-    var colStatus = getColumnIndex_(sheet, 'Status_Compra');
-    var numRowsValidation = Math.max(sheet.getMaxRows() - 1, 1);
     var list = [
       COMPRAS_STATUS_COMPRA.PENDENTE,
       COMPRAS_STATUS_COMPRA.COMPRADO,
@@ -709,13 +716,103 @@ function applyComprasReposicaoPlanilhaLayout_(sheet) {
       .requireValueInList(list, true)
       .setAllowInvalid(false)
       .build();
-    sheet.getRange(2, colStatus, numRowsValidation, 1).setDataValidation(rule);
+    sheet.getRange(2, colStatus, maxDataRows, 1).setDataValidation(rule);
   } catch (eVal) {}
+  try {
+    sheet.getRange(1, 1, maxDataRows + 1, lastCol).setVerticalAlignment('middle');
+  } catch (eVa) {}
+  try {
+    sheet.getRange(2, colStatus, maxDataRows, 1).setFontWeight('bold').setHorizontalAlignment('center');
+  } catch (eBold) {}
+  try {
+    var colSolic = getColumnIndex_(sheet, 'Data_Solicitacao');
+    sheet.getRange(2, colSolic, maxDataRows, 1).setNumberFormat('dd/MM/yyyy HH:mm');
+  } catch (eFmt0) {}
+  try {
+    var colPrev = getColumnIndex_(sheet, 'Previsao_Desejada');
+    sheet.getRange(2, colPrev, maxDataRows, 1).setNumberFormat('dd/MM/yyyy');
+  } catch (eFmt1) {}
+  try {
+    var colDataCompra = getColumnIndex_(sheet, 'Data_Compra');
+    sheet.getRange(2, colDataCompra, maxDataRows, 1).setNumberFormat('dd/MM/yyyy');
+  } catch (eFmt2) {}
+  try {
+    var colUlt = getColumnIndex_(sheet, 'Ultima_Atualizacao');
+    sheet.getRange(2, colUlt, maxDataRows, 1).setNumberFormat('dd/MM/yyyy HH:mm');
+  } catch (eFmt3) {}
+  try {
+    var colObs = getColumnIndex_(sheet, 'Observacao');
+    sheet.getRange(2, colObs, maxDataRows, 1).setWrap(true).setVerticalAlignment('top');
+  } catch (eWrap0) {}
   try {
     if (!sheet.getFilter()) {
       sheet.getRange(1, 1, 1, lastCol).createFilter();
     }
   } catch (eF) {}
+  try {
+    var existingRules = sheet.getConditionalFormatRules() || [];
+    var dataRange = sheet.getRange(2, 1, maxDataRows, lastCol);
+    var colLetter = columnNumberToLetter_(colStatus);
+    var preservedRules = existingRules.filter(function (rule) {
+      return !conditionalFormatRuleTouchesRange_(rule, sheet, 2, 1, maxDataRows, lastCol);
+    });
+    var statusRules = [
+      SpreadsheetApp.newConditionalFormatRule()
+        .whenFormulaSatisfied('=$' + colLetter + '2="' + COMPRAS_STATUS_COMPRA.PENDENTE + '"')
+        .setBackground('#FEF3C7')
+        .setFontColor('#78350F')
+        .setRanges([dataRange])
+        .build(),
+      SpreadsheetApp.newConditionalFormatRule()
+        .whenFormulaSatisfied('=$' + colLetter + '2="' + COMPRAS_STATUS_COMPRA.COMPRADO + '"')
+        .setBackground('#DCFCE7')
+        .setFontColor('#14532D')
+        .setRanges([dataRange])
+        .build(),
+      SpreadsheetApp.newConditionalFormatRule()
+        .whenFormulaSatisfied('=$' + colLetter + '2="' + COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO + '"')
+        .setBackground('#FFEDD5')
+        .setFontColor('#7C2D12')
+        .setRanges([dataRange])
+        .build(),
+      SpreadsheetApp.newConditionalFormatRule()
+        .whenFormulaSatisfied('=$' + colLetter + '2="' + COMPRAS_STATUS_COMPRA.CANCELADO + '"')
+        .setBackground('#FEE2E2')
+        .setFontColor('#7F1D1D')
+        .setRanges([dataRange])
+        .build(),
+    ];
+    sheet.setConditionalFormatRules(preservedRules.concat(statusRules));
+  } catch (eCf) {
+    Logger.log('applyComprasReposicaoPlanilhaLayout_: conditional format ' + eCf);
+  }
+}
+
+function columnNumberToLetter_(colNumber) {
+  var temp = Number(colNumber);
+  var letter = '';
+  while (temp > 0) {
+    var modulo = (temp - 1) % 26;
+    letter = String.fromCharCode(65 + modulo) + letter;
+    temp = Math.floor((temp - modulo) / 26);
+  }
+  return letter;
+}
+
+function conditionalFormatRuleTouchesRange_(rule, sheet, startRow, startCol, numRows, numCols) {
+  var ranges = rule.getRanges ? rule.getRanges() : [];
+  var endRow = startRow + numRows - 1;
+  var endCol = startCol + numCols - 1;
+  return ranges.some(function (range) {
+    if (range.getSheet().getSheetId() !== sheet.getSheetId()) {
+      return false;
+    }
+    var r1 = range.getRow();
+    var c1 = range.getColumn();
+    var r2 = r1 + range.getNumRows() - 1;
+    var c2 = c1 + range.getNumColumns() - 1;
+    return r1 <= endRow && r2 >= startRow && c1 <= endCol && c2 >= startCol;
+  });
 }
 
 /**
