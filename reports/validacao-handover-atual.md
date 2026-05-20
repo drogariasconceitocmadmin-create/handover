@@ -1,122 +1,65 @@
-# Handover v84 (oficial)
+# Handover v86 (oficial)
 
-Projeto: Handover — Drogarias Conceito
+Projeto: Handover - Drogarias Conceito
 
 Branch: `hotfix/handover-p0-save-medicamentos`
 
-Commit do código em produção (v84): `dcdad30` — `fix(handover): inclui compras reposicao no historico e oculta categoria`
+Commit publicado: `cb99c24` - `ux(handover): permite formatacao simples em textos longos`
 
-## Deployment oficial (v84 — ativo)
+## Deployment oficial
 
 Deployment: `AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw`
 
 URL: `https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec`
 
-Versão interna do deployment: `@90` — descrição: **Handover v84 historico compras reposicao**
+Versao interna do deployment: `@93` - descricao: **Handover v86 formatacao simples textos longos**
 
-Status: **APROVADA EM PRODUÇÃO** (validação manual 2026-05-19)
+Status: **APROVADA EM PRODUCAO** (validacao manual 2026-05-20)
 
-Rollback: **NÃO**
+Rollback: **NAO**
 
 ---
 
-## Validação manual v84
+## Validacao manual v86
 
 | Item | Resultado | Detalhe |
 |------|-----------|---------|
-| Categoria sumiu do Novo registro | OK | Campo técnico interno |
-| Pendência abre sem Categoria | OK | — |
-| Encomenda abre sem Categoria / Tipo | OK | Tipo = Encomenda interno |
-| Compra e reposição abre sem Categoria | OK | Categoria = Compras interno |
-| Item comprado aparece no Histórico | OK | Compra e reposição |
-| Item cancelado aparece no Histórico | OK | Compra e reposição |
-| Filtro Histórico mostra Compras e reposição | OK | — |
-| Compras_Reposicao preservado | OK | — |
-| Encomendas preservadas | OK | — |
-| Pendências preservadas | OK | — |
-| POP | NÃO tocado | — |
-| Login/PIN / Checklist / Medicamentos | NÃO tocados | — |
-| Setup / reset / limpeza | NÃO executados | — |
-| Falhas críticas | NENHUMA | — |
+| `**negrito**` renderiza como negrito | OK | Cards/textos longos |
+| Lista com `* item` renderiza como lista | OK | Lista visual simples |
+| Quebras de linha preservadas | OK | Texto longo formatado |
+| Ver mais continua funcionando | OK | Cards expansíveis preservados |
+| Ver menos continua funcionando | OK | Cards expansíveis preservados |
+| Ver detalhes continua funcionando | OK | Modal preservado |
+| HTML livre | BLOQUEADO | Escapado antes da formatacao permitida |
+| POP | NAO tocado | - |
+| Setup | NAO executado | - |
+| Dados apagados | NAO | - |
+| Falhas criticas | NENHUMA | - |
 
-### Escopo da entrega v84
+### Escopo da entrega v86
 
-- **Campo Categoria** ocultado do modal Novo registro — valor técnico (Geral / Medicamentos / Compras_Reposicao) permanece interno.
-- **Campo Tipo** ocultado em Encomenda de medicamentos — valor `Encomenda` preenchido internamente.
-- **Histórico** agora inclui itens de Compra e reposição com status Comprado, Cancelado ou Resolvido.
-- Filtro do Histórico exibe seção "Compras e reposição".
-- Não usa `sheet.clear()`, não usa `deleteRow`, não move linhas, não apaga dados.
-- POP, Login/PIN, Checklist e planilha Compras não tocados.
-
----
-
-## Referência — v83 UX formulários (@89)
-
-| Item | Resultado |
-|------|-----------|
-| Clique Encomenda de medicamentos corrigido | OK |
-| `openNovoRegistroEncomenda_` adicionada | OK |
-| Descrição do menu Encomenda corrigida | OK |
-| Campos Categoria e Tipo ocultos no formulário | OK |
-| Campos Categoria, Unidade e Motivo removidos de Compra e reposição | OK |
-| Atalhos Amanhã / Depois de amanhã / Semana que vem em Compra e reposição | OK |
-
-Commit v83: `76511d9` — versão interna `@89`
+- Alteracao visual-only em `Index.html`.
+- Formatação simples segura para textos longos dos cards e detalhes.
+- Suporte a `**texto**` como negrito.
+- Suporte a linhas iniciadas por `* ` ou `- ` como lista visual simples.
+- Quebras de linha preservadas.
+- HTML livre escapado/bloqueado antes da formatação permitida.
+- Botoes `Ver mais` / `Ver menos` preservados.
+- Modal `Ver detalhes` preservado.
+- Sem alteração de backend, planilhas, setup, dados ou POP.
 
 ---
 
-## Referência — v82 fluxo Compra e reposição (@88)
+## Referencias recentes
 
-Novo fluxo de Compra e reposição implementado como tab separada.
-Commits: `cbe6353..b00f1ed` — versão interna `@88`
-
----
-
-## Referência — v81 filtro operacional Compras_Medicamentos (@87)
-
-| Item | Resultado |
-|------|-----------|
-| Filtro `aplicarFiltroComprasAtivas` aplicado | OK (época v81) |
-| Comprado / Cancelado ocultos na aba principal | OK |
-| Pendente / Não encontrado visíveis | OK |
-| Dados preservados | OK |
-
-Commit v81: `61f8fdd` — versão interna `@87`
-
----
-
-## Referência — v80 arquivamento por status (@86)
-
-| Item | Resultado |
-|------|-----------|
-| Comprado → upsert em Compras_Compradas | OK (época v80) |
-| Cancelado → upsert em Compras_Canceladas | OK (época v80) |
-| Dados não apagados | OK |
-
-Commit v80: `409e5cd` — versão interna `@86`
-
----
-
-## Referência — Smoke v68 (virada 2026-05-12)
-
-Registro histórico da virada Compras / produção limpa.
-
----
-
-## Histórico de versões (trecho)
-
-| Versão | Status |
+| Versao | Status |
 |--------|--------|
-| v68 | Virada produção — Compras separada |
-| v77 | Reabertura Histórico (@77) |
-| v80 | Arquivamento Comprado/Cancelado (@86) |
-| v81 | APROVADA (2026-05-15) — filtro compras ativas (@87) |
-| v82 | APROVADA — novo fluxo Compra e reposição (@88) |
-| v83 | APROVADA — UX formulários, clique Encomenda (@89) |
-| **v84** | **ATIVA OFICIAL** (2026-05-19) — Histórico unificado, Categoria interna (@90) |
+| v84 | APROVADA (2026-05-19) - Historico inclui Compras/reposicao, Categoria interna (@90, commit `dcdad30`) |
+| v85 | APROVADA - Expansao de textos longos nos cards (@92, commit `3f21d36`) |
+| **v86** | **ATIVA OFICIAL** (2026-05-20) - Formatacao simples segura em textos longos (@93, commit `cb99c24`) |
 
 ---
 
-## Próximo passo
+## Proximo passo
 
-Operação normal. Sistema em produção com Histórico unificado (Medicamentos + Compra e reposição).
+Operacao normal. Sistema em producao com textos longos formatados de forma segura nos cards e detalhes.
