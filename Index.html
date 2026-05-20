@@ -1916,6 +1916,24 @@
         text-decoration: underline;
       }
 
+      .fmt-list {
+        margin: 4px 0 2px 16px;
+        padding: 0;
+        list-style: disc;
+      }
+
+      .fmt-list li {
+        margin: 2px 0;
+      }
+
+      .detail-row--rich {
+        grid-column: 1 / -1;
+      }
+
+      .detail-row--rich dd .fmt-list {
+        margin-top: 2px;
+      }
+
       .qk-meta {
         margin: 8px 0 0;
         padding: 8px 10px;
@@ -6084,6 +6102,23 @@
         );
       }
 
+      function detailRowRich_(label, value) {
+        var v = value == null ? '' : String(value).trim();
+        if (!v) return '';
+        return (
+          '<div class="detail-row detail-row--rich"><dt>' + escapeHtml(label) + '</dt>' +
+          '<dd>' + formatSafeRichText_(v) + '</dd></div>'
+        );
+      }
+
+      function detailRowRichAlways_(label, value) {
+        var v = value == null || String(value).trim() === '' ? null : String(value).trim();
+        return (
+          '<div class="detail-row detail-row--rich"><dt>' + escapeHtml(label) + '</dt>' +
+          '<dd>' + (v ? formatSafeRichText_(v) : '—') + '</dd></div>'
+        );
+      }
+
       function buildMedicamentoDetailHtml_(row) {
         if (!row) return '<p>Sem dados.</p>';
         var isFalta = medicationTipoFromRecord_(row) === 'falta';
@@ -6110,7 +6145,7 @@
           compraRows.push(detailRowIf_('Forma de recebimento', row.Forma_Recebimento));
           compraRows.push(detailRowIf_('Previsão de entrega', row.Previsao_Entrega ? formatDate(row.Previsao_Entrega) : ''));
         }
-        compraRows.push(detailRowIf_('Observação da solicitação', row.Observacao_Solicitacao));
+        compraRows.push(detailRowRich_('Observação da solicitação', row.Observacao_Solicitacao));
         var compra = detailSectionHtml_(isFalta ? 'Observação' : 'Compra', compraRows);
 
         var whatsapp = detailSectionHtml_('WhatsApp', [
@@ -6133,7 +6168,7 @@
         var solicitacao = detailSectionHtml_('Solicitação', [
           detailRowAlways_('Título', titulo),
           detailRowAlways_('Urgência', row.Urgencia || 'Normal'),
-          detailRowAlways_('Descrição', row.Descricao),
+          detailRowRichAlways_('Descrição', row.Descricao),
           detailRowAlways_('Status', row.Resolvido ? 'Resolvido' : 'Pendente'),
           detailRowIf_('Criado por', row.Autor),
           detailRowIf_('Data', row.Timestamp ? formatDateTime(row.Timestamp) : ''),
@@ -6171,7 +6206,7 @@
           detailRowAlways_('Status Handover', row.Status_Handover || 'Pendente'),
           detailRowIf_('Unidade', row.Unidade),
           detailRowIf_('Motivo', row.Motivo),
-          detailRowIf_('Observação', row.Observacao),
+          detailRowRich_('Observação', row.Observacao),
           detailRowIf_('Fornecedor sugerido', row.Fornecedor_Sugerido),
           detailRowIf_('Previsão desejada', row.Previsao_Desejada ? formatDate(row.Previsao_Desejada) : ''),
         ]);
@@ -6214,7 +6249,7 @@
           chunks.push(detailDlRow_('Data da solicitação', raw.Data_Solicitacao ? formatDateTime(raw.Data_Solicitacao) : ''));
           chunks.push(detailDlRow_('Data da compra', raw.Data_Compra ? formatDateTime(raw.Data_Compra) : ''));
           chunks.push(detailDlRow_('Data do cancelamento', raw.Data_Cancelamento ? formatDateTime(raw.Data_Cancelamento) : ''));
-          chunks.push(detailDlRow_('Observação', raw.Observacao));
+          chunks.push(detailRowRich_('Observação', raw.Observacao));
           chunks.push(detailDlRow_('Fornecedor sugerido', raw.Fornecedor_Sugerido));
           chunks.push(detailDlRow_('Última ação', raw.Ultima_Acao_Por ? raw.Ultima_Acao_Por + (raw.Ultima_Acao_Em ? ' · ' + formatDateTime(raw.Ultima_Acao_Em) : '') : ''));
           return '<dl>' + chunks.filter(Boolean).join('') + '</dl>';
@@ -6222,7 +6257,7 @@
         if (origem === 'Geral') {
           chunks.push(detailDlRow_('Tipo', 'Geral'));
           chunks.push(detailDlRow_('Título', geralQueueTitleFromItem_(raw)));
-          chunks.push(detailDlRow_('Descrição', raw.Descricao));
+          chunks.push(detailRowRich_('Descrição', raw.Descricao));
           chunks.push(detailDlRow_('Urgência', raw.Urgencia));
         } else {
           chunks.push(detailDlRow_('Tipo', historicoTipoLinha_(raw)));
@@ -7430,9 +7465,48 @@
         return cn === '' ? 'btn-queue-primary' : cn + ' btn-queue-secondary';
       }
 
+      function formatSafeRichText_(text) {
+        if (!text || !String(text).trim()) return '';
+        function applyInline(s) {
+          return s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        }
+        var lines = escapeHtml(String(text)).split('\n');
+        var out = [];
+        var listBuf = [];
+        function flushList() {
+          if (!listBuf.length) return;
+          out.push(
+            '<ul class="fmt-list">' +
+            listBuf.map(function(li) { return '<li>' + li + '</li>'; }).join('') +
+            '</ul>'
+          );
+          listBuf = [];
+        }
+        for (var i = 0; i < lines.length; i++) {
+          var m = lines[i].match(/^[*\-] (.*)$/);
+          if (m) {
+            listBuf.push(applyInline(m[1]));
+          } else {
+            flushList();
+            out.push(applyInline(lines[i]));
+          }
+        }
+        flushList();
+        var result = '';
+        for (var j = 0; j < out.length; j++) {
+          if (j > 0) {
+            var prevIsList = out[j - 1].indexOf('<ul') === 0;
+            var currIsList = out[j].indexOf('<ul') === 0;
+            if (!prevIsList && !currIsList) result += '<br>';
+          }
+          result += out[j];
+        }
+        return result;
+      }
+
       function renderExpandableText_(text, domId) {
         if (!text || !String(text).trim()) return '';
-        var escaped = escapeHtml(String(text));
+        var escaped = formatSafeRichText_(String(text));
         if (String(text).length <= 180) {
           return '<div class="qk-desc">' + escaped + '</div>';
         }
