@@ -1893,6 +1893,29 @@
         overflow-wrap: anywhere;
       }
 
+      .qk-desc--expanded {
+        -webkit-line-clamp: unset;
+        display: block;
+        overflow: visible;
+      }
+
+      .qk-expand-btn {
+        display: inline-block;
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--accent, #2563eb);
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        font-weight: 550;
+        line-height: 1.4;
+      }
+
+      .qk-expand-btn:hover {
+        text-decoration: underline;
+      }
+
       .qk-meta {
         margin: 8px 0 0;
         padding: 8px 10px;
@@ -7231,10 +7254,7 @@
           })
           .join('');
 
-        var descMain =
-          item.description && String(item.description).trim()
-            ? '<div class="qk-desc">' + escapeHtml(item.description) + '</div>'
-            : '';
+        var descMain = renderExpandableText_(item.description || '', item.id + '-hist');
 
         return (
           '<div class="qk-card-shell">' +
@@ -7410,6 +7430,28 @@
         return cn === '' ? 'btn-queue-primary' : cn + ' btn-queue-secondary';
       }
 
+      function renderExpandableText_(text, domId) {
+        if (!text || !String(text).trim()) return '';
+        var escaped = escapeHtml(String(text));
+        if (String(text).length <= 180) {
+          return '<div class="qk-desc">' + escaped + '</div>';
+        }
+        var safeId = escapeAttribute(String(domId));
+        return (
+          '<div class="qk-desc" id="qkd-' + safeId + '">' + escaped + '</div>' +
+          '<button type="button" class="qk-expand-btn" id="qkdb-' + safeId + '" ' +
+          'onclick="toggleExpandableText_(\'' + escapeJsSingleQuoted_(String(domId)) + '\')">Ver mais</button>'
+        );
+      }
+
+      function toggleExpandableText_(domId) {
+        var desc = document.getElementById('qkd-' + domId);
+        var btn = document.getElementById('qkdb-' + domId);
+        if (!desc || !btn) return;
+        var expanded = desc.classList.toggle('qk-desc--expanded');
+        btn.textContent = expanded ? 'Ver menos' : 'Ver mais';
+      }
+
       function buildQueueCardHtml_(item) {
         if (item.type === 'historico') {
           return buildHistoricoCardHtml_(item);
@@ -7447,14 +7489,12 @@
               : 'Geral'
             : item.originLabel || '';
 
-        var descPlain = escapeHtml(item.description || '');
         var extras =
           (item.__resolveError ? '<div class="card-inline-error">' + escapeHtml(item.__resolveError) + '</div>' : '') +
           (item.syncError && item.syncState === 'error'
             ? '<div class="card-inline-error">' + escapeHtml(item.syncError) + '</div>'
             : '');
-        var descBlock =
-          descPlain || extras ? '<div class="qk-desc">' + descPlain + extras + '</div>' : '';
+        var descBlock = renderExpandableText_(item.description || '', item.id) + extras;
 
         var metaBlock = buildQueueMetaRowsHtml_(item);
 
