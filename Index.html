@@ -3932,18 +3932,19 @@
           return;
         }
 
-        // Otimista: marcar item do histórico como "reabrindo" imediatamente.
-        var arc = (historicoResolvidos || []).find(function (h) {
-          return String(h.ID || '') === String(hid || '');
-        });
-        var snapshotEstado = arc ? {
-          Estado_Arquivo: arc.Estado_Arquivo,
-          Reaberto_Por: arc.Reaberto_Por,
-          Data_Reabertura: arc.Data_Reabertura,
-          Motivo_Reabertura: arc.Motivo_Reabertura,
-        } : null;
-        if (arc) {
-          arc.__reopenState = 'reopening';
+        // Localizar item e capturar posição para rollback.
+        var arcIdx = -1;
+        for (var fi = 0; fi < (historicoResolvidos || []).length; fi++) {
+          if (String((historicoResolvidos[fi] || {}).ID || '') === String(hid || '')) {
+            arcIdx = fi;
+            break;
+          }
+        }
+        var arc = arcIdx >= 0 ? historicoResolvidos[arcIdx] : null;
+
+        // Otimista: remover item da lista imediatamente.
+        if (arcIdx >= 0) {
+          historicoResolvidos.splice(arcIdx, 1);
         }
         renderAll();
         showToast_('Reabrindo item...');
@@ -3954,17 +3955,7 @@
             .withSuccessHandler(function (response) {
               perfLog_('reopenHistoricoItem', started);
               touchLastSyncTime_();
-              if (arc) {
-                delete arc.__reopenState;
-                var nomeSessao =
-                  handoverSession &&
-                  (handoverSession.displayName || handoverSession.nome || handoverSession.usuario);
-                arc.Estado_Arquivo = 'Reaberto';
-                arc.Reaberto_Por = nomeSessao || '';
-                arc.Data_Reabertura = new Date().toISOString();
-                arc.Motivo_Reabertura = motivo;
-                arc.ID_Registro_Ativo = response.novoId;
-              }
+              // Adicionar item reaberto à lista de destino.
               if (response.tipo === 'Geral' && response.record) {
                 var existing = (dashboardData.geral || []).find(function (g) {
                   return g.ID === response.record.ID;
@@ -3980,34 +3971,29 @@
                   dashboardData.medicamentos.unshift(response.record);
                 }
               }
-              showToast_('Reaberto como pendência.');
+              invalidateHistoricoCache_();
+              showToast_('Item reaberto.');
               renderAll();
             })
             .withFailureHandler(function (error) {
               perfLog_('reopenHistoricoItem_fail', started);
-              // Rollback: restaurar estado anterior do item no histórico.
+              console.error('[Historico][reopen] falha', error);
+              // Rollback: devolver item à posição original.
               if (arc) {
-                delete arc.__reopenState;
-                if (snapshotEstado) {
-                  arc.Estado_Arquivo = snapshotEstado.Estado_Arquivo;
-                  arc.Reaberto_Por = snapshotEstado.Reaberto_Por;
-                  arc.Data_Reabertura = snapshotEstado.Data_Reabertura;
-                  arc.Motivo_Reabertura = snapshotEstado.Motivo_Reabertura;
-                }
+                var restoreIdx = (arcIdx >= 0 && arcIdx <= (historicoResolvidos || []).length)
+                  ? arcIdx : (historicoResolvidos || []).length;
+                historicoResolvidos.splice(restoreIdx, 0, arc);
               }
               renderAll();
               showToast_('Não foi possível reabrir. A ação foi desfeita.', true);
             })
             .reopenHistoricoItem(hid, tok, motivo);
         } catch (error) {
+          console.error('[Historico][reopen] exception', error);
           if (arc) {
-            delete arc.__reopenState;
-            if (snapshotEstado) {
-              arc.Estado_Arquivo = snapshotEstado.Estado_Arquivo;
-              arc.Reaberto_Por = snapshotEstado.Reaberto_Por;
-              arc.Data_Reabertura = snapshotEstado.Data_Reabertura;
-              arc.Motivo_Reabertura = snapshotEstado.Motivo_Reabertura;
-            }
+            var restoreIdx = (arcIdx >= 0 && arcIdx <= (historicoResolvidos || []).length)
+              ? arcIdx : (historicoResolvidos || []).length;
+            historicoResolvidos.splice(restoreIdx, 0, arc);
           }
           renderAll();
           showToast_(error.message, true);
@@ -7067,7 +7053,9 @@
         return (rows || []).map(function (item) {
           var origem = String(item.Origem || '');
           var estadoArq = String(item.Estado_Arquivo || 'Resolvido').trim();
-          var reopenEligible = estadoArq !== 'Reaberto';
+          var reopenEligible = estadoArq !== 'Reaberto' &&
+            estadoArq !== 'Entregue' &&
+            origem !== 'Compras_Reposicao';
           var arquivoStatusLabel =
             estadoArq === 'Reaberto'
               ? 'Reaberto'
