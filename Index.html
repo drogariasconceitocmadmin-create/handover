@@ -1949,6 +1949,24 @@
       .itens-add-btn { margin-top: 6px; font-size: 0.88em; }
       .item-group-badge { display: inline-block; font-size: 0.78em; font-weight: 600; background: #e8f0fe; color: #1a73e8; border-radius: 3px; padding: 1px 5px; margin-left: 4px; vertical-align: middle; }
 
+      /* v92 — card agrupado de encomenda multi-itens */
+      .badge-pedido-count { background: #e8f0fe; color: #1a73e8; font-size: 11px; font-weight: 700; border-radius: 3px; padding: 2px 7px; display: inline-block; }
+      .grp-items-table { width: 100%; border-collapse: collapse; margin: 8px 0 4px; }
+      .grp-items-table th { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); padding: 3px 4px 4px 0; border-bottom: 1px solid var(--border); }
+      .grp-items-table td { padding: 5px 4px 5px 0; border-bottom: 1px solid rgba(227,234,245,0.6); vertical-align: middle; font-size: 13px; }
+      .grp-items-table tr:last-child td { border-bottom: none; }
+      .grp-item-name { font-weight: 600; min-width: 0; word-break: break-word; }
+      .grp-item-qty { color: var(--muted); font-size: 12px; white-space: nowrap; padding-right: 8px !important; }
+      .grp-item-actions { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
+      .grp-item-actions button { font-size: 11px; padding: 3px 9px; border-radius: 10px; cursor: pointer; border: 1px solid transparent; white-space: nowrap; line-height: 1.4; }
+      .grp-item-actions button.btn-queue-primary { background: var(--primary); color: #fff; }
+      .grp-item-actions button.btn-queue-secondary { background: var(--chip); color: var(--primary); border-color: rgba(0,75,199,0.2); }
+      .grp-item-actions button.btn-queue-light { background: transparent; color: var(--muted); border-color: var(--border); }
+      .grp-item-actions button.warning { background: rgba(249,115,22,0.1); color: var(--warning); border-color: rgba(249,115,22,0.25); }
+      .grp-item-actions button.whatsapp { background: rgba(22,163,74,0.1); color: var(--success); border-color: rgba(22,163,74,0.25); }
+      .grp-more-btn { background: none !important; border: 1px solid var(--border) !important; color: var(--muted) !important; font-size: 13px !important; padding: 2px 7px !important; border-radius: 8px !important; cursor: pointer; }
+      .grp-more-btn:hover { background: var(--bg) !important; }
+
       .qk-meta {
         margin: 8px 0 0;
         padding: 8px 10px;
@@ -7365,23 +7383,26 @@
           return;
         }
 
-        queueItems.forEach(function (item) {
+        // v92: agrupar encomendas multi-itens por Pedido_ID antes de renderizar
+        var renderUnits = groupMedicationItemsForRender_(queueItems);
+        renderUnits.forEach(function (unit) {
           const card = document.createElement('article');
-          var cardClass = 'queue-card' + (item.isOverdue ? ' overdue' : '');
-          if (item.syncState === 'syncing') {
-            cardClass += ' syncing';
+          if (unit._type === 'group') {
+            var grp = unit;
+            var cardClass = 'queue-card' + (grp.isOverdue ? ' overdue' : '');
+            if (grp.syncState === 'syncing') { cardClass += ' syncing'; }
+            card.className = cardClass;
+            card.innerHTML = buildMedicationGroupCardHtml_(grp);
+          } else {
+            var item = unit.item;
+            var cardClass = 'queue-card' + (item.isOverdue ? ' overdue' : '');
+            if (item.syncState === 'syncing') { cardClass += ' syncing'; }
+            if (item.syncState === 'error') { cardClass += ' sync-error'; }
+            if (item.statusKey === 'cancelado') { cardClass += ' is-cancelado'; }
+            if (item.type === 'historico') { cardClass += ' queue-card--historico'; }
+            card.className = cardClass;
+            card.innerHTML = buildQueueCardHtml_(item);
           }
-          if (item.syncState === 'error') {
-            cardClass += ' sync-error';
-          }
-          if (item.statusKey === 'cancelado') {
-            cardClass += ' is-cancelado';
-          }
-          if (item.type === 'historico') {
-            cardClass += ' queue-card--historico';
-          }
-          card.className = cardClass;
-          card.innerHTML = buildQueueCardHtml_(item);
           queueList.appendChild(card);
         });
       }
@@ -7687,6 +7708,101 @@
         if (!desc || !btn) return;
         var expanded = desc.classList.toggle('qk-desc--expanded');
         btn.textContent = expanded ? 'Ver menos' : 'Ver mais';
+      }
+
+      // v92 — card agrupado para encomendas com múltiplos itens (mesmo Pedido_ID)
+      function buildMedicationGroupCardHtml_(group) {
+        var grpItems = group.items;
+        var totalCount = grpItems.length;
+
+        var stripeClass = group.vencidosTier === 'vencido' ? 'qk-stripe-vencido'
+          : group.vencidosTier === 'hoje' ? 'qk-stripe-hoje'
+          : 'qk-stripe-med';
+
+        var syncBadge = group.syncState === 'syncing'
+          ? '<span class="badge">Sincronizando...</span>' : '';
+
+        // Meta header (dados comuns ao pedido)
+        function metaRow_(lbl, val) {
+          var v = val == null ? '' : String(val).trim();
+          if (!v || v === '-') { return ''; }
+          return '<div class="qk-meta-row"><dt>' + escapeHtml(lbl) + '</dt><dd>' + escapeHtml(v) + '</dd></div>';
+        }
+        var metaInner =
+          metaRow_('Cliente', group.metaCliente) +
+          metaRow_('Telefone', group.metaTelefone) +
+          metaRow_('Recebimento', group.metaFormaRecebimento) +
+          metaRow_('Atendente', group.metaAtendente) +
+          metaRow_('Previsão', group.forecast) +
+          metaRow_('Fornecedor', group.metaFornecedorCompra) +
+          metaRow_('Pré-pago', group.metaPrePago);
+        var metaHtml = metaInner ? '<dl class="qk-meta">' + metaInner + '</dl>' : '';
+
+        // Tabela de itens
+        var tableRows = grpItems.map(function (item, idx) {
+          var statusBadge = '<span class="badge' + (item.statusKey ? ' status-' + item.statusKey : '') + '">' +
+            escapeHtml(item.statusLabel) + '</span>';
+
+          // Botões de ação individuais
+          var actionBtns = item.actions.map(function (action) {
+            var cls = queueActionButtonClass_(action);
+            return '<button data-queue-action="1" class="' + escapeHtml(cls) + '" type="button" ' +
+              'onclick="' + escapeAttribute(action.handler) + "('" + escapeAttribute(item.id) + "')\">" +
+              escapeHtml(action.label) + '</button>';
+          }).join('');
+
+          // Menu ⋯ por item
+          var moreMenu = '<div class="card-more" data-card-more-wrap="' + escapeAttribute(item.id) + '">' +
+            '<button type="button" class="grp-more-btn" ' +
+            'onclick="toggleCardMoreMenu_(event,\'' + escapeJsSingleQuoted_(item.id) + '\')">⋯</button>' +
+            '<div class="card-more-menu hidden" role="menu">' +
+            '<button type="button" onclick="cardMoreVerDetalhes_(\'' + escapeJsSingleQuoted_(item.id) + '\')">' +
+            '<span class="card-menu-ico" aria-hidden="true">' + iconSvg_('eye', 15) + '</span>Ver detalhes</button>' +
+            '<button type="button" onclick="openAuditDrawerForActiveItem_(\'' + escapeJsSingleQuoted_(item.id) + '\')">' +
+            '<span class="card-menu-ico" aria-hidden="true">' + iconSvg_('clock', 15) + '</span>Trilha de auditoria</button>' +
+            (item.statusKey !== 'cancelado'
+              ? '<button type="button" onclick="cancelMedicationRequest_(\'' + escapeJsSingleQuoted_(item.id) + '\')">' +
+                '<span class="card-menu-ico" aria-hidden="true">' + iconSvg_('minus', 15) + '</span>Cancelar pedido</button>'
+              : '') +
+            '</div></div>';
+
+          return '<tr class="grp-item-row">' +
+            '<td class="grp-item-name">' + escapeHtml(String(idx + 1) + '. ' + (item.title || '—')) + '</td>' +
+            '<td class="grp-item-qty">' + escapeHtml(item.quantidadeItem || '—') + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td><div class="grp-item-actions">' + actionBtns + moreMenu + '</div></td>' +
+            '</tr>';
+        }).join('');
+
+        var tableHtml =
+          '<table class="grp-items-table">' +
+          '<thead><tr>' +
+          '<th>Medicamento</th>' +
+          '<th style="width:46px">Qtd</th>' +
+          '<th style="width:88px">Status</th>' +
+          '<th style="width:1px"></th>' +
+          '</tr></thead>' +
+          '<tbody>' + tableRows + '</tbody>' +
+          '</table>';
+
+        return (
+          '<div class="qk-card-shell">' +
+          '<span class="qk-stripe ' + stripeClass + '" aria-hidden="true"></span>' +
+          '<div class="qk-card-main">' +
+          '<div class="qk-top">' +
+          '<div class="qk-badges">' +
+          '<span class="qk-type-tag">Medicamentos</span>' +
+          syncBadge +
+          '<span class="badge">Encomenda</span>' +
+          '<span class="badge-pedido-count">Pedido com ' + escapeHtml(String(totalCount)) + ' itens</span>' +
+          '</div>' +
+          '<div class="qk-top-right"><div class="qk-time">' + escapeHtml(group.timeLabel) + '</div></div>' +
+          '</div>' +
+          tableHtml +
+          metaHtml +
+          '</div>' +
+          '</div>'
+        );
       }
 
       function buildQueueCardHtml_(item) {
@@ -8006,6 +8122,11 @@
             (item.Tipo || '-') +
             (tipoLow === 'falta' ? '' : ' · Pré-pago: ' + (item.Pre_Pago ? 'Sim' : 'Não')) +
             (observacaoSolicitacaoCard ? ' · Obs: ' + observacaoSolicitacaoCard : '');
+          var pedidoIdCard = String(item.Pedido_ID || '').trim();
+          var totalItensCard = parseInt(item.Total_Itens, 10) || 0;
+          var itemIndiceCard = parseInt(item.Item_Indice, 10) || 0;
+          var quantidadeItemCard = String(item.Quantidade_Item || '').trim();
+          var observacaoItemCard = String(item.Observacao_Item || '').trim();
           var searchBlob = [
             item.Medicamento,
             item.Tipo,
@@ -8021,6 +8142,8 @@
             auditMed,
             revLine,
             descPlainMed,
+            quantidadeItemCard,
+            observacaoItemCard,
           ]
             .join(' ')
             .toLowerCase();
@@ -8061,6 +8184,11 @@
               'Aviso WhatsApp: ' +
               (item.Status_Aviso_WhatsApp || 'Não registrado') +
               (tipoLow === 'falta' ? '' : item.Telefone ? ' | Telefone: ' + item.Telefone : ''),
+            pedidoId: pedidoIdCard,
+            totalItens: totalItensCard,
+            itemIndice: itemIndiceCard,
+            quantidadeItem: quantidadeItemCard,
+            observacaoItem: observacaoItemCard,
             syncState: item.__syncState || '',
             syncError: item.__syncError || '',
             timeLabel: formatDateTime(item.Timestamp),
@@ -8128,6 +8256,79 @@
           const timeA = Number(a.timeSort || 0);
           const timeB = Number(b.timeSort || 0);
           return timeB - timeA;
+        });
+      }
+
+      // v92 — agrupa itens de encomenda multi-item pelo Pedido_ID para renderização.
+      // Opera sobre a lista pós-filtro: itens que não passaram no filtro não entram no grupo.
+      // Retorna array de "unidades de render": { _type:'single', item } ou { _type:'group', ... }
+      function groupMedicationItemsForRender_(items) {
+        var result = [];
+        var groupMap = {}; // pedidoId → índice em result
+
+        items.forEach(function (item) {
+          var pid = item.pedidoId;
+          // Agrupar apenas medicamentos com Total_Itens > 1 e Pedido_ID preenchido
+          if (item.type !== 'medicamento' || !pid || item.totalItens <= 1) {
+            result.push({ _type: 'single', item: item });
+            return;
+          }
+          if (groupMap[pid] !== undefined) {
+            result[groupMap[pid]].items.push(item);
+          } else {
+            groupMap[pid] = result.length;
+            result.push({ _type: 'group', pedidoId: pid, items: [item] });
+          }
+        });
+
+        // Grupos com 1 item após filtro → tratar como individual
+        return result.map(function (unit) {
+          if (unit._type !== 'group') {
+            return unit;
+          }
+          if (unit.items.length === 1) {
+            return { _type: 'single', item: unit.items[0] };
+          }
+          var grpItems = unit.items;
+          var rep = grpItems[0];
+          // Status resumido: único se todos iguais, 'misto' caso contrário
+          var uniqueStatuses = grpItems.map(function (i) { return i.statusKey; })
+            .filter(function (v, idx, arr) { return arr.indexOf(v) === idx; });
+          var overallStatusKey = uniqueStatuses.length === 1 ? uniqueStatuses[0] : 'misto';
+          var overallStatusLabel = uniqueStatuses.length === 1 ? grpItems[0].statusLabel : 'Variado';
+          // Menor timeSort = mais antigo; usamos max para posição de sort do grupo
+          var latestTimeSort = grpItems.reduce(function (acc, i) {
+            return Math.max(acc, Number(i.timeSort || 0));
+          }, 0);
+          var latestItem = grpItems.reduce(function (best, cur) {
+            return Number(cur.timeSort || 0) >= Number(best.timeSort || 0) ? cur : best;
+          }, grpItems[0]);
+          // Vencimento: pior caso entre os itens do grupo
+          var vencidosTier = grpItems.reduce(function (best, cur) {
+            if (cur.vencidosTier === 'vencido') { return 'vencido'; }
+            if (cur.vencidosTier === 'hoje' && best !== 'vencido') { return 'hoje'; }
+            return best;
+          }, '');
+          return {
+            _type: 'group',
+            pedidoId: unit.pedidoId,
+            items: grpItems,
+            overallStatusKey: overallStatusKey,
+            overallStatusLabel: overallStatusLabel,
+            timeLabel: latestItem.timeLabel,
+            timeSort: latestTimeSort,
+            isOverdue: grpItems.some(function (i) { return i.isOverdue; }),
+            vencidosTier: vencidosTier,
+            // Campos representativos: usa primeiro item (todos deveriam ter os mesmos dados do pedido)
+            metaCliente: rep.metaCliente,
+            metaTelefone: rep.metaTelefone,
+            metaAtendente: rep.metaAtendente,
+            forecast: rep.forecast,
+            metaPrePago: rep.metaPrePago,
+            metaFornecedorCompra: rep.metaFornecedorCompra,
+            metaFormaRecebimento: rep.metaFormaRecebimento,
+            syncState: grpItems.some(function (i) { return i.syncState === 'syncing'; }) ? 'syncing' : '',
+          };
         });
       }
 
