@@ -4909,6 +4909,114 @@ function reopenMedicamentoCanceladoFromHistorico_(location, sess, op, mot, rid) 
   };
 }
 
+/**
+ * Medicamento entregue ainda na aba Medicamentos: reabre na mesma linha como Pendente/Comprado.
+ */
+function reopenMedicamentoEntregueFromHistorico_(location, sess, op, mot, rid) {
+  var sheet = location.sheet;
+  var rn = location.rowNumber;
+  var rowObj = rowToObjectFromSheetRow_(sheet, rn);
+  normalizeItemForClient_(rowObj);
+  if (!toBoolean_(rowObj.Entregue)) {
+    throw new Error('Medicamento nao esta marcado como entregue; nao e possivel reabrir por este fluxo.');
+  }
+
+  var statusAnterior = sanitizeText_(rowObj.Status) || 'Entregue';
+  var comprado = toBoolean_(rowObj.Comprado);
+
+  sheet.getRange(rn, getColumnIndex_(sheet, 'Entregue')).setValue(false);
+  try { sheet.getRange(rn, getColumnIndex_(sheet, 'Entregue_Por')).setValue(''); } catch (e0) {}
+  try { sheet.getRange(rn, getColumnIndex_(sheet, 'Data_Entrega')).setValue(''); } catch (e1) {}
+
+  syncMedicationStatus_(sheet, rn);
+  writeMedicationUltimaAcao_(sheet, rn, op);
+
+  var statusNovo = comprado ? 'Comprado' : 'Pendente';
+  try {
+    writeHandoverEditAudit_(SHEET_NAMES.MEDICAMENTOS, rid, sess, [
+      {
+        campo: 'Entregue',
+        anterior: 'true',
+        novo: 'false',
+        resumo: op + ' reabriu pedido entregue a partir do historico.' + (sanitizeText_(mot) ? ' Motivo: ' + sanitizeText_(mot) : ''),
+      },
+      { campo: 'Status', anterior: statusAnterior, novo: statusNovo },
+    ]);
+  } catch (audE) {
+    Logger.log('reopenMedicamentoEntregueFromHistorico_ audit: ' + audE);
+  }
+
+  try {
+    mirrorComprasMedicamentosRowForMedicamentoId_(rid);
+  } catch (ce) {
+    Logger.log('reopenMedicamentoEntregueFromHistorico_ mirror compras: ' + ce);
+  }
+
+  return {
+    success: true,
+    tipo: 'Medicamentos',
+    record: fetchMedicationRecordById_(rid),
+    arquivoId: rid,
+    novoId: rid,
+  };
+}
+
+/**
+ * Compra/Reposição em estado histórico (comprado/cancelado/resolvido): volta para Pendente de compra.
+ */
+function reopenComprasReposicaoFromHistorico_(location, sess, op, mot, rid) {
+  var sheet = location.sheet;
+  var rn = location.rowNumber;
+  var rowObj = rowToObjectFromSheetRow_(sheet, rn);
+  normalizeItemForClient_(rowObj);
+
+  if (!isComprasReposicaoHistorico_(rowObj)) {
+    throw new Error('Item de Compras_Reposicao nao esta em estado historico; nao e possivel reabrir.');
+  }
+
+  var statusCompraAnterior = sanitizeText_(rowObj.Status_Compra) || '';
+  var now = new Date();
+
+  sheet.getRange(rn, getColumnIndex_(sheet, 'Status_Compra')).setValue(COMPRAS_STATUS_COMPRA.PENDENTE);
+  sheet.getRange(rn, getColumnIndex_(sheet, 'Status_Handover')).setValue('Pendente');
+  sheet.getRange(rn, getColumnIndex_(sheet, 'Comprado')).setValue(false);
+  sheet.getRange(rn, getColumnIndex_(sheet, 'Cancelado')).setValue(false);
+  try { sheet.getRange(rn, getColumnIndex_(sheet, 'Comprado_Por')).setValue(''); } catch (e0) {}
+  try { sheet.getRange(rn, getColumnIndex_(sheet, 'Data_Compra')).setValue(''); } catch (e1) {}
+  try { sheet.getRange(rn, getColumnIndex_(sheet, 'Cancelado_Por')).setValue(''); } catch (e2) {}
+  try { sheet.getRange(rn, getColumnIndex_(sheet, 'Data_Cancelamento')).setValue(''); } catch (e3) {}
+  try { sheet.getRange(rn, getColumnIndex_(sheet, 'Motivo_Cancelamento')).setValue(''); } catch (e4) {}
+  try { sheet.getRange(rn, getColumnIndex_(sheet, 'Ultima_Acao_Por')).setValue(sanitizeText_(op)); } catch (e5) {}
+  try { sheet.getRange(rn, getColumnIndex_(sheet, 'Ultima_Acao_Em')).setValue(now); } catch (e6) {}
+
+  try {
+    writeHandoverEditAudit_(SHEET_NAMES.COMPRAS_REPOSICAO, rid, sess, [
+      {
+        campo: 'Status_Compra',
+        anterior: statusCompraAnterior,
+        novo: COMPRAS_STATUS_COMPRA.PENDENTE,
+        resumo: op + ' reabriu compra/reposicao a partir do historico.' + (sanitizeText_(mot) ? ' Motivo: ' + sanitizeText_(mot) : ''),
+      },
+    ]);
+  } catch (audE) {
+    Logger.log('reopenComprasReposicaoFromHistorico_ audit: ' + audE);
+  }
+
+  try {
+    mirrorComprasReposicaoRowForId_(rid);
+  } catch (me) {
+    Logger.log('reopenComprasReposicaoFromHistorico_ mirror: ' + me);
+  }
+
+  return {
+    success: true,
+    tipo: 'ComprasReposicao',
+    record: fetchComprasReposicaoRecordById_(rid),
+    arquivoId: rid,
+    novoId: rid,
+  };
+}
+
 function reopenHistoricoItem(archivedRecordId, sessionToken, motivo) {
   const started = Date.now();
   var rid = sanitizeText_(archivedRecordId);
@@ -4936,9 +5044,18 @@ function reopenHistoricoItem(archivedRecordId, sessionToken, motivo) {
           Logger.log('reopenHistoricoItem via Medicamentos cancelado id=' + rid);
           return reopenMedicamentoCanceladoFromHistorico_(locMed, sess, op, mot, rid);
         }
+        if (toBoolean_(peekMed.Entregue)) {
+          Logger.log('reopenHistoricoItem via Medicamentos entregue id=' + rid);
+          return reopenMedicamentoEntregueFromHistorico_(locMed, sess, op, mot, rid);
+        }
+      }
+      var locCompras = findRowById_(SHEET_NAMES.COMPRAS_REPOSICAO, rid);
+      if (locCompras) {
+        Logger.log('reopenHistoricoItem via Compras_Reposicao id=' + rid);
+        return reopenComprasReposicaoFromHistorico_(locCompras, sess, op, mot, rid);
       }
       throw new Error(
-        'Nao foi possivel reabrir: item nao encontrado nem em Arquivo_Resolvidos nem em Medicamentos.'
+        'Nao foi possivel reabrir: item nao encontrado em Arquivo_Resolvidos, Medicamentos nem Compras_Reposicao.'
       );
     }
 

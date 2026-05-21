@@ -3970,6 +3970,16 @@
                 if (!existingMed) {
                   dashboardData.medicamentos.unshift(response.record);
                 }
+              } else if (response.tipo === 'ComprasReposicao' && response.record) {
+                if (!dashboardData.comprasReposicao) {
+                  dashboardData.comprasReposicao = [];
+                }
+                var existingCr = dashboardData.comprasReposicao.find(function (c) {
+                  return c.ID === response.record.ID;
+                });
+                if (!existingCr) {
+                  dashboardData.comprasReposicao.unshift(response.record);
+                }
               }
               invalidateHistoricoCache_();
               showToast_('Item reaberto.');
@@ -7053,9 +7063,7 @@
         return (rows || []).map(function (item) {
           var origem = String(item.Origem || '');
           var estadoArq = String(item.Estado_Arquivo || 'Resolvido').trim();
-          var reopenEligible = estadoArq !== 'Reaberto' &&
-            estadoArq !== 'Entregue' &&
-            origem !== 'Compras_Reposicao';
+          var reopenEligible = estadoArq !== 'Reaberto';
           var arquivoStatusLabel =
             estadoArq === 'Reaberto'
               ? 'Reaberto'
