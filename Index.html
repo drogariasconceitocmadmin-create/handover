@@ -3926,43 +3926,90 @@
           return;
         }
         cancelReopenHistoricoModal_();
+
         var tok = ensureSessionTokenForAction_();
         if (!tok) {
           return;
         }
+
+        // Otimista: marcar item do histórico como "reabrindo" imediatamente.
+        var arc = (historicoResolvidos || []).find(function (h) {
+          return String(h.ID || '') === String(hid || '');
+        });
+        var snapshotEstado = arc ? {
+          Estado_Arquivo: arc.Estado_Arquivo,
+          Reaberto_Por: arc.Reaberto_Por,
+          Data_Reabertura: arc.Data_Reabertura,
+          Motivo_Reabertura: arc.Motivo_Reabertura,
+        } : null;
+        if (arc) {
+          arc.__reopenState = 'reopening';
+        }
+        renderAll();
+        showToast_('Reabrindo item...');
+
         var started = Date.now();
         try {
           getScriptRunner_()
             .withSuccessHandler(function (response) {
               perfLog_('reopenHistoricoItem', started);
               touchLastSyncTime_();
-              if (response.tipo === 'Geral' && response.record) {
-                dashboardData.geral.unshift(response.record);
-              } else if (response.tipo === 'Medicamentos' && response.record) {
-                dashboardData.medicamentos.unshift(response.record);
-              }
-              var arc = (historicoResolvidos || []).find(function (h) {
-                return String(h.ID || '') === String(hid || '');
-              });
-              var nomeSessao =
-                handoverSession &&
-                (handoverSession.displayName || handoverSession.nome || handoverSession.usuario);
               if (arc) {
+                delete arc.__reopenState;
+                var nomeSessao =
+                  handoverSession &&
+                  (handoverSession.displayName || handoverSession.nome || handoverSession.usuario);
                 arc.Estado_Arquivo = 'Reaberto';
                 arc.Reaberto_Por = nomeSessao || '';
                 arc.Data_Reabertura = new Date().toISOString();
                 arc.Motivo_Reabertura = motivo;
                 arc.ID_Registro_Ativo = response.novoId;
               }
-              showToast_('Reaberto como pendência');
+              if (response.tipo === 'Geral' && response.record) {
+                var existing = (dashboardData.geral || []).find(function (g) {
+                  return g.ID === response.record.ID;
+                });
+                if (!existing) {
+                  dashboardData.geral.unshift(response.record);
+                }
+              } else if (response.tipo === 'Medicamentos' && response.record) {
+                var existingMed = (dashboardData.medicamentos || []).find(function (m) {
+                  return m.ID === response.record.ID;
+                });
+                if (!existingMed) {
+                  dashboardData.medicamentos.unshift(response.record);
+                }
+              }
+              showToast_('Reaberto como pendência.');
               renderAll();
             })
             .withFailureHandler(function (error) {
               perfLog_('reopenHistoricoItem_fail', started);
-              showToast_(getErrorMessage(error), true);
+              // Rollback: restaurar estado anterior do item no histórico.
+              if (arc) {
+                delete arc.__reopenState;
+                if (snapshotEstado) {
+                  arc.Estado_Arquivo = snapshotEstado.Estado_Arquivo;
+                  arc.Reaberto_Por = snapshotEstado.Reaberto_Por;
+                  arc.Data_Reabertura = snapshotEstado.Data_Reabertura;
+                  arc.Motivo_Reabertura = snapshotEstado.Motivo_Reabertura;
+                }
+              }
+              renderAll();
+              showToast_('Não foi possível reabrir. A ação foi desfeita.', true);
             })
             .reopenHistoricoItem(hid, tok, motivo);
         } catch (error) {
+          if (arc) {
+            delete arc.__reopenState;
+            if (snapshotEstado) {
+              arc.Estado_Arquivo = snapshotEstado.Estado_Arquivo;
+              arc.Reaberto_Por = snapshotEstado.Reaberto_Por;
+              arc.Data_Reabertura = snapshotEstado.Data_Reabertura;
+              arc.Motivo_Reabertura = snapshotEstado.Motivo_Reabertura;
+            }
+          }
+          renderAll();
           showToast_(error.message, true);
         }
       }
@@ -7036,7 +7083,7 @@
             histStripe: estadoArq === 'Reaberto' ? 'reaberto' : 'resolvido',
             isOverdue: false,
             whatsappNotSent: false,
-            actions: reopenEligible
+            actions: reopenEligible && !item.__reopenState
               ? [
                   {
                     label: 'Reverter para pendente',
@@ -7045,7 +7092,7 @@
                   },
                 ]
               : [],
-            syncState: '',
+            syncState: item.__reopenState === 'reopening' ? 'syncing' : '',
             syncError: '',
             extraMeta:
               (audit ? audit + ' | ' : '') +
@@ -9672,16 +9719,36 @@
             return r.ID === id;
           });
           if (!item || item.__syncState === 'syncing') return;
+
+          var snapshot = {
+            Comprado: item.Comprado,
+            Status_Compra: item.Status_Compra,
+            Status_Handover: item.Status_Handover,
+          };
+
+          // Otimista: some imediatamente da fila ativa.
+          item.Comprado = true;
+          item.Status_Compra = 'Comprado';
           item.__syncState = 'syncing';
+          invalidateHistoricoCache_();
           renderAll();
+          showToast_('Marcado como comprado.');
+
+          var started = Date.now();
           getScriptRunner_()
             .withSuccessHandler(function (response) {
               delete item.__syncState;
-              if (response && response.record) upsertComprasReposicao_(response.record);
+              if (response && response.record) {
+                upsertComprasReposicao_(response.record);
+              }
+              perfLog_('markComprasReposicaoPurchased', started);
               renderAll();
-              showToast_('Marcado como comprado');
             })
             .withFailureHandler(function (error) {
+              // Rollback.
+              item.Comprado = snapshot.Comprado;
+              item.Status_Compra = snapshot.Status_Compra;
+              item.Status_Handover = snapshot.Status_Handover;
               delete item.__syncState;
               renderAll();
               showToast_(getErrorMessage(error), true);
@@ -9700,25 +9767,45 @@
         runWithOperador_(function () {
           var tok = ensureSessionTokenForAction_();
           if (!tok) return;
+
+          var snapshot = {
+            Comprado: item.Comprado,
+            Status_Compra: item.Status_Compra,
+            Status_Handover: item.Status_Handover,
+          };
+
+          // Otimista: some imediatamente da fila ativa.
           item.__syncState = 'syncing';
+          dashboardData.comprasReposicao = (dashboardData.comprasReposicao || []).filter(function (r) {
+            return r.ID !== id;
+          });
+          invalidateHistoricoCache_();
           renderAll();
+          showToast_('Item cancelado.');
+
+          var started = Date.now();
           getScriptRunner_()
             .withSuccessHandler(function (response) {
               delete item.__syncState;
               if (response && response.record) {
                 upsertComprasReposicao_(response.record);
-              } else {
-                dashboardData.comprasReposicao = (dashboardData.comprasReposicao || []).filter(function (r) {
-                  return r.ID !== id;
-                });
               }
+              perfLog_('cancelComprasReposicaoRequest', started);
               renderAll();
-              showToast_('Solicitação cancelada');
             })
             .withFailureHandler(function (error) {
+              // Rollback: devolver item à lista.
+              item.Comprado = snapshot.Comprado;
+              item.Status_Compra = snapshot.Status_Compra;
+              item.Status_Handover = snapshot.Status_Handover;
               delete item.__syncState;
+              var cur = dashboardData.comprasReposicao || [];
+              if (!cur.some(function (r) { return r.ID === id; })) {
+                cur.unshift(item);
+              }
+              dashboardData.comprasReposicao = cur;
               renderAll();
-              showToast_(getErrorMessage(error), true);
+              showToast_('Não foi possível cancelar. A ação foi desfeita.', true);
             })
             .cancelComprasReposicaoRequest(id, tok, motivo);
         });
@@ -9928,7 +10015,72 @@
       }
 
       function markResolved(id) {
-        runQueueAction_('Marcando como resolvido...', 'markAsResolved', id);
+        runWithOperador_(function () {
+          var tok = ensureSessionTokenForAction_();
+          if (!tok) {
+            return;
+          }
+          var list = dashboardData.geral || [];
+          var item = list.find(function (g) {
+            return g.ID === id;
+          });
+          if (!item || item.__resolveState === 'resolving') {
+            return;
+          }
+
+          // Otimista: some imediatamente da fila.
+          delete item.__resolveError;
+          item.__resolveState = 'resolving';
+          removeGeralById_(id);
+          invalidateHistoricoCache_();
+          renderAll();
+          clearStatus(queueStatus);
+          showToast_('Item marcado como resolvido.');
+
+          var started = Date.now();
+          try {
+            getScriptRunner_()
+              .withSuccessHandler(function (response) {
+                perfLog_('markAsResolved', started);
+                // Item já foi removido; garantir consistência caso refresh tenha re-adicionado.
+                removeGeralById_(response.removedId || id);
+                setStatus(queueStatus, 'Solicitação arquivada.');
+              })
+              .withFailureHandler(function (error) {
+                // Rollback: restaurar item na fila.
+                delete item.__resolveState;
+                item.__resolveError = formatQueueActionError_(error, {
+                  id: id,
+                  aba: 'Geral',
+                  acao: 'Resolver / arquivar',
+                });
+                var cur = dashboardData.geral || [];
+                if (!cur.some(function (g) { return g.ID === id; })) {
+                  cur.unshift(item);
+                }
+                dashboardData.geral = cur;
+                renderAll();
+                setStatus(queueStatus, getErrorMessage(error), true);
+                showToast_(getErrorMessage(error), true);
+              })
+              .markAsResolved(id, tok);
+          } catch (error) {
+            delete item.__resolveState;
+            item.__resolveError = formatQueueActionError_(error, {
+              id: id,
+              aba: 'Geral',
+              acao: 'Resolver / arquivar',
+            });
+            var cur2 = dashboardData.geral || [];
+            if (!cur2.some(function (g) { return g.ID === id; })) {
+              cur2.unshift(item);
+            }
+            dashboardData.geral = cur2;
+            renderAll();
+            setStatus(queueStatus, error.message, true);
+            showToast_(error.message, true);
+          }
+        });
       }
 
       function notifyClientWhatsApp(id) {
