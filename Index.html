@@ -1934,6 +1934,21 @@
         margin-top: 2px;
       }
 
+      /* ── Tabela de itens da encomenda (formulário multi-item) ── */
+      .itens-table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 0.9em; }
+      .itens-table th { text-align: left; font-weight: 600; padding: 4px 6px; border-bottom: 2px solid var(--border, #ddd); color: var(--text-muted, #555); }
+      .itens-table td { padding: 3px 4px; border-bottom: 1px solid var(--border, #eee); vertical-align: middle; }
+      .itens-table input[type="text"] { width: 100%; padding: 4px 6px; border: 1px solid var(--border, #ccc); border-radius: var(--radius-sm, 4px); font-size: 0.95em; box-sizing: border-box; }
+      .itens-table input[type="text"]:focus { outline: 2px solid var(--primary, #1a73e8); border-color: transparent; }
+      .itens-table .col-qty { width: 58px; }
+      .itens-table .col-qty input { text-align: center; }
+      .itens-table .col-rm { width: 30px; text-align: center; }
+      .btn-remove-item { background: none; border: none; cursor: pointer; color: #c0392b; font-size: 1.1em; padding: 2px 5px; border-radius: 3px; line-height: 1; }
+      .btn-remove-item:hover:not(:disabled) { background: #fdecea; }
+      .btn-remove-item:disabled { opacity: 0.25; cursor: default; }
+      .itens-add-btn { margin-top: 6px; font-size: 0.88em; }
+      .item-group-badge { display: inline-block; font-size: 0.78em; font-weight: 600; background: #e8f0fe; color: #1a73e8; border-radius: 3px; padding: 1px 5px; margin-left: 4px; vertical-align: middle; }
+
       .qk-meta {
         margin: 8px 0 0;
         padding: 8px 10px;
@@ -2909,9 +2924,26 @@
               </select>
             </div>
 
-            <div class="field">
+            <div class="field" id="med-medicamento-field">
               <label for="medicamento">Medicamento</label>
               <input id="medicamento" name="medicamento">
+            </div>
+
+            <!-- Tabela multi-item (Encomenda, modo criar) -->
+            <div id="med-itens-table-wrapper" class="hidden field">
+              <label>Itens da encomenda <span style="font-weight:400;font-size:0.83em;color:var(--text-muted,#666)">(mínimo 1)</span></label>
+              <table class="itens-table" id="med-itens-table">
+                <thead>
+                  <tr>
+                    <th>Medicamento / produto</th>
+                    <th class="col-qty">Qtd</th>
+                    <th>Obs. do item</th>
+                    <th class="col-rm"></th>
+                  </tr>
+                </thead>
+                <tbody id="itens-tbody"></tbody>
+              </table>
+              <button type="button" class="light itens-add-btn" onclick="addItemRow_()">+ Adicionar item</button>
             </div>
 
             <div class="field">
@@ -4531,6 +4563,20 @@
         if (encOnly) {
           encOnly.classList.toggle('hidden', isFalta);
         }
+        // Alternar campo único ↔ tabela multi-item
+        var medField = document.getElementById('med-medicamento-field');
+        var itensWrapper = document.getElementById('med-itens-table-wrapper');
+        var showTable = !isFalta && formMode_ === 'create';
+        if (medField) { medField.classList.toggle('hidden', showTable); }
+        if (itensWrapper) {
+          itensWrapper.classList.toggle('hidden', !showTable);
+          if (showTable) {
+            var tbody = document.getElementById('itens-tbody');
+            if (tbody && tbody.querySelectorAll('tr.item-row').length === 0) {
+              addItemRow_();
+            }
+          }
+        }
         updateFornecedorCompraCodigoVisibility_();
       }
 
@@ -4539,6 +4585,70 @@
           .trim()
           .toLowerCase();
       }
+
+      // ── Gestão da tabela de itens (Encomenda multi-item) ──────────────────
+      function addItemRow_() {
+        var tbody = document.getElementById('itens-tbody');
+        if (!tbody) { return; }
+        var tr = document.createElement('tr');
+        tr.className = 'item-row';
+        tr.innerHTML =
+          '<td><input type="text" class="itens-med" placeholder="Nome do medicamento" autocomplete="off" maxlength="200"></td>' +
+          '<td class="col-qty"><input type="text" class="itens-qty" placeholder="1" maxlength="20"></td>' +
+          '<td><input type="text" class="itens-obs" placeholder="(opcional)" maxlength="300"></td>' +
+          '<td class="col-rm"><button type="button" class="btn-remove-item" onclick="removeItemRow_(this)" title="Remover item">×</button></td>';
+        tbody.appendChild(tr);
+        updateRemoveItemButtons_();
+        var inp = tr.querySelector('.itens-med');
+        if (inp) { inp.focus(); }
+      }
+
+      function removeItemRow_(btn) {
+        var tr = btn.closest ? btn.closest('tr.item-row') : (function () {
+          var n = btn; while (n && !(n.tagName === 'TR' && n.className.indexOf('item-row') >= 0)) { n = n.parentNode; } return n;
+        })();
+        if (!tr) { return; }
+        var tbody = document.getElementById('itens-tbody');
+        if (!tbody || tbody.querySelectorAll('tr.item-row').length <= 1) { return; }
+        tr.parentNode.removeChild(tr);
+        updateRemoveItemButtons_();
+      }
+
+      function updateRemoveItemButtons_() {
+        var tbody = document.getElementById('itens-tbody');
+        if (!tbody) { return; }
+        var rows = tbody.querySelectorAll('tr.item-row');
+        rows.forEach(function (r) {
+          var btn = r.querySelector('.btn-remove-item');
+          if (btn) { btn.disabled = rows.length <= 1; }
+        });
+      }
+
+      function getItemRows_() {
+        var tbody = document.getElementById('itens-tbody');
+        if (!tbody) { return []; }
+        var rows = tbody.querySelectorAll('tr.item-row');
+        var result = [];
+        rows.forEach(function (tr) {
+          var medEl = tr.querySelector('.itens-med');
+          var qtyEl = tr.querySelector('.itens-qty');
+          var obsEl = tr.querySelector('.itens-obs');
+          result.push({
+            medicamento: medEl ? String(medEl.value || '').trim() : '',
+            quantidade: qtyEl ? (String(qtyEl.value || '').trim() || '1') : '1',
+            observacaoItem: obsEl ? String(obsEl.value || '').trim() : '',
+          });
+        });
+        return result;
+      }
+
+      function resetItensTable_() {
+        var tbody = document.getElementById('itens-tbody');
+        if (!tbody) { return; }
+        tbody.innerHTML = '';
+        // Não adiciona linha aqui — updateMedicinePriceVisibility_ cuida disso ao exibir
+      }
+      // ─────────────────────────────────────────────────────────────────────
 
       function upsertMedicamento_(record) {
         if (!record || !record.ID) {
@@ -6165,10 +6275,20 @@
       function buildMedicamentoDetailHtml_(row) {
         if (!row) return '<p>Sem dados.</p>';
         var isFalta = medicationTipoFromRecord_(row) === 'falta';
+        var totalItens = parseInt(row.Total_Itens, 10) || 0;
+        var itemIndice = parseInt(row.Item_Indice, 10) || 0;
+        var isMultiItem = totalItens > 1;
+        var tipoLabel = isFalta ? 'Falta' : 'Encomenda';
+        if (isMultiItem) {
+          tipoLabel += ' <span class="item-group-badge">Item ' + itemIndice + ' de ' + totalItens + '</span>';
+        }
 
         var solicitacao = detailSectionHtml_('Solicitação', [
-          detailRowAlways_('Tipo', isFalta ? 'Falta' : 'Encomenda'),
+          '<div class="detail-row"><dt>Tipo</dt><dd>' + tipoLabel + '</dd></div>',
           detailRowAlways_('Medicamento', row.Medicamento),
+          isMultiItem && row.Quantidade_Item ? detailRowAlways_('Quantidade', row.Quantidade_Item) : '',
+          isMultiItem && row.Observacao_Item ? detailRowRich_('Obs. do item', row.Observacao_Item) : '',
+          isMultiItem ? detailRowIf_('Pedido', row.Pedido_ID) : '',
           detailRowAlways_('Status', row.Status),
           detailRowIf_('Data da solicitação', row.Timestamp ? formatDateTime(row.Timestamp) : ''),
         ]);
@@ -8951,6 +9071,7 @@
         formModalOverlay.setAttribute('aria-hidden', 'true');
         document.body.style.overflow = '';
         requestForm.reset();
+        resetItensTable_();
         formMode_ = 'create';
         editingItemContext_ = null;
         categorySelect.disabled = false;
@@ -8969,6 +9090,7 @@
           return;
         }
         requestForm.reset();
+        resetItensTable_();
         formMode_ = 'create';
         editingItemContext_ = null;
         categorySelect.disabled = false;
@@ -9273,6 +9395,7 @@
           };
 
           var optimisticId = 'opt-' + Date.now();
+          var extraOptimisticIds = [];
           if (tab === 'Geral') {
             dashboardData.geral.unshift({
               ID: optimisticId,
@@ -9318,22 +9441,23 @@
             activeQueueFilter = 'pendentes';
             postMainTabDomSync_();
           } else {
+            var itensPayload = (!isFalta && payload.itens && payload.itens.length > 0) ? payload.itens : null;
+            var fnCompraOpt = payload.fornecedorCompra || 'Não informado';
+            var codCompraOpt = (fnCompraOpt === 'Panpharma' || fnCompraOpt === 'Santa Cruz')
+              ? String(payload.codigoCompraFornecedor || '').trim() : '';
             dashboardData.medicamentos.unshift({
               ID: optimisticId,
               Origem: 'Medicamentos',
               Timestamp: new Date().toISOString(),
               Tipo: payload.tipo,
-              Medicamento: payload.medicamento,
+              Medicamento: itensPayload ? itensPayload[0].medicamento : payload.medicamento,
               Pre_Pago: payload.prePago,
               Cliente: payload.cliente,
               Atendente: payload.atendente,
               Previsao_Entrega: payload.previsaoEntrega,
               Telefone: payload.telefone,
-              Fornecedor_Compra: payload.fornecedorCompra || 'Não informado',
-              Codigo_Compra_Fornecedor:
-                payload.fornecedorCompra === 'Panpharma' || payload.fornecedorCompra === 'Santa Cruz'
-                  ? String(payload.codigoCompraFornecedor || '').trim()
-                  : '',
+              Fornecedor_Compra: fnCompraOpt,
+              Codigo_Compra_Fornecedor: codCompraOpt,
               Forma_Recebimento: isFalta ? '' : payload.formaRecebimento || 'A combinar',
               Comprado: false,
               Entregue: false,
@@ -9341,9 +9465,42 @@
               Status_Aviso_WhatsApp: '',
               Preco_Venda: isFalta ? '' : payload.precoVenda,
               Ultima_Acao_Por: operador,
+              Total_Itens: itensPayload ? String(itensPayload.length) : '',
+              Item_Indice: itensPayload ? '1' : '',
               __syncState: 'syncing',
               __pendingSave: pendingCtx,
             });
+            if (itensPayload && itensPayload.length > 1) {
+              for (var oi = 1; oi < itensPayload.length; oi++) {
+                var extraOptId = 'opt-' + Date.now() + '-' + oi;
+                extraOptimisticIds.push(extraOptId);
+                dashboardData.medicamentos.unshift({
+                  ID: extraOptId,
+                  Origem: 'Medicamentos',
+                  Timestamp: new Date().toISOString(),
+                  Tipo: payload.tipo,
+                  Medicamento: itensPayload[oi].medicamento,
+                  Pre_Pago: payload.prePago,
+                  Cliente: payload.cliente,
+                  Atendente: payload.atendente,
+                  Previsao_Entrega: payload.previsaoEntrega,
+                  Telefone: payload.telefone,
+                  Fornecedor_Compra: fnCompraOpt,
+                  Codigo_Compra_Fornecedor: codCompraOpt,
+                  Forma_Recebimento: payload.formaRecebimento || 'A combinar',
+                  Comprado: false,
+                  Entregue: false,
+                  Status: 'Pendente',
+                  Status_Aviso_WhatsApp: '',
+                  Preco_Venda: payload.precoVenda,
+                  Ultima_Acao_Por: operador,
+                  Total_Itens: String(itensPayload.length),
+                  Item_Indice: String(oi + 1),
+                  __syncState: 'syncing',
+                  __pendingSave: pendingCtx,
+                });
+              }
+            }
             activeMainTab = 'medicamentos';
             activeQueueFilter = 'pendentes';
             medQueueSearchQuery = '';
@@ -9360,6 +9517,7 @@
 
           var started = Date.now();
           function handleSaveFailure_(error) {
+            extraOptimisticIds.forEach(function (eid) { removeOptimisticPlaceholder_(eid, tab); });
             removeOptimisticPlaceholder_(optimisticId, tab);
             perfLog_('saveData_fail', started);
             window.setTimeout(function () { try { renderAll(); } catch (e) {} }, 0);
@@ -9373,8 +9531,13 @@
                   handleSaveFailure_(response && response.message ? { message: response.message } : { message: 'O servidor não confirmou o salvamento.' });
                   return;
                 }
+                extraOptimisticIds.forEach(function (eid) { removeOptimisticPlaceholder_(eid, tab); });
                 removeOptimisticPlaceholder_(optimisticId, tab);
-                if (response.record && response.record.ID) {
+                if (response.records && response.records.length) {
+                  response.records.forEach(function (rec) {
+                    if (rec && rec.ID) { upsertMedicamento_(rec); }
+                  });
+                } else if (response.record && response.record.ID) {
                   if (tab === 'Geral') {
                     upsertGeral_(response.record);
                   } else if (tab === 'Compras_Reposicao') {
@@ -9494,9 +9657,25 @@
         }
         var formaEl = document.getElementById('formaRecebimento');
         var obsEl = document.getElementById('observacaoSolicitacao');
+        var tipoVal = document.getElementById('tipo').value;
+        var isEncomenda = String(tipoVal || '').toLowerCase() === 'encomenda';
+        // Construir itens para Encomenda no modo criar
+        var itens = null;
+        if (isEncomenda && formMode_ === 'create') {
+          var rawRows = getItemRows_();
+          var validRows = rawRows.filter(function (r) { return r.medicamento; });
+          if (validRows.length > 0) {
+            itens = validRows;
+          }
+        }
+        // medicamento: primeiro item da tabela (para compatibilidade e Falta)
+        var medSingle = document.getElementById('medicamento').value;
+        if (itens && itens.length > 0) {
+          medSingle = itens[0].medicamento;
+        }
         return {
-          tipo: document.getElementById('tipo').value,
-          medicamento: document.getElementById('medicamento').value,
+          tipo: tipoVal,
+          medicamento: medSingle,
           precoVenda: document.getElementById('precoVenda').value,
           prePago: document.getElementById('prePago').checked,
           cliente: document.getElementById('cliente').value,
@@ -9507,6 +9686,7 @@
           codigoCompraFornecedor: cod,
           formaRecebimento: formaEl ? formaEl.value || 'A combinar' : 'A combinar',
           observacaoSolicitacao: obsEl ? obsEl.value || '' : '',
+          itens: itens,
         };
       }
 
@@ -9523,10 +9703,15 @@
         }
 
         if (tab === 'Medicamentos') {
-          if (!payload.medicamento.trim()) return 'Informe o medicamento.';
-          if (!payload.atendente.trim()) return 'Informe o atendente.';
           var tipoLowVal = String(payload.tipo || '').toLowerCase();
           var isFaltaVal = tipoLowVal === 'falta';
+          var hasItens = payload.itens && payload.itens.length > 0;
+          if (hasItens) {
+            if (!payload.itens[0].medicamento) return 'Informe pelo menos um medicamento na lista de itens.';
+          } else {
+            if (!payload.medicamento.trim()) return 'Informe o medicamento.';
+          }
+          if (!payload.atendente.trim()) return 'Informe o atendente.';
           if (!isFaltaVal) {
             if (!payload.cliente.trim()) return 'Informe o cliente.';
             if (!payload.telefone.trim()) return 'Informe o telefone do cliente.';

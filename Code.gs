@@ -187,6 +187,11 @@ const HEADERS = {
     'Codigo_Compra_Fornecedor',
     'Forma_Recebimento',
     'Observacao_Solicitacao',
+    'Pedido_ID',
+    'Item_Indice',
+    'Total_Itens',
+    'Quantidade_Item',
+    'Observacao_Item',
   ],
   Compras_Reposicao: [
     'ID',
@@ -247,6 +252,11 @@ const HEADERS = {
     'Observacao_Compra',
     'Mensagem_Cliente',
     'Ultima_Atualizacao',
+    'Pedido_ID',
+    'Item_Indice',
+    'Total_Itens',
+    'Quantidade_Item',
+    'Observacao_Item',
   ],
   Usuarios_Handover: HANDOVER_USERS_HEADERS,
   Auditoria_Handover: [
@@ -2187,6 +2197,11 @@ function buildComprasRowNamedValuesFromMedicamento_(medItem, existingStatusCompr
     Observacao_Compra: '',
     Mensagem_Cliente: '',
     Ultima_Atualizacao: new Date(),
+    Pedido_ID: sanitizeText_(medItem.Pedido_ID || ''),
+    Item_Indice: medItem.Item_Indice || '',
+    Total_Itens: medItem.Total_Itens || '',
+    Quantidade_Item: sanitizeText_(medItem.Quantidade_Item || ''),
+    Observacao_Item: sanitizeText_(medItem.Observacao_Item || ''),
   };
 }
 
@@ -3792,21 +3807,31 @@ function saveData(tab, data, sessionToken) {
   const result = appendHandoverRecord_(tab, data, authorLabel);
   // Registrar evento de criação na trilha de auditoria.
   try {
-    var novoId = result && result.record && result.record.ID ? result.record.ID : '';
-    if (novoId) {
-      var sheetNameAudit = SHEET_NAMES.GERAL;
-      var titulo = sanitizeText_(data.titulo || data.descricao || 'Pendência');
-      if (tab === SHEET_NAMES.MEDICAMENTOS) {
-        sheetNameAudit = SHEET_NAMES.MEDICAMENTOS;
-        titulo = sanitizeText_(data.medicamento || data.tipo || 'Medicamento');
-      } else if (tab === SHEET_NAMES.COMPRAS_REPOSICAO) {
-        sheetNameAudit = SHEET_NAMES.COMPRAS_REPOSICAO;
-        titulo = sanitizeText_(data.item || data.categoriaCompra || 'Compra e reposição');
-      }
-      writeHandoverEditAudit_(sheetNameAudit, novoId, sess, [
-        { campo: 'Status', anterior: '', novo: 'Criado', resumo: authorLabel + ' criou: ' + titulo },
-      ]);
+    var sheetNameAudit = SHEET_NAMES.GERAL;
+    var titulo = sanitizeText_(data.titulo || data.descricao || 'Pendência');
+    if (tab === SHEET_NAMES.MEDICAMENTOS) {
+      sheetNameAudit = SHEET_NAMES.MEDICAMENTOS;
+      titulo = sanitizeText_(data.medicamento || (data.itens && data.itens[0] && data.itens[0].medicamento) || data.tipo || 'Medicamento');
+    } else if (tab === SHEET_NAMES.COMPRAS_REPOSICAO) {
+      sheetNameAudit = SHEET_NAMES.COMPRAS_REPOSICAO;
+      titulo = sanitizeText_(data.item || data.categoriaCompra || 'Compra e reposição');
     }
+    var auditIds = [];
+    if (result && result.records && result.records.length) {
+      result.records.forEach(function (r) { if (r && r.ID) { auditIds.push(r.ID); } });
+    } else {
+      var singleId = result && result.record && result.record.ID ? result.record.ID : '';
+      if (singleId) { auditIds.push(singleId); }
+    }
+    auditIds.forEach(function (novoId) {
+      try {
+        writeHandoverEditAudit_(sheetNameAudit, novoId, sess, [
+          { campo: 'Status', anterior: '', novo: 'Criado', resumo: authorLabel + ' criou: ' + titulo },
+        ]);
+      } catch (auditItemErr) {
+        Logger.log('saveData audit item ' + novoId + ': ' + auditItemErr);
+      }
+    });
   } catch (auditErr) {
     Logger.log('saveData audit: ' + auditErr);
   }
@@ -4025,6 +4050,11 @@ function appendHandoverRecord_(tab, data, authorLabel) {
         Codigo_Compra_Fornecedor: codCompra,
         Forma_Recebimento: '',
         Observacao_Solicitacao: sanitizeText_(data.observacaoSolicitacao || ''),
+        Pedido_ID: id,
+        Item_Indice: '1',
+        Total_Itens: '1',
+        Quantidade_Item: '',
+        Observacao_Item: '',
       });
       sheet.appendRow(rowValuesFalta);
       try {
@@ -4040,6 +4070,101 @@ function appendHandoverRecord_(tab, data, authorLabel) {
       };
     }
 
+    // ── Multi-item (itens array) ──────────────────────────────────────────────
+    if (Array.isArray(data.itens) && data.itens.length > 0) {
+      var previsaoEntregaMulti = parseDate_(data.previsaoEntrega);
+      if (!previsaoEntregaMulti) {
+        throw new Error(ENCOMENDA_PRECO_DATA_MSG_);
+      }
+      var precoVendaMulti = parseSalePrice_(data.precoVenda);
+      var formaRecebimentoMulti = normalizeFormaRecebimento_(data.formaRecebimento);
+      var pedidoId = Utilities.getUuid();
+      var totalItensMulti = data.itens.length;
+      var createdMultiIds = [];
+
+      for (var mi = 0; mi < data.itens.length; mi++) {
+        var itemData = data.itens[mi];
+        var itemNomeMed = sanitizeText_(itemData.medicamento || '');
+        if (!itemNomeMed) {
+          continue; // ignorar linhas vazias
+        }
+        var itemId = Utilities.getUuid();
+        var qtdItem = sanitizeText_(String(itemData.quantidade || '1')) || '1';
+        var obsItem = sanitizeText_(itemData.observacaoItem || '');
+        var fnCompraItem = normalizeFornecedorCompraInput_(data.fornecedorCompra);
+        var codCompraItem = normalizeCodigoCompraFornecedorInput_(data.codigoCompraFornecedor, fnCompraItem);
+        sheet.appendRow(buildAppendRowValuesFromNamedMap_(sheet, {
+          ID: itemId,
+          Timestamp: timestamp,
+          Tipo: tipo,
+          Medicamento: itemNomeMed,
+          Pre_Pago: toBoolean_(data.prePago),
+          Cliente: sanitizeText_(data.cliente),
+          Atendente: sanitizeText_(data.atendente),
+          Previsao_Entrega: previsaoEntregaMulti,
+          Comprado: false,
+          Entregue: false,
+          Telefone: sanitizeText_(data.telefone),
+          Status: 'Pendente',
+          Status_Aviso_WhatsApp: '',
+          Data_Aviso_WhatsApp: '',
+          Preco_Venda: precoVendaMulti,
+          Ultima_Acao_Por: op,
+          Ultima_Acao_Em: op ? nowAcao : '',
+          Revertido_Por: '',
+          Data_Reversao: '',
+          Status_Anterior: '',
+          Motivo_Reversao: '',
+          Cancelado_Por: '',
+          Data_Cancelamento: '',
+          Motivo_Cancelamento: '',
+          Fornecedor_Compra: fnCompraItem,
+          Codigo_Compra_Fornecedor: codCompraItem,
+          Forma_Recebimento: formaRecebimentoMulti,
+          Observacao_Solicitacao: sanitizeText_(data.observacaoSolicitacao || ''),
+          Pedido_ID: pedidoId,
+          Item_Indice: String(mi + 1),
+          Total_Itens: String(totalItensMulti),
+          Quantidade_Item: qtdItem,
+          Observacao_Item: obsItem,
+        }));
+        try {
+          mirrorComprasMedicamentosRowForMedicamentoId_(itemId);
+        } catch (comprasErrMulti) {
+          Logger.log('saveData multi-item mirror ' + (mi + 1) + ': ' + comprasErrMulti);
+        }
+        createdMultiIds.push(itemId);
+      }
+
+      if (createdMultiIds.length === 0) {
+        throw new Error('Nenhum item válido informado na encomenda.');
+      }
+
+      if (tipo.toLowerCase() === 'encomenda') {
+        try {
+          sendOrderEmail_({
+            id: createdMultiIds[0],
+            timestamp: timestamp,
+            tipo: tipo,
+            medicamento: sanitizeText_(data.itens[0].medicamento || ''),
+            prePago: toBoolean_(data.prePago),
+            cliente: sanitizeText_(data.cliente),
+            atendente: sanitizeText_(data.atendente),
+            previsaoEntrega: previsaoEntregaMulti,
+          });
+        } catch (emailErrMulti) {
+          Logger.log('saveData multi-item email: ' + emailErrMulti);
+        }
+      }
+
+      Logger.log('saveData Medicamentos multi n=' + createdMultiIds.length + ' ms=' + (Date.now() - started));
+      return {
+        success: true,
+        records: createdMultiIds.map(function (cid) { return fetchMedicationRecordById_(cid); }).filter(Boolean),
+      };
+    }
+
+    // ── Single item (path original) ───────────────────────────────────────────
     const previsaoEntrega = parseDate_(data.previsaoEntrega);
     if (!previsaoEntrega) {
       throw new Error(ENCOMENDA_PRECO_DATA_MSG_);
@@ -4076,6 +4201,11 @@ function appendHandoverRecord_(tab, data, authorLabel) {
       Codigo_Compra_Fornecedor: codCompra,
       Forma_Recebimento: formaRecebimento,
       Observacao_Solicitacao: sanitizeText_(data.observacaoSolicitacao || ''),
+      Pedido_ID: id,
+      Item_Indice: '1',
+      Total_Itens: '1',
+      Quantidade_Item: '',
+      Observacao_Item: '',
     });
     sheet.appendRow(rowValues);
     try {
