@@ -7976,11 +7976,13 @@
             });
           case 'faltas':
             return items.filter(function (item) {
-              return item.type === 'medicamento' && item.medTipo === 'falta' && item.statusKey !== 'cancelado';
+              return item.type === 'medicamento' && item.medTipo === 'falta' &&
+                item.statusKey !== 'cancelado' && item.statusKey !== 'entregue';
             });
           case 'encomendas':
             return items.filter(function (item) {
-              return item.type === 'medicamento' && item.medTipo === 'encomenda' && item.statusKey !== 'cancelado';
+              return item.type === 'medicamento' && item.medTipo === 'encomenda' &&
+                item.statusKey !== 'cancelado' && item.statusKey !== 'entregue';
             });
           case 'pendentes':
             return items.filter(function (item) {
@@ -8012,11 +8014,14 @@
             });
           case 'vencidos_hoje':
             return items.filter(function (item) {
-              return item.isOverdue;
+              return item.isOverdue && item.statusKey !== 'entregue' && item.statusKey !== 'cancelado';
             });
           case 'resolvidos':
             return items;
           case 'todos':
+            return items.filter(function (item) {
+              return item.statusKey !== 'entregue' && item.statusKey !== 'cancelado';
+            });
           default:
             return items;
         }
@@ -9857,7 +9862,69 @@
       }
 
       function markDelivered(id) {
-        runQueueAction_('Marcando como entregue...', 'markAsDelivered', id);
+        runWithOperador_(function () {
+          var tok = ensureSessionTokenForAction_();
+          if (!tok) {
+            return;
+          }
+          var list = dashboardData.medicamentos || [];
+          var item = list.find(function (m) {
+            return m.ID === id;
+          });
+          if (!item || item.__syncState === 'syncing') {
+            return;
+          }
+
+          var snapshot = {
+            Comprado: item.Comprado,
+            Entregue: item.Entregue,
+            Status: item.Status,
+          };
+
+          // Otimista: some imediatamente da lista ativa.
+          item.Comprado = true;
+          item.Entregue = true;
+          item.Status = 'Entregue';
+          item.__syncState = 'syncing';
+
+          invalidateHistoricoCache_();
+          renderAll();
+          clearStatus(queueStatus);
+          showToast_('Marcado como entregue.');
+
+          var started = Date.now();
+          try {
+            getScriptRunner_()
+              .withSuccessHandler(function (response) {
+                delete item.__syncState;
+                if (response.record) {
+                  upsertMedicamento_(response.record);
+                }
+                perfLog_('markAsDelivered', started);
+                renderAll();
+                setStatus(queueStatus, 'Marcado como entregue.');
+              })
+              .withFailureHandler(function (error) {
+                // Rollback: restaura card e contadores.
+                item.Comprado = snapshot.Comprado;
+                item.Entregue = snapshot.Entregue;
+                item.Status = snapshot.Status;
+                delete item.__syncState;
+                renderAll();
+                setStatus(queueStatus, getErrorMessage(error), true);
+                showToast_(getErrorMessage(error), true);
+              })
+              .markAsDelivered(id, tok);
+          } catch (error) {
+            item.Comprado = snapshot.Comprado;
+            item.Entregue = snapshot.Entregue;
+            item.Status = snapshot.Status;
+            delete item.__syncState;
+            renderAll();
+            setStatus(queueStatus, error.message, true);
+            showToast_(error.message, true);
+          }
+        });
       }
 
       function markResolved(id) {

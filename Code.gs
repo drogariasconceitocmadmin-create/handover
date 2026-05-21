@@ -3756,7 +3756,8 @@ function refreshDashboardBundle(checklistTurnoOpt, sessionToken) {
       return !item.Resolvido;
     }),
     medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS).filter(function (m) {
-      return String(m.Status || '').trim().toLowerCase() !== 'cancelado';
+      var st = String(m.Status || '').trim().toLowerCase();
+      return st !== 'cancelado' && !toBoolean_(m.Entregue);
     }),
     comprasReposicao: fetchSheetItems_(SHEET_NAMES.COMPRAS_REPOSICAO).filter(function (r) {
       return isComprasReposicaoAtiva_(r);
@@ -4170,7 +4171,8 @@ function fetchData() {
       return !item.Resolvido;
     }),
     medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS).filter(function (m) {
-      return String(m.Status || '').trim().toLowerCase() !== 'cancelado';
+      var st = String(m.Status || '').trim().toLowerCase();
+      return st !== 'cancelado' && !toBoolean_(m.Entregue);
     }),
     comprasReposicao: fetchSheetItems_(SHEET_NAMES.COMPRAS_REPOSICAO).filter(function (r) {
       return isComprasReposicaoAtiva_(r);
@@ -4407,7 +4409,7 @@ function fetchHistoricoResolvidos(limit, sessionToken) {
       .reverse();
   }
 
-  // Incluir medicamentos cancelados que ainda estejam na aba Medicamentos
+  // Incluir medicamentos cancelados/entregues que ainda estejam na aba Medicamentos
   // (fallback: archive pode ter falhado — não aparecem em Arquivo_Resolvidos).
   var archivedIds = {};
   historico.forEach(function (h) { if (h.ID) { archivedIds[h.ID] = true; } });
@@ -4418,6 +4420,18 @@ function fetchHistoricoResolvidos(limit, sessionToken) {
     m.Origem = SHEET_NAMES.MEDICAMENTOS;
     m.Estado_Arquivo = 'Cancelado';
     m.Arquivado_Em = m.Data_Cancelamento || m.Ultima_Acao_Em || '';
+    normalizeItemForClient_(m);
+    return m;
+  });
+
+  // Incluir medicamentos entregues que permanecem na aba Medicamentos
+  // (marcarEntregue não move para Arquivo_Resolvidos — ficam na planilha com Entregue=true).
+  var entreguesMed = fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS).filter(function (m) {
+    return toBoolean_(m.Entregue) && !archivedIds[m.ID];
+  }).map(function (m) {
+    m.Origem = SHEET_NAMES.MEDICAMENTOS;
+    m.Estado_Arquivo = 'Entregue';
+    m.Arquivado_Em = m.Ultima_Acao_Em || '';
     normalizeItemForClient_(m);
     return m;
   });
@@ -4436,7 +4450,7 @@ function fetchHistoricoResolvidos(limit, sessionToken) {
     return historicoSortTime_(b) - historicoSortTime_(a);
   });
 
-  var combinado = historicoComprasReposicao.concat(canceladosMed).concat(historico);
+  var combinado = historicoComprasReposicao.concat(canceladosMed).concat(entreguesMed).concat(historico);
   combinado.sort(function (a, b) {
     return historicoSortTime_(b) - historicoSortTime_(a);
   });
@@ -4444,6 +4458,7 @@ function fetchHistoricoResolvidos(limit, sessionToken) {
   Logger.log('fetchHistoricoResolvidos ms=' + (Date.now() - started) +
     ' arquivo=' + historico.length +
     ' cancelados_med=' + canceladosMed.length +
+    ' entregues_med=' + entreguesMed.length +
     ' compras_reposicao=' + historicoComprasReposicao.length);
   return {
     success: true,
@@ -4502,12 +4517,21 @@ function markAsDelivered(id, sessionToken) {
     throw new Error('Pedido cancelado pela compra; não é possível marcar como entregue.');
   }
 
+  var statusAnterior = sanitizeText_(rowPeekD.Status) || 'Pendente';
   const compradoColumn = getColumnIndex_(location.sheet, 'Comprado');
   const entregueColumn = getColumnIndex_(location.sheet, 'Entregue');
   location.sheet.getRange(location.rowNumber, compradoColumn).setValue(true);
   location.sheet.getRange(location.rowNumber, entregueColumn).setValue(true);
   syncMedicationStatus_(location.sheet, location.rowNumber);
   writeMedicationUltimaAcao_(location.sheet, location.rowNumber, author);
+  // Registrar entrega na trilha de auditoria.
+  try {
+    writeHandoverEditAudit_(SHEET_NAMES.MEDICAMENTOS, id, sess, [
+      { campo: 'Status', anterior: statusAnterior, novo: 'Entregue' },
+    ]);
+  } catch (auditDelivErr) {
+    Logger.log('markAsDelivered audit: ' + auditDelivErr);
+  }
   try {
     mirrorComprasMedicamentosRowForMedicamentoId_(id);
   } catch (ce2) {
