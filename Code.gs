@@ -220,6 +220,11 @@ const HEADERS = {
     'Excluido',
     'Excluido_Por',
     'Excluido_Em',
+    'Pedido_ID',
+    'Item_Indice',
+    'Total_Itens',
+    'Quantidade_Item',
+    'Observacao_Item',
   ],
   Compras_Medicamentos: [
     'ID_Compra',           // UUID gerado na criação da linha de compras (novo)
@@ -571,6 +576,11 @@ var COMPRAS_PLANILHA_REPOSICAO_HEADERS_ = [
   'Data_Cancelamento',
   'Motivo_Cancelamento',
   'Ultima_Atualizacao',
+  'Pedido_ID',
+  'Item_Indice',
+  'Total_Itens',
+  'Quantidade_Item',
+  'Observacao_Item',
 ];
 
 /**
@@ -657,6 +667,11 @@ function buildComprasReposicaoNamedValues_(handoverItem, existingStatusCompra) {
     Data_Cancelamento: item.Data_Cancelamento || '',
     Motivo_Cancelamento: sanitizeText_(item.Motivo_Cancelamento || ''),
     Ultima_Atualizacao: new Date(),
+    Pedido_ID: sanitizeText_(item.Pedido_ID || ''),
+    Item_Indice: item.Item_Indice || '',
+    Total_Itens: item.Total_Itens || '',
+    Quantidade_Item: sanitizeText_(item.Quantidade_Item || ''),
+    Observacao_Item: sanitizeText_(item.Observacao_Item || ''),
   };
 }
 
@@ -4235,7 +4250,65 @@ function appendHandoverRecord_(tab, data, authorLabel) {
   }
 
   if (tab === SHEET_NAMES.COMPRAS_REPOSICAO) {
-    var categoria = sanitizeText_(data.categoriaCompra);
+    var categoria = sanitizeText_(data.categoriaCompra) || 'Compras';
+    var prioridade = normalizeComprasReposicaoPrioridade_(data.prioridade);
+    var previsaoDesejada = parseDate_(data.previsaoDesejada);
+
+    // v92B — caminho multi-item: Array.isArray(data.itens) com pelo menos 1 item válido
+    if (Array.isArray(data.itens) && data.itens.length > 0) {
+      var pedidoIdRepos = Utilities.getUuid();
+      var totalItensRepos = data.itens.length;
+      var createdReposIds = [];
+      for (var ri = 0; ri < data.itens.length; ri++) {
+        var rItem = data.itens[ri];
+        var rItemNome = sanitizeText_(rItem.item || '');
+        if (!rItemNome) { continue; }
+        var rId = Utilities.getUuid();
+        var rQtd = sanitizeText_(rItem.quantidade || '');
+        sheet.appendRow(buildAppendRowValuesFromNamedMap_(sheet, {
+          ID: rId,
+          Data_Solicitacao: timestamp,
+          Categoria_Compra: categoria,
+          Item: rItemNome,
+          Quantidade: rQtd,
+          Unidade: '',
+          Prioridade: prioridade,
+          Motivo: '',
+          Solicitante: authorLabel,
+          Observacao: sanitizeText_(data.observacao || ''),
+          Fornecedor_Sugerido: sanitizeText_(data.fornecedorSugerido || ''),
+          Previsao_Desejada: previsaoDesejada || '',
+          Status_Compra: COMPRAS_STATUS_COMPRA.PENDENTE,
+          Status_Handover: 'Pendente',
+          Comprado: false,
+          Comprado_Por: '',
+          Data_Compra: '',
+          Cancelado: false,
+          Cancelado_Por: '',
+          Data_Cancelamento: '',
+          Motivo_Cancelamento: '',
+          Ultima_Acao_Por: op,
+          Ultima_Acao_Em: op ? nowAcao : '',
+          Excluido: false,
+          Excluido_Por: '',
+          Excluido_Em: '',
+          Pedido_ID: pedidoIdRepos,
+          Item_Indice: String(ri + 1),
+          Total_Itens: String(totalItensRepos),
+          Quantidade_Item: rQtd,
+          Observacao_Item: sanitizeText_(rItem.observacaoItem || ''),
+        }));
+        try { mirrorComprasReposicaoRowForId_(rId); } catch (mEr) { Logger.log('saveData mirror repos multi ' + (ri + 1) + ': ' + mEr); }
+        createdReposIds.push(rId);
+      }
+      Logger.log('saveData Compras_Reposicao multi n=' + createdReposIds.length + ' ms=' + (Date.now() - started));
+      return {
+        success: true,
+        records: createdReposIds.map(function (cid) { return fetchComprasReposicaoRecordById_(cid); }).filter(Boolean),
+      };
+    }
+
+    // Caminho item único (backward compatible)
     var itemNome = sanitizeText_(data.item);
     var quantidade = sanitizeText_(data.quantidade);
     if (!categoria) {
@@ -4247,8 +4320,6 @@ function appendHandoverRecord_(tab, data, authorLabel) {
     if (!quantidade) {
       throw new Error('Informe a quantidade ou descrição da necessidade.');
     }
-    var prioridade = normalizeComprasReposicaoPrioridade_(data.prioridade);
-    var previsaoDesejada = parseDate_(data.previsaoDesejada);
     var namedRepos = {
       ID: id,
       Data_Solicitacao: timestamp,
@@ -4276,6 +4347,11 @@ function appendHandoverRecord_(tab, data, authorLabel) {
       Excluido: false,
       Excluido_Por: '',
       Excluido_Em: '',
+      Pedido_ID: id,
+      Item_Indice: '1',
+      Total_Itens: '1',
+      Quantidade_Item: quantidade,
+      Observacao_Item: '',
     };
     sheet.appendRow(buildAppendRowValuesFromNamedMap_(sheet, namedRepos));
     try {

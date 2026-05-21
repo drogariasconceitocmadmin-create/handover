@@ -3042,13 +3042,25 @@
           </div>
 
           <div id="reposicao-fields" class="hidden">
-            <div class="field">
-              <label for="reposicao-item">Item / produto</label>
-              <input id="reposicao-item" name="reposicaoItem" type="text" placeholder="Ex.: Detergente, sacola P, papel A4">
+            <!-- v92B: campos individuais — preservados para modo edição / retry item único -->
+            <div id="rep-single-fields" class="hidden">
+              <div class="field">
+                <label for="reposicao-item">Item / produto</label>
+                <input id="reposicao-item" name="reposicaoItem" type="text" placeholder="Ex.: Detergente, sacola P, papel A4">
+              </div>
+              <div class="field">
+                <label for="reposicao-quantidade">Quantidade ou descrição da necessidade</label>
+                <input id="reposicao-quantidade" name="reposicaoQuantidade" type="text" placeholder="Ex.: 10 un, 2 caixas">
+              </div>
             </div>
-            <div class="field">
-              <label for="reposicao-quantidade">Quantidade ou descrição da necessidade</label>
-              <input id="reposicao-quantidade" name="reposicaoQuantidade" type="text" placeholder="Ex.: 10 un, 2 caixas">
+            <!-- v92B: tabela de itens — exibida no modo criar -->
+            <div id="rep-itens-table-wrapper" class="field">
+              <label>Itens da compra</label>
+              <table class="itens-table" id="rep-itens-table">
+                <thead><tr><th>Item / produto</th><th class="col-qty">Quantidade</th><th>Obs.</th><th class="col-rm"></th></tr></thead>
+                <tbody id="rep-itens-tbody"></tbody>
+              </table>
+              <button type="button" class="light itens-add-btn" onclick="addReposicaoItemRow_()">+ Adicionar item</button>
             </div>
             <div class="field">
               <label for="reposicao-prioridade">Prioridade</label>
@@ -4665,6 +4677,74 @@
         if (!tbody) { return; }
         tbody.innerHTML = '';
         // Não adiciona linha aqui — updateMedicinePriceVisibility_ cuida disso ao exibir
+      }
+
+      // ─── v92B: Compras/Reposição — tabela de itens ────────────────────────
+      function addReposicaoItemRow_() {
+        var tbody = document.getElementById('rep-itens-tbody');
+        if (!tbody) { return; }
+        var tr = document.createElement('tr');
+        tr.className = 'item-row';
+        var inp = 'width:100%;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm,4px);font-size:.95em;box-sizing:border-box;';
+        tr.innerHTML =
+          '<td class="itens-table td"><input type="text" placeholder="Ex.: Sacola P, Papel A4" style="' + inp + '"></td>' +
+          '<td class="col-qty"><input type="text" placeholder="Ex.: 2 cx" style="' + inp + '"></td>' +
+          '<td><input type="text" placeholder="Obs. (opcional)" style="' + inp + '"></td>' +
+          '<td class="col-rm"><button type="button" class="btn-remove-item" onclick="removeReposicaoItemRow_(this)" title="Remover">✕</button></td>';
+        tbody.appendChild(tr);
+        updateReposicaoRemoveButtons_();
+        var first = tr.querySelector('input');
+        if (first) { first.focus(); }
+      }
+      function removeReposicaoItemRow_(btn) {
+        var tbody = document.getElementById('rep-itens-tbody');
+        if (!tbody || tbody.querySelectorAll('tr.item-row').length <= 1) { return; }
+        var row = btn ? btn.closest('tr') : null;
+        if (row) { row.remove(); }
+        updateReposicaoRemoveButtons_();
+      }
+      function updateReposicaoRemoveButtons_() {
+        var tbody = document.getElementById('rep-itens-tbody');
+        if (!tbody) { return; }
+        var rows = tbody.querySelectorAll('tr.item-row');
+        rows.forEach(function (r) {
+          var b = r.querySelector('.btn-remove-item');
+          if (b) { b.disabled = rows.length <= 1; }
+        });
+      }
+      function getReposicaoItemRows_() {
+        var tbody = document.getElementById('rep-itens-tbody');
+        if (!tbody) { return []; }
+        var result = [];
+        tbody.querySelectorAll('tr.item-row').forEach(function (tr) {
+          var inputs = tr.querySelectorAll('input');
+          result.push({
+            item: inputs[0] ? String(inputs[0].value || '').trim() : '',
+            quantidade: inputs[1] ? String(inputs[1].value || '').trim() : '',
+            observacaoItem: inputs[2] ? String(inputs[2].value || '').trim() : '',
+          });
+        });
+        return result;
+      }
+      function resetReposicaoItensTable_() {
+        var tbody = document.getElementById('rep-itens-tbody');
+        if (!tbody) { return; }
+        tbody.innerHTML = '';
+      }
+      function updateReposicaoFormMode_() {
+        var single = document.getElementById('rep-single-fields');
+        var tableWrap = document.getElementById('rep-itens-table-wrapper');
+        var isCreate = formMode_ === 'create';
+        if (single) { single.classList.toggle('hidden', isCreate); }
+        if (tableWrap) {
+          tableWrap.classList.toggle('hidden', !isCreate);
+          if (isCreate) {
+            var tbody = document.getElementById('rep-itens-tbody');
+            if (tbody && tbody.querySelectorAll('tr.item-row').length === 0) {
+              addReposicaoItemRow_();
+            }
+          }
+        }
       }
       // ─────────────────────────────────────────────────────────────────────
 
@@ -7392,7 +7472,9 @@
             var cardClass = 'queue-card' + (grp.isOverdue ? ' overdue' : '');
             if (grp.syncState === 'syncing') { cardClass += ' syncing'; }
             card.className = cardClass;
-            card.innerHTML = buildMedicationGroupCardHtml_(grp);
+            card.innerHTML = grp.itemType === 'compras_reposicao'
+              ? buildReposicaoGroupCardHtml_(grp)
+              : buildMedicationGroupCardHtml_(grp);
           } else {
             var item = unit.item;
             var cardClass = 'queue-card' + (item.isOverdue ? ' overdue' : '');
@@ -7794,6 +7876,94 @@
           '<span class="qk-type-tag">Medicamentos</span>' +
           syncBadge +
           '<span class="badge">Encomenda</span>' +
+          '<span class="badge-pedido-count">Pedido com ' + escapeHtml(String(totalCount)) + ' itens</span>' +
+          '</div>' +
+          '<div class="qk-top-right"><div class="qk-time">' + escapeHtml(group.timeLabel) + '</div></div>' +
+          '</div>' +
+          tableHtml +
+          metaHtml +
+          '</div>' +
+          '</div>'
+        );
+      }
+
+      // v92B — card agrupado para Compra e reposição com múltiplos itens
+      function buildReposicaoGroupCardHtml_(group) {
+        var grpItems = group.items;
+        var totalCount = grpItems.length;
+
+        var stripeClass = group.vencidosTier === 'vencido' ? 'qk-stripe-vencido'
+          : group.vencidosTier === 'hoje' ? 'qk-stripe-hoje'
+          : 'qk-stripe-med';
+
+        var syncBadge = group.syncState === 'syncing'
+          ? '<span class="badge">Sincronizando...</span>' : '';
+
+        function metaRow_(lbl, val) {
+          var v = val == null ? '' : String(val).trim();
+          if (!v || v === '-') { return ''; }
+          return '<div class="qk-meta-row"><dt>' + escapeHtml(lbl) + '</dt><dd>' + escapeHtml(v) + '</dd></div>';
+        }
+        var metaInner =
+          metaRow_('Solicitante', group.metaSolicitante) +
+          metaRow_('Prioridade', group.metaPrioridade) +
+          metaRow_('Previsão', group.forecast) +
+          metaRow_('Fornecedor sugerido', group.metaFornecedorSugerido) +
+          metaRow_('Observação', group.metaObservacao);
+        var metaHtml = metaInner ? '<dl class="qk-meta">' + metaInner + '</dl>' : '';
+
+        var tableRows = grpItems.map(function (item, idx) {
+          var statusBadge = '<span class="badge' + (item.statusKey ? ' status-' + item.statusKey : '') + '">' +
+            escapeHtml(item.statusLabel) + '</span>';
+
+          var actionBtns = item.actions.map(function (action) {
+            var cls = queueActionButtonClass_(action);
+            return '<button data-queue-action="1" class="' + escapeHtml(cls) + '" type="button" ' +
+              'onclick="' + escapeAttribute(action.handler) + "('" + escapeAttribute(item.id) + "')\">" +
+              escapeHtml(action.label) + '</button>';
+          }).join('');
+
+          var moreMenu = '<div class="card-more" data-card-more-wrap="' + escapeAttribute(item.id) + '">' +
+            '<button type="button" class="grp-more-btn" ' +
+            'onclick="toggleCardMoreMenu_(event,\'' + escapeJsSingleQuoted_(item.id) + '\')">⋯</button>' +
+            '<div class="card-more-menu hidden" role="menu">' +
+            '<button type="button" onclick="cardMoreVerDetalhes_(\'' + escapeJsSingleQuoted_(item.id) + '\')">' +
+            '<span class="card-menu-ico" aria-hidden="true">' + iconSvg_('eye', 15) + '</span>Ver detalhes</button>' +
+            '<button type="button" onclick="openAuditDrawerForActiveItem_(\'' + escapeJsSingleQuoted_(item.id) + '\')">' +
+            '<span class="card-menu-ico" aria-hidden="true">' + iconSvg_('clock', 15) + '</span>Trilha de auditoria</button>' +
+            (item.statusKey !== 'cancelado'
+              ? '<button type="button" onclick="cancelComprasReposicaoRequest_(\'' + escapeJsSingleQuoted_(item.id) + '\')">' +
+                '<span class="card-menu-ico" aria-hidden="true">' + iconSvg_('minus', 15) + '</span>Cancelar</button>'
+              : '') +
+            '</div></div>';
+
+          return '<tr class="grp-item-row">' +
+            '<td class="grp-item-name">' + escapeHtml(String(idx + 1) + '. ' + (item.title || '—')) + '</td>' +
+            '<td class="grp-item-qty">' + escapeHtml(item.quantidadeItem || '—') + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td><div class="grp-item-actions">' + actionBtns + moreMenu + '</div></td>' +
+            '</tr>';
+        }).join('');
+
+        var tableHtml =
+          '<table class="grp-items-table">' +
+          '<thead><tr>' +
+          '<th>Item</th>' +
+          '<th style="width:80px">Quantidade</th>' +
+          '<th style="width:88px">Status</th>' +
+          '<th style="width:1px"></th>' +
+          '</tr></thead>' +
+          '<tbody>' + tableRows + '</tbody>' +
+          '</table>';
+
+        return (
+          '<div class="qk-card-shell">' +
+          '<span class="qk-stripe ' + stripeClass + '" aria-hidden="true"></span>' +
+          '<div class="qk-card-main">' +
+          '<div class="qk-top">' +
+          '<div class="qk-badges">' +
+          '<span class="qk-type-tag">Compras e reposição</span>' +
+          syncBadge +
           '<span class="badge-pedido-count">Pedido com ' + escapeHtml(String(totalCount)) + ' itens</span>' +
           '</div>' +
           '<div class="qk-top-right"><div class="qk-time">' + escapeHtml(group.timeLabel) + '</div></div>' +
@@ -8238,12 +8408,20 @@
             metaSolicitante: item.Solicitante || '',
             metaStatusCompra: item.Status_Compra || '',
             metaObservacao: item.Observacao || '',
+            metaFornecedorSugerido: String(item.Fornecedor_Sugerido || '').trim(),
             metaUltimaAcao: metaUltimaRep,
+            forecast: item.Previsao_Desejada ? formatDate(item.Previsao_Desejada) : '',
             person: item.Solicitante || '-',
             timeLabel: formatDateTime(item.Data_Solicitacao || item.Timestamp),
             timeSort: parseDateTime_(item.Data_Solicitacao || item.Timestamp),
             syncState: item.__syncState || '',
             syncError: item.__syncError || '',
+            // v92B — campos multi-item
+            pedidoId: String(item.Pedido_ID || '').trim(),
+            totalItens: parseInt(item.Total_Itens, 10) || 0,
+            itemIndice: parseInt(item.Item_Indice, 10) || 0,
+            quantidadeItem: String(item.Quantidade_Item || item.Quantidade || '').trim(),
+            observacaoItem: String(item.Observacao_Item || '').trim(),
             actions: actions,
           };
         });
@@ -8268,8 +8446,9 @@
 
         items.forEach(function (item) {
           var pid = item.pedidoId;
-          // Agrupar apenas medicamentos com Total_Itens > 1 e Pedido_ID preenchido
-          if (item.type !== 'medicamento' || !pid || item.totalItens <= 1) {
+          // Agrupar medicamentos e compras_reposicao com Total_Itens > 1 e Pedido_ID preenchido
+          var canGroup = (item.type === 'medicamento' || item.type === 'compras_reposicao');
+          if (!canGroup || !pid || item.totalItens <= 1) {
             result.push({ _type: 'single', item: item });
             return;
           }
@@ -8320,6 +8499,7 @@
             isOverdue: grpItems.some(function (i) { return i.isOverdue; }),
             vencidosTier: vencidosTier,
             // Campos representativos: usa primeiro item (todos deveriam ter os mesmos dados do pedido)
+            itemType: rep.type,        // 'medicamento' ou 'compras_reposicao'
             metaCliente: rep.metaCliente,
             metaTelefone: rep.metaTelefone,
             metaAtendente: rep.metaAtendente,
@@ -8327,6 +8507,11 @@
             metaPrePago: rep.metaPrePago,
             metaFornecedorCompra: rep.metaFornecedorCompra,
             metaFormaRecebimento: rep.metaFormaRecebimento,
+            // Compras_Reposicao specific
+            metaPrioridade: rep.metaPrioridade || '',
+            metaSolicitante: rep.metaSolicitante || '',
+            metaFornecedorSugerido: rep.metaFornecedorSugerido || '',
+            metaObservacao: rep.metaObservacao || '',
             syncState: grpItems.some(function (i) { return i.syncState === 'syncing'; }) ? 'syncing' : '',
           };
         });
@@ -9264,7 +9449,7 @@
         }
       }
 
-      function closeFormModal_() {
+      function closeFormModal_() { // eslint-disable-line no-unused-vars
         if (!formModalOverlay) {
           return;
         }
@@ -9273,6 +9458,7 @@
         document.body.style.overflow = '';
         requestForm.reset();
         resetItensTable_();
+        resetReposicaoItensTable_();
         formMode_ = 'create';
         editingItemContext_ = null;
         categorySelect.disabled = false;
@@ -9292,6 +9478,7 @@
         }
         requestForm.reset();
         resetItensTable_();
+        resetReposicaoItensTable_();
         formMode_ = 'create';
         editingItemContext_ = null;
         categorySelect.disabled = false;
@@ -9327,10 +9514,9 @@
               med.focus();
             }
           } else if (categorySelect.value === 'Compras_Reposicao') {
-            var rep = document.getElementById('reposicao-item');
-            if (rep) {
-              rep.focus();
-            }
+            var repTbody = document.getElementById('rep-itens-tbody');
+            var repFirst = repTbody ? repTbody.querySelector('input') : null;
+            if (repFirst) { repFirst.focus(); }
           } else {
             var tg = document.getElementById('tituloGeral');
             if (tg) {
@@ -9373,6 +9559,9 @@
         clearStatus(formStatus);
         clearEncomendaRequiredHints_();
         updateMedicinePriceVisibility_();
+        if (isReposicao) {
+          updateReposicaoFormMode_();
+        }
         if (isMedication) {
           syncMedicamentoAtendenteFromOperador_();
         }
@@ -9502,11 +9691,24 @@
           }
           toggleGeralVencimentoFields_();
         } else if (ps.tab === 'Compras_Reposicao') {
-          document.getElementById('reposicao-item').value = pl.item || '';
-          document.getElementById('reposicao-quantidade').value = pl.quantidade || '';
           document.getElementById('reposicao-prioridade').value = pl.prioridade || 'Normal';
           document.getElementById('reposicao-observacao').value = pl.observacao || '';
           document.getElementById('reposicao-fornecedor').value = pl.fornecedorSugerido || '';
+          // Popular tabela de itens (v92B)
+          resetReposicaoItensTable_();
+          var reposItensRetry = pl.itens && pl.itens.length > 0 ? pl.itens : [{ item: pl.item || '', quantidade: pl.quantidade || '', observacaoItem: '' }];
+          reposItensRetry.forEach(function (ri) {
+            addReposicaoItemRow_();
+            var tbody = document.getElementById('rep-itens-tbody');
+            var rows = tbody ? tbody.querySelectorAll('tr.item-row') : [];
+            var tr = rows[rows.length - 1];
+            if (tr) {
+              var inputs = tr.querySelectorAll('input');
+              if (inputs[0]) { inputs[0].value = ri.item || ''; }
+              if (inputs[1]) { inputs[1].value = ri.quantidade || ''; }
+              if (inputs[2]) { inputs[2].value = ri.observacaoItem || ''; }
+            }
+          });
           document.getElementById('reposicao-previsao').value = pl.previsaoDesejada || '';
         } else {
           document.getElementById('tipo').value = pl.tipo || '';
@@ -9616,16 +9818,19 @@
             });
           } else if (tab === 'Compras_Reposicao') {
             dashboardData.comprasReposicao = dashboardData.comprasReposicao || [];
+            var itensReposOpt = payload.itens && payload.itens.length > 0 ? payload.itens : null;
+            // Pseudo Pedido_ID para agrupamento visual do otimista
+            var repPedidoOptId = itensReposOpt && itensReposOpt.length > 1 ? ('opt-grp-' + Date.now()) : '';
             dashboardData.comprasReposicao.unshift({
               ID: optimisticId,
               Origem: 'Compras_Reposicao',
               Data_Solicitacao: new Date().toISOString(),
               Categoria_Compra: payload.categoriaCompra,
-              Item: payload.item,
-              Quantidade: payload.quantidade,
-              Unidade: payload.unidade,
+              Item: itensReposOpt ? itensReposOpt[0].item : payload.item,
+              Quantidade: itensReposOpt ? itensReposOpt[0].quantidade : payload.quantidade,
+              Unidade: '',
               Prioridade: payload.prioridade,
-              Motivo: payload.motivo,
+              Motivo: '',
               Solicitante: operador,
               Observacao: payload.observacao,
               Fornecedor_Sugerido: payload.fornecedorSugerido,
@@ -9635,9 +9840,44 @@
               Comprado: false,
               Cancelado: false,
               Ultima_Acao_Por: operador,
+              Pedido_ID: repPedidoOptId || '',
+              Total_Itens: itensReposOpt ? String(itensReposOpt.length) : '',
+              Item_Indice: itensReposOpt ? '1' : '',
               __syncState: 'syncing',
               __pendingSave: pendingCtx,
             });
+            // Itens adicionais do pedido multi-item
+            if (itensReposOpt && itensReposOpt.length > 1) {
+              for (var roi = 1; roi < itensReposOpt.length; roi++) {
+                var extraRepOptId = 'opt-' + Date.now() + '-rep-' + roi;
+                extraOptimisticIds.push(extraRepOptId);
+                dashboardData.comprasReposicao.unshift({
+                  ID: extraRepOptId,
+                  Origem: 'Compras_Reposicao',
+                  Data_Solicitacao: new Date().toISOString(),
+                  Categoria_Compra: payload.categoriaCompra,
+                  Item: itensReposOpt[roi].item,
+                  Quantidade: itensReposOpt[roi].quantidade,
+                  Unidade: '',
+                  Prioridade: payload.prioridade,
+                  Motivo: '',
+                  Solicitante: operador,
+                  Observacao: payload.observacao,
+                  Fornecedor_Sugerido: payload.fornecedorSugerido,
+                  Previsao_Desejada: payload.previsaoDesejada,
+                  Status_Compra: 'Pendente de compra',
+                  Status_Handover: 'Pendente',
+                  Comprado: false,
+                  Cancelado: false,
+                  Ultima_Acao_Por: operador,
+                  Pedido_ID: repPedidoOptId,
+                  Total_Itens: String(itensReposOpt.length),
+                  Item_Indice: String(roi + 1),
+                  __syncState: 'syncing',
+                  __pendingSave: pendingCtx,
+                });
+              }
+            }
             activeMainTab = 'compras_reposicao';
             activeQueueFilter = 'pendentes';
             postMainTabDomSync_();
@@ -9735,8 +9975,14 @@
                 extraOptimisticIds.forEach(function (eid) { removeOptimisticPlaceholder_(eid, tab); });
                 removeOptimisticPlaceholder_(optimisticId, tab);
                 if (response.records && response.records.length) {
+                  // Multi-item: pode ser Medicamentos ou Compras_Reposicao
                   response.records.forEach(function (rec) {
-                    if (rec && rec.ID) { upsertMedicamento_(rec); }
+                    if (!rec || !rec.ID) { return; }
+                    if (tab === 'Compras_Reposicao') {
+                      upsertComprasReposicao_(rec);
+                    } else {
+                      upsertMedicamento_(rec);
+                    }
                   });
                 } else if (response.record && response.record.ID) {
                   if (tab === 'Geral') {
@@ -9830,14 +10076,22 @@
       }
 
       function getComprasReposicaoPayload() {
+        // v92B: coletar itens da tabela em modo criar
+        var itens = null;
+        if (formMode_ === 'create') {
+          var rawReps = getReposicaoItemRows_();
+          var validReps = rawReps.filter(function (r) { return r.item; });
+          if (validReps.length > 0) { itens = validReps; }
+        }
         return {
           categoriaCompra: 'Compras', // preenchido internamente — não exibido ao usuário
-          item: document.getElementById('reposicao-item').value,
-          quantidade: document.getElementById('reposicao-quantidade').value,
+          item: itens && itens.length > 0 ? itens[0].item : document.getElementById('reposicao-item').value,
+          quantidade: itens && itens.length > 0 ? itens[0].quantidade : document.getElementById('reposicao-quantidade').value,
           prioridade: document.getElementById('reposicao-prioridade').value,
           observacao: document.getElementById('reposicao-observacao').value,
           fornecedorSugerido: document.getElementById('reposicao-fornecedor').value,
           previsaoDesejada: document.getElementById('reposicao-previsao').value,
+          itens: itens,
         };
       }
 
@@ -9924,12 +10178,13 @@
         }
 
         if (tab === 'Compras_Reposicao') {
-          if (
-            !String(payload.item || '').trim() ||
-            !String(payload.quantidade || '').trim() ||
-            !String(payload.prioridade || '').trim()
-          ) {
-            return 'Informe item, quantidade ou descrição e prioridade.';
+          var hasItensRep = payload.itens && payload.itens.length > 0;
+          if (hasItensRep) {
+            if (!payload.itens[0].item) { return 'Informe pelo menos um item na lista.'; }
+          } else {
+            if (!String(payload.item || '').trim() || !String(payload.quantidade || '').trim() || !String(payload.prioridade || '').trim()) {
+              return 'Informe item, quantidade ou descrição e prioridade.';
+            }
           }
         }
 
