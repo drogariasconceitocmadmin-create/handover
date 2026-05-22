@@ -1015,6 +1015,116 @@ function diagnosticarComprasReposicaoSync() {
   return { ok: true, log: log };
 }
 
+/**
+ * DIAGNÓSTICO — apenas lê e loga; NÃO altera dados.
+ * Inspeciona a aba Compras_Reposicao do Handover e simula o pipeline
+ * fetchData → isComprasReposicaoAtiva_ para mostrar por que a UI exibe 0.
+ *
+ * Execute no editor Apps Script e consulte Logs (View → Logs ou Ctrl+Enter).
+ */
+function diagnosticarFetchComprasReposicaoHandover() {
+  var log = [];
+  function l(msg) { log.push(msg); Logger.log(msg); }
+
+  l('=== diagnosticarFetchComprasReposicaoHandover ===');
+
+  // 1. Planilha Handover
+  var hss;
+  try { hss = getSpreadsheet_(); } catch (e) {
+    l('ERRO getSpreadsheet_: ' + e);
+    return { ok: false, log: log };
+  }
+  l('Handover SS id=' + hss.getId() + ' nome="' + hss.getName() + '"');
+
+  // 2. Aba Compras_Reposicao no Handover
+  var hSheet = hss.getSheetByName(SHEET_NAMES.COMPRAS_REPOSICAO);
+  if (!hSheet) {
+    l('ERRO: aba "' + SHEET_NAMES.COMPRAS_REPOSICAO + '" NAO EXISTE no Handover');
+    return { ok: false, log: log };
+  }
+
+  var lastRow = hSheet.getLastRow();
+  var lastCol = Math.max(hSheet.getLastColumn(), 0);
+  l('Handover.' + SHEET_NAMES.COMPRAS_REPOSICAO + ': lastRow=' + lastRow + ' lastCol=' + lastCol);
+
+  if (lastRow < 1 || lastCol < 1) {
+    l('Aba vazia — nada a inspecionar');
+    return { ok: true, log: log };
+  }
+
+  // 3. Headers reais
+  var headers = hSheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  l('Headers [' + headers.length + ']: ' + JSON.stringify(headers));
+
+  // 4. Colunas esperadas por isComprasReposicaoAtiva_
+  ['ID', 'Item', 'Status_Compra', 'Status_Handover', 'Comprado', 'Cancelado', 'Excluido', 'Pedido_ID'].forEach(function(col) {
+    var found = false;
+    var target = canonicalHeaderKey_(col);
+    headers.forEach(function(h) {
+      if (h && canonicalHeaderKey_(String(h)) === target) { found = true; }
+    });
+    if (!found) { l('  COLUNA FALTANDO: ' + col); }
+  });
+
+  if (lastRow <= 1) {
+    l('Nenhuma linha de dados (só cabeçalho)');
+    return { ok: true, log: log };
+  }
+
+  // 5. Inspecionar até 20 linhas
+  var maxRows = Math.min(lastRow - 1, 20);
+  var dataVals = hSheet.getRange(2, 1, maxRows, lastCol).getValues();
+  var totalAtivos = 0, totalInativos = 0;
+  l('Primeiras ' + maxRows + ' linhas (de ' + (lastRow - 1) + ' total):');
+  dataVals.forEach(function(row, idx) {
+    var rObj = rowCellsToObject_(headers, row);
+    var id          = sanitizeText_(String(rObj.ID || ''));
+    var item        = sanitizeText_(String(rObj.Item || ''));
+    var statusC     = sanitizeText_(String(rObj.Status_Compra || ''));
+    var statusH     = sanitizeText_(String(rObj.Status_Handover || ''));
+    var comprado    = rObj.Comprado;
+    var cancelado   = rObj.Cancelado;
+    var excluido    = rObj.Excluido;
+    var pedidoId    = sanitizeText_(String(rObj.Pedido_ID || ''));
+
+    // Simular isComprasReposicaoAtiva_
+    var ativo = true;
+    var motivo = '';
+    if (toBoolean_(excluido)) {
+      ativo = false; motivo = 'Excluido=true';
+    } else {
+      var statusKey = normalizeComprasReposicaoStatusKey_(rObj);
+      if (statusKey === 'comprado') {
+        ativo = false; motivo = 'statusKey=comprado (Status_Compra="' + statusC + '", Status_Handover="' + statusH + '", Comprado=' + comprado + ')';
+      } else if (statusKey === 'cancelado') {
+        ativo = false; motivo = 'statusKey=cancelado (Status_Compra="' + statusC + '", Cancelado=' + cancelado + ')';
+      } else if (statusKey === 'resolvido') {
+        ativo = false; motivo = 'statusKey=resolvido (Status_Handover="' + statusH + '")';
+      }
+    }
+    if (ativo) { totalAtivos++; } else { totalInativos++; }
+    l('  [' + (idx + 2) + '] id=' + (id || '(vazio)') +
+      ' item="' + item + '"' +
+      ' Status_Compra="' + statusC + '"' +
+      ' Status_Handover="' + statusH + '"' +
+      ' Comprado=' + comprado +
+      ' Cancelado=' + cancelado +
+      ' Excluido=' + excluido +
+      ' Pedido_ID="' + pedidoId + '"' +
+      ' → ATIVO: ' + (ativo ? 'SIM' : 'NAO (' + motivo + ')'));
+  });
+
+  l('Total ativos: ' + totalAtivos + ' / inativos: ' + totalInativos + ' / inspecionados: ' + maxRows);
+  l('fetchData deveria retornar: ' + totalAtivos + ' itens em comprasReposicao');
+  l('Nome do campo no payload: comprasReposicao');
+  l('');
+  l('NOTA: se totalAtivos > 0 mas a UI mostra 0,');
+  l('  a causa é no frontend (normalizeData ou mergeServerIntoDashboard_).');
+  l('  Confirme se v97 foi publicado com a correção do frontend.');
+  l('=== fim diagnóstico ===');
+  return { ok: true, totalAtivos: totalAtivos, totalInativos: totalInativos, log: log };
+}
+
 function normalizeComprasReposicaoPrioridade_(value) {
   var s = String(value || '').trim();
   var allowed = [

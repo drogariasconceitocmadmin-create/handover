@@ -4164,6 +4164,10 @@
         var keepMed = (dashboardData.medicamentos || []).filter(function (m) {
           return m.__syncState === 'syncing' || String(m.ID || '').indexOf('opt-') === 0;
         });
+        // v97 — preserva registros com operação otimista em andamento
+        var keepCr = (dashboardData.comprasReposicao || []).filter(function (c) {
+          return c.__syncState === 'syncing' || String(c.ID || '').indexOf('opt-') === 0;
+        });
         dashboardData.geral = (bundle.geral || []).slice();
         keepGeral.forEach(function (row) {
           if (!dashboardData.geral.some(function (x) {
@@ -4178,6 +4182,15 @@
             return x.ID === row.ID;
           })) {
             dashboardData.medicamentos.unshift(row);
+          }
+        });
+        // v97 — aplica comprasReposicao do bundle no dashboardData
+        dashboardData.comprasReposicao = (bundle.comprasReposicao || []).slice();
+        keepCr.forEach(function (c) {
+          if (!dashboardData.comprasReposicao.some(function (x) {
+            return x.ID === c.ID;
+          })) {
+            dashboardData.comprasReposicao.unshift(c);
           }
         });
         checklistCacheByTurno_ = Object.create(null);
@@ -11004,6 +11017,7 @@
         return {
           geral: Array.isArray(data && data.geral) ? data.geral : [],
           medicamentos: Array.isArray(data && data.medicamentos) ? data.medicamentos : [],
+          comprasReposicao: Array.isArray(data && data.comprasReposicao) ? data.comprasReposicao : [], // v97
           checklistTurno: normalizeChecklistData_(data && data.checklistTurno),
         };
       }
