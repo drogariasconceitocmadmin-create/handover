@@ -2,64 +2,71 @@
   "projeto": "Handover - Drogarias Conceito",
   "status_geral": "PRODUCAO",
   "branch_publicada": "hotfix/handover-p0-save-medicamentos",
-  "versao_ativa": 86,
-  "versao_descricao": "Handover v86 formatacao simples textos longos",
-  "commit_publicado": "cb99c24",
-  "commit_publicado_descricao": "ux(handover): permite formatacao simples em textos longos",
+  "versao_ativa": 98,
+  "versao_descricao": "Handover v98 nao encontrado encomendas",
+  "commit_publicado": "7276368",
+  "commit_publicado_descricao": "fix(handover): mostra nao encontrado em encomendas",
   "rollback_feito": false,
   "deploymentId_oficial": "AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw",
-  "deploymentId_versao_interna": 93,
+  "deploymentId_versao_interna": 105,
   "url_oficial": "https://script.google.com/macros/s/AKfycbzJ5fxFTSfkDsU5l0s79MNrklpkwI1xVMgG_DIvXnJWlRFLRCGMZYtKZSymyc6fmXuw/exec",
   "pop_tocado": false,
   "dados_apagados": false,
   "setup_executado": false,
   "clasp_push_neste_report": false,
   "deploy_neste_report": false,
-  "data_aprovacao_v86": "2026-05-20",
-  "validacao_v86_manual": {
+  "data_aprovacao_v98": "2026-05-22",
+  "validacao_v98_manual": {
     "executado": true,
     "tipo": "validacao manual (operador humano)",
-    "sessao": "2026-05-20",
-    "negrito_markdown": "OK",
-    "lista_asterisco": "OK",
-    "quebras_linha_preservadas": "OK",
-    "ver_mais": "OK",
-    "ver_menos": "OK",
-    "ver_detalhes": "OK",
-    "html_livre_escapado_bloqueado": "OK",
+    "sessao": "2026-05-22",
+    "encomenda_nao_encontrado_badge": "OK",
+    "encomenda_nao_encontrado_em_encomendas": "OK",
+    "encomenda_nao_encontrado_em_todos": "OK",
+    "encomenda_nao_encontrado_em_pendentes": "OK",
+    "encomenda_nao_encontrado_nao_em_comprados": "OK",
+    "encomenda_nao_encontrado_nao_em_entregues": "OK",
+    "card_agrupado_nao_encontrados": "OK",
+    "faltas_preservadas": "OK",
+    "compras_reposicao_preservado": "OK",
+    "atualizar_agora_preservado": "OK",
     "falhas_criticas": "NENHUMA",
     "resultado": "APROVADA"
   },
-  "escopo_entrega_v86": [
-    "Alteracao visual-only em Index.html",
-    "Formatacao simples segura em textos longos dos cards e detalhes",
-    "**texto** renderiza como negrito",
-    "Linhas iniciadas por * item ou - item renderizam como lista visual simples",
-    "Quebras de linha preservadas",
-    "HTML livre escapado/bloqueado antes da formatacao permitida",
-    "Botoes Ver mais e Ver menos preservados",
-    "Ver detalhes preservado",
-    "Sem alteracao de backend, planilhas, setup, dados ou POP"
+  "escopo_entrega_v98": [
+    "Backend: enrichMedicamentosWithNaoEncontrado_ (nova funcao) le Compras_Medicamentos e sobreescreve item.Status para Nao encontrado para itens com status nao terminal",
+    "fetchData e refreshDashboardBundle chamam enrichMedicamentosWithNaoEncontrado_ antes de retornar medicamentos",
+    "Frontend: normalizeMedicationStatus_ fallback por item.Status_Compra",
+    "buildMedicationGroupCardHtml_: nao_encontrado adicionado ao counts e summaryParts",
+    "Faltas (Compras_Reposicao) preservadas",
+    "Multi-itens preservado",
+    "POP, Login/PIN, Checklist, dados: intocados"
   ],
   "referencias_recentes": {
-    "v84": {
-      "versao_interna": 90,
-      "commit": "dcdad30",
-      "status": "APROVADA",
-      "descricao": "Historico inclui Compras/reposicao, Categoria interna"
-    },
-    "v85": {
-      "versao_interna": 92,
-      "commit": "3f21d36",
-      "status": "APROVADA",
-      "descricao": "Expansao de textos longos nos cards"
-    },
     "v86": {
       "versao_interna": 93,
       "commit": "cb99c24",
-      "status": "ATIVA OFICIAL",
+      "status": "APROVADA",
       "descricao": "Formatacao simples segura em textos longos"
+    },
+    "v96": {
+      "versao_interna": 103,
+      "commit": "1fc168a",
+      "status": "APROVADA",
+      "descricao": "Backfill Compras_Reposicao com canonical key matching"
+    },
+    "v97": {
+      "versao_interna": 104,
+      "commit": "cdbff9b",
+      "status": "APROVADA",
+      "descricao": "Exibe Compras_Reposicao sincronizadas na UI"
+    },
+    "v98": {
+      "versao_interna": 105,
+      "commit": "7276368",
+      "status": "ATIVA OFICIAL",
+      "descricao": "Nao encontrado em Encomendas/Medicamentos"
     }
   },
-  "veredito": "v86 APROVADA em producao. Rollback NAO. POP nao tocado. Dados nao apagados. Setup nao executado. Cards expansíveis e Ver detalhes preservados."
+  "veredito": "v98 APROVADA em producao. Rollback NAO. POP nao tocado. Dados nao apagados. Setup nao executado. Badge Nao encontrado funcional em Encomendas, Faltas e Compras_Reposicao."
 }
