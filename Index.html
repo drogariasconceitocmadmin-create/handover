@@ -7844,16 +7844,17 @@
           : 'Encomenda com ' + totalCount + ' itens';
 
         // Resumo de status dos itens
-        var counts = { pendente: 0, comprado: 0, entregue: 0, cancelado: 0 };
+        var counts = { pendente: 0, nao_encontrado: 0, comprado: 0, entregue: 0, cancelado: 0 }; // v98
         grpItems.forEach(function (it) {
           var k = it.statusKey || 'pendente';
           if (counts[k] !== undefined) { counts[k]++; } else { counts.pendente++; }
         });
         var summaryParts = [];
-        if (counts.comprado)  { summaryParts.push('<span class="grp-summary-item"><strong>' + counts.comprado  + '</strong>/' + totalCount + ' comprados</span>'); }
-        if (counts.entregue)  { summaryParts.push('<span class="grp-summary-item"><strong>' + counts.entregue  + '</strong>/' + totalCount + ' entregues</span>'); }
-        if (counts.cancelado) { summaryParts.push('<span class="grp-summary-item"><strong>' + counts.cancelado + '</strong>/' + totalCount + ' cancelados</span>'); }
-        if (counts.pendente)  { summaryParts.push('<span class="grp-summary-item"><strong>' + counts.pendente  + '</strong>' + (summaryParts.length ? ' pendentes' : '/' + totalCount + ' pendentes') + '</span>'); }
+        if (counts.comprado)       { summaryParts.push('<span class="grp-summary-item"><strong>' + counts.comprado       + '</strong>/' + totalCount + ' comprados</span>'); }
+        if (counts.entregue)       { summaryParts.push('<span class="grp-summary-item"><strong>' + counts.entregue       + '</strong>/' + totalCount + ' entregues</span>'); }
+        if (counts.cancelado)      { summaryParts.push('<span class="grp-summary-item"><strong>' + counts.cancelado      + '</strong>/' + totalCount + ' cancelados</span>'); }
+        if (counts.nao_encontrado) { summaryParts.push('<span class="grp-summary-item"><strong>' + counts.nao_encontrado + '</strong>/' + totalCount + ' não encontrados</span>'); } // v98
+        if (counts.pendente)       { summaryParts.push('<span class="grp-summary-item"><strong>' + counts.pendente       + '</strong>' + (summaryParts.length ? ' pendentes' : '/' + totalCount + ' pendentes') + '</span>'); }
         var summaryHtml = summaryParts.length
           ? '<div class="grp-summary">' + summaryParts.join('<span style="color:var(--border)"> · </span>') + '</div>'
           : '';
@@ -8764,8 +8765,13 @@
         if (item.Comprado || statusText === 'comprado') {
           return { key: 'comprado', label: 'Comprado' };
         }
-        // v94 — Não encontrado: pendência ativa propagada do Compras_Medicamentos
+        // v94 — Não encontrado: propagado do Status ou, como fallback, do Status_Compra (v98)
         if (statusText === 'não encontrado' || statusText === 'nao encontrado') {
+          return { key: 'nao_encontrado', label: 'Não encontrado' };
+        }
+        // v98 — fallback: Status_Compra pode chegar como campo extra do enrichment
+        var scText = String(item.Status_Compra || '').trim().toLowerCase();
+        if (scText === 'não encontrado' || scText === 'nao encontrado') {
           return { key: 'nao_encontrado', label: 'Não encontrado' };
         }
         return { key: 'pendente', label: 'Pendente' };

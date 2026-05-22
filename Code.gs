@@ -4303,14 +4303,17 @@ function refreshDashboardBundle(checklistTurnoOpt, sessionToken) {
   } catch (eChecklist) {
     Logger.log('[Handover] refreshDashboardBundle: checklist falhou, retornando null. ' + eChecklist.message);
   }
+  var meds = fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS).filter(function (m) {
+    var st = String(m.Status || '').trim().toLowerCase();
+    return st !== 'cancelado' && !toBoolean_(m.Entregue);
+  });
+  enrichMedicamentosWithNaoEncontrado_(meds); // v98
+
   return {
     geral: fetchSheetItems_(SHEET_NAMES.GERAL).filter(function (item) {
       return !item.Resolvido;
     }),
-    medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS).filter(function (m) {
-      var st = String(m.Status || '').trim().toLowerCase();
-      return st !== 'cancelado' && !toBoolean_(m.Entregue);
-    }),
+    medicamentos: meds,
     comprasReposicao: fetchSheetItems_(SHEET_NAMES.COMPRAS_REPOSICAO).filter(function (r) {
       return isComprasReposicaoAtiva_(r);
     }),
@@ -4894,19 +4897,62 @@ function appendHandoverRecord_(tab, data, authorLabel) {
 function fetchData() {
   setupSpreadsheet();
 
+  var meds = fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS).filter(function (m) {
+    var st = String(m.Status || '').trim().toLowerCase();
+    return st !== 'cancelado' && !toBoolean_(m.Entregue);
+  });
+  enrichMedicamentosWithNaoEncontrado_(meds); // v98
+
   return {
     geral: fetchSheetItems_(SHEET_NAMES.GERAL).filter(function (item) {
       return !item.Resolvido;
     }),
-    medicamentos: fetchSheetItems_(SHEET_NAMES.MEDICAMENTOS).filter(function (m) {
-      var st = String(m.Status || '').trim().toLowerCase();
-      return st !== 'cancelado' && !toBoolean_(m.Entregue);
-    }),
+    medicamentos: meds,
     comprasReposicao: fetchSheetItems_(SHEET_NAMES.COMPRAS_REPOSICAO).filter(function (r) {
       return isComprasReposicaoAtiva_(r);
     }),
     checklistTurno: buildChecklistTurnoPayload_(inferDefaultChecklistTurno_()),
   };
+}
+
+/**
+ * v98 — Enriquece lista de medicamentos com Status='Não encontrado' a partir de
+ * Compras_Medicamentos quando o Status atual ainda é 'Pendente' (pré-v94 ou trigger
+ * não disparado). Mutação in-place para não duplicar arrays.
+ */
+function enrichMedicamentosWithNaoEncontrado_(items) {
+  if (!items || !items.length) return items;
+  try {
+    var cSheet = getComprasMedicamentosSheet_();
+    var lastRow = cSheet.getLastRow();
+    if (lastRow <= 1) return items;
+    var lastCol = cSheet.getLastColumn();
+    var headers = cSheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    var data = cSheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+    // Mapeia ID_Handover → Status_Compra normalizado (só registros 'Não encontrado')
+    var naoEncontradoIds = {};
+    data.forEach(function (row) {
+      var obj = rowCellsToObject_(headers, row);
+      var idH = sanitizeText_(getByCanonicalKey_(obj, 'ID_Handover') || '');
+      var sc = normalizeComprasStatusCompraInput_(getByCanonicalKey_(obj, 'Status_Compra') || '');
+      if (idH && sc === COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO) {
+        naoEncontradoIds[idH] = true;
+      }
+    });
+    // Aplica enriquecimento apenas quando Status atual não é terminal
+    items.forEach(function (item) {
+      var id = sanitizeText_(item.ID || '');
+      if (!id || !naoEncontradoIds[id]) return;
+      var curStatus = sanitizeText_(item.Status || '').toLowerCase();
+      if (curStatus !== 'cancelado' && curStatus !== 'entregue' && curStatus !== 'não encontrado') {
+        item.Status = COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO;
+        Logger.log('[enrichNaoEncontrado] ID=' + id + ' Status sobreescrito para Não encontrado');
+      }
+    });
+  } catch (e) {
+    Logger.log('[enrichMedicamentosWithNaoEncontrado_] erro: ' + e);
+  }
+  return items;
 }
 
 function normalizeComprasReposicaoStatusKey_(item) {
