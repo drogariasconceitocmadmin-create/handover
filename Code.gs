@@ -615,6 +615,238 @@ function findComprasReposicaoPlanilhaRowByHandoverId_(sheet, handoverId) {
   return findComprasRowByHandoverId_(sheet, handoverId);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// v95 — Trigger de edição e sincronização bidirecional de Compras_Reposicao
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Roteador de edição da aba Compras_Reposicao na planilha externa de Compras.
+ * Chamado por handleComprasMedicamentosEdit_ quando a edição ocorreu nessa aba.
+ * Só reage a edições na coluna Status_Compra; outras colunas são ignoradas.
+ *
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet  Aba Compras_Reposicao da planilha Compras.
+ * @param {number} rowNumber   Linha editada (1-based, > 1).
+ * @param {number} editedCol   Coluna editada (1-based).
+ * @param {string} newValue    Valor novo da célula.
+ */
+function handleComprasReposicaoEdit_(sheet, rowNumber, editedCol, newValue) {
+  var colStatus;
+  try {
+    colStatus = getColumnIndex_(sheet, 'Status_Compra');
+  } catch (errCol) {
+    Logger.log('handleComprasReposicaoEdit_: coluna Status_Compra nao encontrada ' + errCol);
+    return;
+  }
+  if (editedCol !== colStatus) {
+    return; // só processa edição de Status_Compra
+  }
+  var rowObj = rowToObjectFromSheetRow_(sheet, rowNumber);
+  var idHandover = sanitizeText_(rowObj.ID_Handover || '');
+  if (!idHandover) {
+    Logger.log('handleComprasReposicaoEdit_: ID_Handover ausente na linha ' + rowNumber);
+    return;
+  }
+  var statusRaw = newValue || String(rowObj.Status_Compra || '').trim();
+  Logger.log('handleComprasReposicaoEdit_: linha=' + rowNumber + ' ID_Handover=' + idHandover + ' Status_Compra=' + statusRaw);
+  try {
+    processarStatusComprasReposicaoPorId_(idHandover, statusRaw);
+  } catch (procErr) {
+    Logger.log('handleComprasReposicaoEdit_: erro id=' + idHandover + ' msg=' + (procErr && procErr.message ? procErr.message : procErr));
+  }
+}
+
+/**
+ * Aplica o novo Status_Compra da planilha de Compras no item correspondente
+ * da aba Handover Compras_Reposicao.
+ * Idempotente — apenas atualiza campos de status, não apaga dados.
+ *
+ * @param {string} idHandover   ID primário do item na aba Handover Compras_Reposicao.
+ * @param {string} statusCompraRaw  Valor bruto de Status_Compra.
+ */
+function processarStatusComprasReposicaoPorId_(idHandover, statusCompraRaw) {
+  var id = sanitizeText_(idHandover);
+  if (!id) {
+    return { ok: false, reason: 'id_vazio' };
+  }
+  var statusCompra = normalizeComprasStatusCompraInput_(statusCompraRaw);
+  var validStatuses = [
+    COMPRAS_STATUS_COMPRA.PENDENTE,
+    COMPRAS_STATUS_COMPRA.COMPRADO,
+    COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO,
+    COMPRAS_STATUS_COMPRA.CANCELADO,
+  ];
+  if (validStatuses.indexOf(statusCompra) < 0) {
+    Logger.log('processarStatusComprasReposicaoPorId_: status invalido=' + String(statusCompraRaw || '') + ' id=' + id);
+    return { ok: false, reason: 'status_invalido' };
+  }
+  setupSpreadsheet();
+  var loc = findRowById_(SHEET_NAMES.COMPRAS_REPOSICAO, id);
+  if (!loc) {
+    Logger.log('processarStatusComprasReposicaoPorId_: linha nao encontrada id=' + id);
+    return { ok: false, reason: 'linha_nao_encontrada' };
+  }
+  var sh = loc.sheet;
+  var rn = loc.rowNumber;
+  var now = new Date();
+  // Colunas obrigatórias
+  var colStatusCompra   = getColumnIndex_(sh, 'Status_Compra');
+  var colStatusHandover = getColumnIndex_(sh, 'Status_Handover');
+  var colComprado       = getColumnIndex_(sh, 'Comprado');
+  var colCancelado      = getColumnIndex_(sh, 'Cancelado');
+  // Coluna opcional de auditoria
+  var colUltAcaoEm = -1;
+  try { colUltAcaoEm = getColumnIndex_(sh, 'Ultima_Acao_Em'); } catch (e) {}
+  sh.getRange(rn, colStatusCompra).setValue(statusCompra);
+  if (statusCompra === COMPRAS_STATUS_COMPRA.COMPRADO) {
+    sh.getRange(rn, colStatusHandover).setValue('Comprado');
+    sh.getRange(rn, colComprado).setValue(true);
+    sh.getRange(rn, colCancelado).setValue(false);
+  } else if (statusCompra === COMPRAS_STATUS_COMPRA.CANCELADO) {
+    sh.getRange(rn, colStatusHandover).setValue('Cancelado');
+    sh.getRange(rn, colComprado).setValue(false);
+    sh.getRange(rn, colCancelado).setValue(true);
+  } else if (statusCompra === COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO) {
+    sh.getRange(rn, colStatusHandover).setValue(COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO);
+    sh.getRange(rn, colComprado).setValue(false);
+    sh.getRange(rn, colCancelado).setValue(false);
+  } else {
+    // PENDENTE ou outro ativo
+    sh.getRange(rn, colStatusHandover).setValue('Pendente');
+    sh.getRange(rn, colComprado).setValue(false);
+    sh.getRange(rn, colCancelado).setValue(false);
+  }
+  if (colUltAcaoEm > 0) {
+    try { sh.getRange(rn, colUltAcaoEm).setValue(now); } catch (e) {}
+  }
+  Logger.log('processarStatusComprasReposicaoPorId_: id=' + id + ' status_final=' + statusCompra);
+  return { ok: true, statusFinal: statusCompra };
+}
+
+/**
+ * BACKFILL — sincroniza a aba Compras_Reposicao da planilha externa de Compras
+ * para a aba Compras_Reposicao do Handover.
+ *
+ * Idempotente: pode ser rodada mais de uma vez sem apagar dados.
+ *   - Para cada linha da planilha de Compras com ID_Handover:
+ *       se já existe no Handover → atualiza Status_Compra, Status_Handover,
+ *         Comprado e Cancelado.
+ *       se NÃO existe → cria uma nova linha no Handover.
+ *   - Para linhas sem ID_Handover: gera UUID, grava na planilha de Compras,
+ *     depois cria linha no Handover.
+ *
+ * Regras:
+ *   - Não usa sheet.clear(), deleteRow nem apaga dados.
+ *   - Preserva Pedido_ID, Item_Indice, Total_Itens, Quantidade_Item, Observacao_Item.
+ *   - Loga quantos registros foram criados/atualizados/ignorados.
+ */
+function sincronizarComprasReposicaoParaHandover() {
+  setupSpreadsheet();
+  var cSheet = getComprasReposicaoPlanilhaSheet_();
+  var ss = getSpreadsheet_();
+  var hSheet = ss.getSheetByName(SHEET_NAMES.COMPRAS_REPOSICAO);
+  if (!hSheet) {
+    hSheet = ss.insertSheet(SHEET_NAMES.COMPRAS_REPOSICAO);
+  }
+  ensureHeadersLegacyAdditive_(hSheet, HEADERS.Compras_Reposicao);
+  var lastRow = cSheet.getLastRow();
+  if (lastRow <= 1) {
+    Logger.log('sincronizarComprasReposicaoParaHandover: planilha Compras vazia ou só cabeçalho');
+    return { ok: true, criados: 0, atualizados: 0, ignorados: 0 };
+  }
+  var criados = 0, atualizados = 0, ignorados = 0;
+  var now = new Date();
+  // Descobre coluna ID_Handover na planilha de Compras para write-back
+  var colIdHandoverCompras = -1;
+  try { colIdHandoverCompras = getColumnIndex_(cSheet, 'ID_Handover'); } catch (e) {}
+  for (var r = 2; r <= lastRow; r++) {
+    try {
+      var cObj = rowToObjectFromSheetRow_(cSheet, r);
+      if (!cObj || !sanitizeText_(cObj.Item || '')) {
+        ignorados++;
+        continue; // linha em branco ou sem Item — pula
+      }
+      var idHandover = sanitizeText_(cObj.ID_Handover || '');
+      // Se não tem ID_Handover, gerar e gravar na planilha de Compras
+      if (!idHandover) {
+        idHandover = Utilities.getUuid();
+        if (colIdHandoverCompras > 0) {
+          try { cSheet.getRange(r, colIdHandoverCompras).setValue(idHandover); } catch (wbErr) {
+            Logger.log('sincronizarComprasReposicaoParaHandover: write-back ID_Handover linha ' + r + ': ' + wbErr);
+            ignorados++;
+            continue;
+          }
+        } else {
+          // Não consegue gravar ID_Handover → pula para não criar duplicata sem chave
+          Logger.log('sincronizarComprasReposicaoParaHandover: coluna ID_Handover nao encontrada na planilha de Compras');
+          ignorados++;
+          continue;
+        }
+      }
+      var statusCompra = normalizeComprasStatusCompraInput_(cObj.Status_Compra || '') || COMPRAS_STATUS_COMPRA.PENDENTE;
+      var statusHandover = sanitizeText_(cObj.Status_Handover || 'Pendente') || 'Pendente';
+      var comprado = toBoolean_(cObj.Comprado);
+      var cancelado = toBoolean_(cObj.Cancelado);
+      // Tenta localizar a linha no Handover pelo ID_Handover
+      var existeLoc = null;
+      try { existeLoc = findRowById_(SHEET_NAMES.COMPRAS_REPOSICAO, idHandover); } catch (fErr) {}
+      if (existeLoc) {
+        // Linha existe no Handover — atualiza apenas campos de status
+        var sh = existeLoc.sheet;
+        var rn = existeLoc.rowNumber;
+        sh.getRange(rn, getColumnIndex_(sh, 'Status_Compra')).setValue(statusCompra);
+        sh.getRange(rn, getColumnIndex_(sh, 'Status_Handover')).setValue(statusHandover);
+        sh.getRange(rn, getColumnIndex_(sh, 'Comprado')).setValue(comprado);
+        sh.getRange(rn, getColumnIndex_(sh, 'Cancelado')).setValue(cancelado);
+        try { sh.getRange(rn, getColumnIndex_(sh, 'Ultima_Acao_Em')).setValue(now); } catch (e) {}
+        atualizados++;
+      } else {
+        // Linha não existe no Handover — cria nova
+        var namedNew = {
+          ID: idHandover,
+          Data_Solicitacao: cObj.Data_Solicitacao || now,
+          Categoria_Compra: sanitizeText_(cObj.Categoria_Compra || cObj.Origem || ''),
+          Item: sanitizeText_(cObj.Item || ''),
+          Quantidade: sanitizeText_(cObj.Quantidade || ''),
+          Unidade: sanitizeText_(cObj.Unidade || ''),
+          Prioridade: normalizeComprasReposicaoPrioridade_(cObj.Prioridade),
+          Motivo: sanitizeText_(cObj.Motivo || ''),
+          Solicitante: sanitizeText_(cObj.Solicitante || ''),
+          Observacao: sanitizeText_(cObj.Observacao || ''),
+          Fornecedor_Sugerido: sanitizeText_(cObj.Fornecedor_Sugerido || ''),
+          Previsao_Desejada: cObj.Previsao_Desejada || '',
+          Status_Compra: statusCompra,
+          Status_Handover: statusHandover,
+          Comprado: comprado,
+          Comprado_Por: sanitizeText_(cObj.Comprado_Por || ''),
+          Data_Compra: cObj.Data_Compra || '',
+          Cancelado: cancelado,
+          Cancelado_Por: sanitizeText_(cObj.Cancelado_Por || ''),
+          Data_Cancelamento: cObj.Data_Cancelamento || '',
+          Motivo_Cancelamento: sanitizeText_(cObj.Motivo_Cancelamento || ''),
+          Ultima_Acao_Por: '',
+          Ultima_Acao_Em: now,
+          Excluido: false,
+          Excluido_Por: '',
+          Excluido_Em: '',
+          Pedido_ID: sanitizeText_(cObj.Pedido_ID || idHandover),
+          Item_Indice: cObj.Item_Indice || '1',
+          Total_Itens: cObj.Total_Itens || '1',
+          Quantidade_Item: sanitizeText_(cObj.Quantidade_Item || cObj.Quantidade || ''),
+          Observacao_Item: sanitizeText_(cObj.Observacao_Item || ''),
+        };
+        hSheet.appendRow(buildAppendRowValuesFromNamedMap_(hSheet, namedNew));
+        criados++;
+      }
+    } catch (rowErr) {
+      Logger.log('sincronizarComprasReposicaoParaHandover: erro linha ' + r + ': ' + rowErr);
+      ignorados++;
+    }
+  }
+  var resumo = 'criados=' + criados + ' atualizados=' + atualizados + ' ignorados=' + ignorados;
+  Logger.log('sincronizarComprasReposicaoParaHandover: ' + resumo);
+  return { ok: true, criados: criados, atualizados: atualizados, ignorados: ignorados };
+}
+
 function normalizeComprasReposicaoPrioridade_(value) {
   var s = String(value || '').trim();
   var allowed = [
@@ -2636,7 +2868,17 @@ function handleComprasMedicamentosEdit_(e) {
   if (parentId !== officialId) {
     return;
   }
-  if (sheet.getName() !== SHEET_NAMES.COMPRAS_MEDICAMENTOS) {
+  // v95 — roteia edições por aba da planilha de Compras
+  var sheetNameEdit = sheet.getName();
+  if (sheetNameEdit === SHEET_NAMES.COMPRAS_REPOSICAO) {
+    var rRowNumber = e.range.getRow();
+    if (rRowNumber > 1) {
+      handleComprasReposicaoEdit_(sheet, rRowNumber, e.range.getColumn(),
+        e.value !== undefined && e.value !== null ? String(e.value) : '');
+    }
+    return;
+  }
+  if (sheetNameEdit !== SHEET_NAMES.COMPRAS_MEDICAMENTOS) {
     return;
   }
   var rowNumber = e.range.getRow();
