@@ -740,55 +740,100 @@ function processarStatusComprasReposicaoPorId_(idHandover, statusCompraRaw) {
  *   - Loga quantos registros foram criados/atualizados/ignorados.
  */
 function sincronizarComprasReposicaoParaHandover() {
+  // v96 — corrigido: leitura por canonical key (tolerante a nomes de coluna diferentes),
+  //        Status_Compra vazio => PENDENTE (não pula a linha),
+  //        log detalhado quando ignora linha.
   setupSpreadsheet();
-  var cSheet = getComprasReposicaoPlanilhaSheet_();
+
+  // Lê a planilha externa de Compras diretamente (sem getComprasReposicaoPlanilhaSheet_
+  // para não depender do ensureHeaders ter normalizado os nomes das colunas).
+  var cSS = getComprasSpreadsheet_();
+  var cSheet = cSS.getSheetByName(SHEET_NAMES.COMPRAS_REPOSICAO);
+  if (!cSheet) {
+    Logger.log('sincronizarComprasReposicaoParaHandover: aba ' + SHEET_NAMES.COMPRAS_REPOSICAO + ' nao existe na planilha de Compras');
+    return { ok: false, criados: 0, atualizados: 0, ignorados: 0, erro: 'aba_nao_existe' };
+  }
+
   var ss = getSpreadsheet_();
   var hSheet = ss.getSheetByName(SHEET_NAMES.COMPRAS_REPOSICAO);
   if (!hSheet) {
     hSheet = ss.insertSheet(SHEET_NAMES.COMPRAS_REPOSICAO);
   }
   ensureHeadersLegacyAdditive_(hSheet, HEADERS.Compras_Reposicao);
+
   var lastRow = cSheet.getLastRow();
   if (lastRow <= 1) {
     Logger.log('sincronizarComprasReposicaoParaHandover: planilha Compras vazia ou só cabeçalho');
     return { ok: true, criados: 0, atualizados: 0, ignorados: 0 };
   }
+
   var criados = 0, atualizados = 0, ignorados = 0;
   var now = new Date();
-  // Descobre coluna ID_Handover na planilha de Compras para write-back
+
+  // Descobre coluna ID_Handover na planilha de Compras para write-back (canonical match)
   var colIdHandoverCompras = -1;
-  try { colIdHandoverCompras = getColumnIndex_(cSheet, 'ID_Handover'); } catch (e) {}
+  try { colIdHandoverCompras = getColumnIndex_(cSheet, 'ID_Handover'); } catch (e) {
+    Logger.log('sincronizarComprasReposicaoParaHandover: coluna ID_Handover nao encontrada na planilha de Compras — ' + e);
+  }
+
+  // Lê headers reais da aba de Compras uma vez para log
+  var csLastCol = cSheet.getLastColumn();
+  var csHeadersRow = cSheet.getRange(1, 1, 1, csLastCol).getValues()[0];
+  Logger.log('sincronizarComprasReposicaoParaHandover: headers externos=' + JSON.stringify(csHeadersRow));
+
   for (var r = 2; r <= lastRow; r++) {
     try {
       var cObj = rowToObjectFromSheetRow_(cSheet, r);
-      if (!cObj || !sanitizeText_(cObj.Item || '')) {
+      if (!cObj) { ignorados++; continue; }
+
+      // v96 — lê Item por canonical key com aliases comuns para planilhas manuais
+      var itemName = sanitizeText_(
+        String(getByCanonicalKey_(cObj, 'Item') ||
+               getByCanonicalKey_(cObj, 'Medicamento') ||
+               getByCanonicalKey_(cObj, 'Produto') ||
+               getByCanonicalKey_(cObj, 'Nome') || '')
+      );
+      if (!itemName) {
+        Logger.log('sincronizarComprasReposicaoParaHandover: linha ' + r + ' ignorada — item vazio. Chaves: ' + Object.keys(cObj).join(', '));
         ignorados++;
-        continue; // linha em branco ou sem Item — pula
+        continue;
       }
-      var idHandover = sanitizeText_(cObj.ID_Handover || '');
+
+      // ID_Handover — canonical lookup
+      var idHandover = sanitizeText_(String(getByCanonicalKey_(cObj, 'ID_Handover') || ''));
+
       // Se não tem ID_Handover, gerar e gravar na planilha de Compras
       if (!idHandover) {
         idHandover = Utilities.getUuid();
         if (colIdHandoverCompras > 0) {
-          try { cSheet.getRange(r, colIdHandoverCompras).setValue(idHandover); } catch (wbErr) {
+          try {
+            cSheet.getRange(r, colIdHandoverCompras).setValue(idHandover);
+          } catch (wbErr) {
             Logger.log('sincronizarComprasReposicaoParaHandover: write-back ID_Handover linha ' + r + ': ' + wbErr);
             ignorados++;
             continue;
           }
         } else {
-          // Não consegue gravar ID_Handover → pula para não criar duplicata sem chave
-          Logger.log('sincronizarComprasReposicaoParaHandover: coluna ID_Handover nao encontrada na planilha de Compras');
+          // Sem coluna ID_Handover não é possível criar chave — pula para evitar duplicata
+          Logger.log('sincronizarComprasReposicaoParaHandover: linha ' + r + ' ignorada — sem coluna ID_Handover para write-back');
           ignorados++;
           continue;
         }
       }
-      var statusCompra = normalizeComprasStatusCompraInput_(cObj.Status_Compra || '') || COMPRAS_STATUS_COMPRA.PENDENTE;
-      var statusHandover = sanitizeText_(cObj.Status_Handover || 'Pendente') || 'Pendente';
-      var comprado = toBoolean_(cObj.Comprado);
-      var cancelado = toBoolean_(cObj.Cancelado);
+
+      // v96 — Status_Compra vazio NÃO descarta a linha; assume PENDENTE
+      var statusCompraRaw = String(getByCanonicalKey_(cObj, 'Status_Compra') ||
+                                   getByCanonicalKey_(cObj, 'Status') || '').trim();
+      var statusCompra = normalizeComprasStatusCompraInput_(statusCompraRaw) || COMPRAS_STATUS_COMPRA.PENDENTE;
+
+      var statusHandover = sanitizeText_(String(getByCanonicalKey_(cObj, 'Status_Handover') || 'Pendente')) || 'Pendente';
+      var comprado = toBoolean_(getByCanonicalKey_(cObj, 'Comprado'));
+      var cancelado = toBoolean_(getByCanonicalKey_(cObj, 'Cancelado'));
+
       // Tenta localizar a linha no Handover pelo ID_Handover
       var existeLoc = null;
       try { existeLoc = findRowById_(SHEET_NAMES.COMPRAS_REPOSICAO, idHandover); } catch (fErr) {}
+
       if (existeLoc) {
         // Linha existe no Handover — atualiza apenas campos de status
         var sh = existeLoc.sheet;
@@ -798,43 +843,48 @@ function sincronizarComprasReposicaoParaHandover() {
         sh.getRange(rn, getColumnIndex_(sh, 'Comprado')).setValue(comprado);
         sh.getRange(rn, getColumnIndex_(sh, 'Cancelado')).setValue(cancelado);
         try { sh.getRange(rn, getColumnIndex_(sh, 'Ultima_Acao_Em')).setValue(now); } catch (e) {}
+        Logger.log('sincronizarComprasReposicaoParaHandover: linha ' + r + ' ATUALIZADA id=' + idHandover + ' item="' + itemName + '"');
         atualizados++;
       } else {
         // Linha não existe no Handover — cria nova
+        var quantidade = sanitizeText_(String(getByCanonicalKey_(cObj, 'Quantidade') ||
+                                              getByCanonicalKey_(cObj, 'Qtd') || ''));
         var namedNew = {
           ID: idHandover,
-          Data_Solicitacao: cObj.Data_Solicitacao || now,
-          Categoria_Compra: sanitizeText_(cObj.Categoria_Compra || cObj.Origem || ''),
-          Item: sanitizeText_(cObj.Item || ''),
-          Quantidade: sanitizeText_(cObj.Quantidade || ''),
-          Unidade: sanitizeText_(cObj.Unidade || ''),
-          Prioridade: normalizeComprasReposicaoPrioridade_(cObj.Prioridade),
-          Motivo: sanitizeText_(cObj.Motivo || ''),
-          Solicitante: sanitizeText_(cObj.Solicitante || ''),
-          Observacao: sanitizeText_(cObj.Observacao || ''),
-          Fornecedor_Sugerido: sanitizeText_(cObj.Fornecedor_Sugerido || ''),
-          Previsao_Desejada: cObj.Previsao_Desejada || '',
+          Data_Solicitacao: getByCanonicalKey_(cObj, 'Data_Solicitacao') || now,
+          Categoria_Compra: sanitizeText_(String(getByCanonicalKey_(cObj, 'Categoria_Compra') ||
+                                                 getByCanonicalKey_(cObj, 'Origem') || '')),
+          Item: itemName,
+          Quantidade: quantidade,
+          Unidade: sanitizeText_(String(getByCanonicalKey_(cObj, 'Unidade') || '')),
+          Prioridade: normalizeComprasReposicaoPrioridade_(getByCanonicalKey_(cObj, 'Prioridade')),
+          Motivo: sanitizeText_(String(getByCanonicalKey_(cObj, 'Motivo') || '')),
+          Solicitante: sanitizeText_(String(getByCanonicalKey_(cObj, 'Solicitante') || '')),
+          Observacao: sanitizeText_(String(getByCanonicalKey_(cObj, 'Observacao') || '')),
+          Fornecedor_Sugerido: sanitizeText_(String(getByCanonicalKey_(cObj, 'Fornecedor_Sugerido') || '')),
+          Previsao_Desejada: getByCanonicalKey_(cObj, 'Previsao_Desejada') || '',
           Status_Compra: statusCompra,
           Status_Handover: statusHandover,
           Comprado: comprado,
-          Comprado_Por: sanitizeText_(cObj.Comprado_Por || ''),
-          Data_Compra: cObj.Data_Compra || '',
+          Comprado_Por: sanitizeText_(String(getByCanonicalKey_(cObj, 'Comprado_Por') || '')),
+          Data_Compra: getByCanonicalKey_(cObj, 'Data_Compra') || '',
           Cancelado: cancelado,
-          Cancelado_Por: sanitizeText_(cObj.Cancelado_Por || ''),
-          Data_Cancelamento: cObj.Data_Cancelamento || '',
-          Motivo_Cancelamento: sanitizeText_(cObj.Motivo_Cancelamento || ''),
+          Cancelado_Por: sanitizeText_(String(getByCanonicalKey_(cObj, 'Cancelado_Por') || '')),
+          Data_Cancelamento: getByCanonicalKey_(cObj, 'Data_Cancelamento') || '',
+          Motivo_Cancelamento: sanitizeText_(String(getByCanonicalKey_(cObj, 'Motivo_Cancelamento') || '')),
           Ultima_Acao_Por: '',
           Ultima_Acao_Em: now,
           Excluido: false,
           Excluido_Por: '',
           Excluido_Em: '',
-          Pedido_ID: sanitizeText_(cObj.Pedido_ID || idHandover),
-          Item_Indice: cObj.Item_Indice || '1',
-          Total_Itens: cObj.Total_Itens || '1',
-          Quantidade_Item: sanitizeText_(cObj.Quantidade_Item || cObj.Quantidade || ''),
-          Observacao_Item: sanitizeText_(cObj.Observacao_Item || ''),
+          Pedido_ID: sanitizeText_(String(getByCanonicalKey_(cObj, 'Pedido_ID') || idHandover)),
+          Item_Indice: getByCanonicalKey_(cObj, 'Item_Indice') || '1',
+          Total_Itens: getByCanonicalKey_(cObj, 'Total_Itens') || '1',
+          Quantidade_Item: sanitizeText_(String(getByCanonicalKey_(cObj, 'Quantidade_Item') || quantidade)),
+          Observacao_Item: sanitizeText_(String(getByCanonicalKey_(cObj, 'Observacao_Item') || '')),
         };
         hSheet.appendRow(buildAppendRowValuesFromNamedMap_(hSheet, namedNew));
+        Logger.log('sincronizarComprasReposicaoParaHandover: linha ' + r + ' CRIADA id=' + idHandover + ' item="' + itemName + '" status="' + statusCompra + '"');
         criados++;
       }
     } catch (rowErr) {
@@ -845,6 +895,124 @@ function sincronizarComprasReposicaoParaHandover() {
   var resumo = 'criados=' + criados + ' atualizados=' + atualizados + ' ignorados=' + ignorados;
   Logger.log('sincronizarComprasReposicaoParaHandover: ' + resumo);
   return { ok: true, criados: criados, atualizados: atualizados, ignorados: ignorados };
+}
+
+/**
+ * DIAGNÓSTICO — apenas lê e loga; NÃO altera dados.
+ * Inspeciona a planilha externa de Compras e a aba Compras_Reposicao do Handover
+ * para revelar a estrutura real de colunas e ajudar a diagnosticar falhas de sincronização.
+ * Execute manualmente pelo editor Apps Script e verifique os Logs (Ctrl+Enter → View → Logs).
+ */
+function diagnosticarComprasReposicaoSync() {
+  var log = [];
+  function l(msg) { log.push(msg); Logger.log(msg); }
+
+  l('=== diagnosticarComprasReposicaoSync ===');
+
+  // 1. Planilha externa de Compras
+  var cSS;
+  try { cSS = getComprasSpreadsheet_(); } catch (e) {
+    l('ERRO getComprasSpreadsheet_: ' + e);
+    return { ok: false, log: log };
+  }
+  l('Compras SS id=' + cSS.getId() + ' nome="' + cSS.getName() + '"');
+
+  // 2. Aba Compras_Reposicao na planilha externa (leitura direta, sem ensureHeaders)
+  var csRaw = cSS.getSheetByName(SHEET_NAMES.COMPRAS_REPOSICAO);
+  if (!csRaw) {
+    l('ERRO: aba "' + SHEET_NAMES.COMPRAS_REPOSICAO + '" NAO EXISTE na planilha de Compras');
+    l('Abas existentes: ' + cSS.getSheets().map(function(s){ return s.getName(); }).join(', '));
+    return { ok: false, log: log };
+  }
+  var csLastRow = csRaw.getLastRow();
+  var csLastCol = Math.max(csRaw.getLastColumn(), 0);
+  l('Compras.' + SHEET_NAMES.COMPRAS_REPOSICAO + ': lastRow=' + csLastRow + ' lastCol=' + csLastCol);
+
+  if (csLastRow < 1 || csLastCol < 1) {
+    l('Planilha de Compras vazia (sem linhas ou sem colunas)');
+    return { ok: true, log: log };
+  }
+
+  // 3. Headers reais da planilha de Compras
+  var csHeaders = csRaw.getRange(1, 1, 1, csLastCol).getValues()[0];
+  l('Headers reais Compras [' + csHeaders.length + ' cols]: ' + JSON.stringify(csHeaders));
+
+  // 4. Verificar colunas esperadas pelo backfill
+  var expectedCols = ['Item', 'ID_Handover', 'Status_Compra', 'Quantidade', 'Solicitante', 'Prioridade', 'Motivo'];
+  expectedCols.forEach(function(col) {
+    var found = false;
+    var foundAs = '';
+    var target = canonicalHeaderKey_(col);
+    csHeaders.forEach(function(h) {
+      var hStr = String(h || '').trim();
+      if (hStr && canonicalHeaderKey_(hStr) === target) { found = true; foundAs = hStr; }
+    });
+    if (found) {
+      l('  Coluna "' + col + '": OK (encontrada como "' + foundAs + '")');
+    } else {
+      l('  Coluna "' + col + '": FALTANDO — nenhuma coluna com canonical "' + target + '"');
+    }
+  });
+
+  // 5. Aliases usados pelo backfill para "Item"
+  var itemAliases = ['Item', 'Medicamento', 'Produto', 'Nome'];
+  var itemAliasFound = '';
+  csHeaders.forEach(function(h) {
+    var hStr = String(h || '').trim();
+    if (!hStr) return;
+    itemAliases.forEach(function(alias) {
+      if (canonicalHeaderKey_(hStr) === canonicalHeaderKey_(alias) && !itemAliasFound) {
+        itemAliasFound = hStr;
+      }
+    });
+  });
+  l('  Item (alias match): ' + (itemAliasFound ? 'OK — "' + itemAliasFound + '"' : 'FALTANDO — nenhuma col Item/Medicamento/Produto/Nome'));
+
+  // 6. Primeiras linhas de dados (max 5)
+  if (csLastRow > 1) {
+    var maxPreview = Math.min(csLastRow - 1, 5);
+    var dataRows = csRaw.getRange(2, 1, maxPreview, csLastCol).getValues();
+    l('Primeiras ' + maxPreview + ' linhas de dados:');
+    dataRows.forEach(function(row, idx) {
+      var rowObj = rowCellsToObject_(csHeaders, row);
+      var itemVal  = String(getByCanonicalKey_(rowObj, 'Item') || getByCanonicalKey_(rowObj, 'Medicamento') || getByCanonicalKey_(rowObj, 'Produto') || getByCanonicalKey_(rowObj, 'Nome') || '').trim();
+      var idH      = String(getByCanonicalKey_(rowObj, 'ID_Handover') || '').trim();
+      var statusC  = String(getByCanonicalKey_(rowObj, 'Status_Compra') || getByCanonicalKey_(rowObj, 'Status') || '').trim();
+      var sol      = String(getByCanonicalKey_(rowObj, 'Solicitante') || '').trim();
+      var allEmpty = row.every(function(v){ return v === '' || v === null || v === undefined; });
+      if (allEmpty) {
+        l('  Linha ' + (idx + 2) + ': [em branco]');
+      } else {
+        l('  Linha ' + (idx + 2) + ': item="' + itemVal + '" | id_handover="' + idH + '" | status_compra="' + statusC + '" | solicitante="' + sol + '"');
+      }
+    });
+  } else {
+    l('Sem linhas de dados (apenas cabeçalho ou vazio)');
+  }
+
+  // 7. Handover Compras_Reposicao
+  var hss = getSpreadsheet_();
+  l('Handover SS id=' + hss.getId() + ' nome="' + hss.getName() + '"');
+  var hSheet = hss.getSheetByName(SHEET_NAMES.COMPRAS_REPOSICAO);
+  if (!hSheet) {
+    l('Handover.' + SHEET_NAMES.COMPRAS_REPOSICAO + ': NAO EXISTE (aba ausente)');
+  } else {
+    var hLastRow = hSheet.getLastRow();
+    var hLastCol = Math.max(hSheet.getLastColumn(), 0);
+    l('Handover.' + SHEET_NAMES.COMPRAS_REPOSICAO + ': lastRow=' + hLastRow + ' lastCol=' + hLastCol);
+    if (hLastCol > 0) {
+      var hHeaders = hSheet.getRange(1, 1, 1, hLastCol).getValues()[0];
+      l('Headers Handover [' + hHeaders.length + ' cols]: ' + JSON.stringify(hHeaders));
+    }
+    if (hLastRow > 1) {
+      l('Handover tem ' + (hLastRow - 1) + ' linha(s) de dados — backfill já criou entradas');
+    } else {
+      l('Handover tem 0 linhas de dados — backfill nunca criou nada');
+    }
+  }
+
+  l('=== fim diagnóstico ===');
+  return { ok: true, log: log };
 }
 
 function normalizeComprasReposicaoPrioridade_(value) {
@@ -6639,6 +6807,27 @@ function canonicalHeaderKey_(header) {
     Logger.log('canonicalHeaderKey_: ' + error);
   }
   return base;
+}
+
+/**
+ * Lê valor de um objeto (gerado por rowCellsToObject_) pelo canonical key.
+ * Tolera variações de capitalização, espaços e acentos nos nomes de coluna.
+ * Útil quando a planilha externa usa nomes ligeiramente diferentes dos esperados.
+ *
+ * @param {Object} obj        Objeto retornado por rowToObjectFromSheetRow_
+ * @param {string} fieldName  Nome esperado do campo (ex: 'Item', 'Status_Compra')
+ * @return {*}  Valor encontrado, ou '' se não existir
+ */
+function getByCanonicalKey_(obj, fieldName) {
+  if (!obj) return '';
+  var target = canonicalHeaderKey_(fieldName);
+  var keys = Object.keys(obj);
+  for (var i = 0; i < keys.length; i++) {
+    if (canonicalHeaderKey_(keys[i]) === target) {
+      return obj[keys[i]];
+    }
+  }
+  return '';
 }
 
 function computeMissingExpectedHeaders_(existingHeaderCells, expectedHeaders) {
