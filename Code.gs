@@ -2566,10 +2566,12 @@ function processarStatusCompraPorIdHandover_(idHandover) {
     sh.getRange(rn, compradoCol).setValue(false);
     sh.getRange(rn, entregueCol).setValue(false);
     syncMedicationStatus_(sh, rn);
-    sh.getRange(rn, statusCol).setValue('Pendente');
+    // v94 — propaga "Não encontrado" para Status de Medicamentos (antes era 'Pendente',
+    // fazendo o item sumir na fila sem badge de alerta).
+    sh.getRange(rn, statusCol).setValue(COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO);
     var medN = rowToObjectFromSheetRow_(sh, rn);
     normalizeItemForClient_(medN);
-    var finalN = sanitizeText_(medN.Status);
+    var finalN = COMPRAS_STATUS_COMPRA.NAO_ENCONTRADO; // status real propagado
     cSheet
       .getRange(rCompras, colMsg)
       .setValue(buildMensagemClienteNaoEncontrado_(oCompras.Cliente, oCompras.Medicamento));

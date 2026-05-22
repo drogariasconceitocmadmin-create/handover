@@ -1755,6 +1755,14 @@
         color: #166534;
       }
 
+      /* v94 — Não encontrado: âmbar/laranja, visualmente distinto de Pendente */
+      .badge.status-nao_encontrado {
+        background: #fff3cd;
+        color: #7c4a00;
+        border-color: rgba(217, 119, 6, 0.3);
+        font-weight: 700;
+      }
+
       .badge.status-na {
         background: #e5e7eb;
         color: #374151;
@@ -3208,6 +3216,7 @@
         'comprados_sem_aviso',
         'entregues',
         'cancelados',
+        'nao_encontrados',        // v94 — Não encontrado agora é pendência ativa visível
         'vencidos_hoje',
         'resolvidos_parcialmente',
       ];
@@ -5203,6 +5212,7 @@
             ['comprados_sem_aviso', 'Comprados sem aviso'],
             ['entregues', 'Entregues'],
             ['cancelados', 'Cancelados'],
+            ['nao_encontrados', 'Não encontrados'], // v94
             ['vencidos_hoje', 'Vencidos/Hoje'],
             ['resolvidos_parcialmente', 'Resolvidos parcialmente'],
           ];
@@ -8308,7 +8318,8 @@
               status.key !== 'cancelado' &&
               (status.key === 'comprado' ||
                 status.key === 'entregue' ||
-                status.key === 'resolvido_parcialmente')
+                status.key === 'resolvido_parcialmente' ||
+                status.key === 'nao_encontrado') // v94 — permite reverter de Não encontrado
             ) {
               actions.push({
                 label: 'Reverter para pendente',
@@ -8332,7 +8343,8 @@
               });
             }
 
-            if (status.key !== 'cancelado' && !item.Entregue && item.__syncState !== 'syncing') {
+            // v94 — não mostrar "Marcar como entregue" para Não encontrado (item não foi comprado)
+            if (status.key !== 'cancelado' && status.key !== 'nao_encontrado' && !item.Entregue && item.__syncState !== 'syncing') {
               actions.push({
                 label: 'Marcar como entregue',
                 handler: 'markDelivered',
@@ -8614,8 +8626,9 @@
                 item.statusKey !== 'cancelado' && item.statusKey !== 'entregue';
             });
           case 'pendentes':
+            // v94 — nao_encontrado é pendência ativa: aparece em Pendentes junto com pendente
             return items.filter(function (item) {
-              return item.statusKey === 'pendente';
+              return item.statusKey === 'pendente' || item.statusKey === 'nao_encontrado';
             });
           case 'comprados':
             return items.filter(function (item) {
@@ -8737,6 +8750,10 @@
         }
         if (item.Comprado || statusText === 'comprado') {
           return { key: 'comprado', label: 'Comprado' };
+        }
+        // v94 — Não encontrado: pendência ativa propagada do Compras_Medicamentos
+        if (statusText === 'não encontrado' || statusText === 'nao encontrado') {
+          return { key: 'nao_encontrado', label: 'Não encontrado' };
         }
         return { key: 'pendente', label: 'Pendente' };
       }
