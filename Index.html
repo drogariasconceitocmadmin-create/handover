@@ -1300,6 +1300,15 @@
         min-height: 0;
       }
 
+      /* v99 — sem esta regra, audit-drawer-inner não cede ao flex pai e a rolagem não funciona */
+      #audit-drawer-inner {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
       .audit-banner {
         font-size: 12px;
         line-height: 1.45;
@@ -6912,17 +6921,11 @@
         var elapsed = '';
         if (createdTs && resolvedTs && resolvedTs >= createdTs) {
           var mins = Math.round((resolvedTs - createdTs) / 60000);
-          if (mins >= 1440) {
-            elapsed = Math.round(mins / 1440) + ' dia(s)';
-          } else if (mins >= 60) {
-            elapsed = Math.round(mins / 60) + ' h';
-          } else {
-            elapsed = mins + ' min';
-          }
+          elapsed = '~' + formatDurationHuman_(mins) + ' até resolver'; // v99
         } else if (createdTs) {
           var now = Date.now();
           var mins2 = Math.round((now - createdTs) / 60000);
-          elapsed = '~' + mins2 + ' min desde a criação (sem data de resolução)';
+          elapsed = '~' + formatDurationHuman_(mins2) + ' desde a criação'; // v99
         }
 
         var filtBtns = ['todos', 'criacao', 'edicao', 'status', 'observacoes', 'whatsapp', 'erro'];
@@ -11192,6 +11195,24 @@
         const date = new Date(value + 'T00:00:00');
         if (Number.isNaN(date.getTime())) return String(value);
         return date.toLocaleDateString('pt-BR');
+      }
+
+      // v99 — duração em linguagem humana: dias, horas e minutos
+      function formatDurationHuman_(mins) {
+        if (!mins || mins < 1) return 'menos de 1 min';
+        if (mins < 60) return mins + ' min';
+        var days = Math.floor(mins / 1440);
+        var remMins = mins % 1440;
+        var hours = Math.floor(remMins / 60);
+        var remMins2 = remMins % 60;
+        if (days >= 1) {
+          var dayLabel = days === 1 ? '1 dia' : days + ' dias';
+          if (hours === 0) return dayLabel;
+          return dayLabel + ' e ' + hours + 'h';
+        }
+        // menos de 24h
+        if (remMins2 === 0) return hours + 'h';
+        return hours + 'h ' + remMins2 + 'min';
       }
 
       function iconSvg_(kind, size) {
