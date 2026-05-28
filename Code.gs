@@ -4057,8 +4057,8 @@ function horarioReferenciaForTurno_(turno) {
 function inferDefaultChecklistTurno_() {
   var hourText = Utilities.formatDate(new Date(), HANDOVER_TIMEZONE, 'HH');
   var hour = Number(hourText);
-  // v100 — dois turnos: Manhã (05–20h) e Noite (21h+/madrugada)
-  if (hour >= 5 && hour < 21) {
+  // v100 — Manhã: 07h–13h59 | Noite (tarde/fechamento): 14h–06h59
+  if (hour >= 7 && hour < 14) {
     return CHECKLIST_TURNO_MANHA;
   }
   return CHECKLIST_TURNO_NOITE;
