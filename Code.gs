@@ -4001,11 +4001,42 @@ function purgeChecklistRowsNotInTemplate_(sheet, lastCol, headerCells, dateKey, 
   return removed;
 }
 
+/**
+ * v100 — Remove linhas duplicadas (mesmo Data + Turno + Item) para a data e turno fornecidos.
+ * Itera de baixo para cima; mantém a ocorrência mais recente (linha mais abaixo) de cada item;
+ * remove repetições acima. Seguro pois deletar de baixo para cima não desloca índices das linhas
+ * ainda não visitadas.
+ */
+function deduplicateChecklistForTurno_(sheet, headerCells, lastCol, dateKey, turno) {
+  var dk = String(dateKey || '').trim();
+  var turnoOk = sanitizeChecklistTurno_(turno);
+  var seen = {};
+  var removed = 0;
+  var lr = sheet.getLastRow();
+  if (lr <= 1) return 0;
+  for (var rn = lr; rn >= 2; rn--) {
+    var row = sheet.getRange(rn, 1, 1, lastCol).getValues()[0];
+    var obj = rowCellsToObject_(headerCells, row);
+    var rowDate = normalizeDateKeyCell_(obj.Data);
+    var rowTurno = sanitizeText_(obj.Turno);
+    if (String(rowDate).trim() !== dk || sanitizeChecklistTurno_(rowTurno) !== turnoOk) {
+      continue;
+    }
+    var itemKey = buildChecklistIdentityKey_(sanitizeText_(obj.Item));
+    if (!itemKey) continue;
+    if (seen[itemKey]) {
+      sheet.deleteRow(rn);
+      removed++;
+    } else {
+      seen[itemKey] = true;
+    }
+  }
+  return removed;
+}
+
 function sanitizeChecklistTurno_(value) {
   var label = sanitizeText_(value);
-  if (label === CHECKLIST_TURNO_TARDE) {
-    return CHECKLIST_TURNO_TARDE;
-  }
+  // v100 — Tarde removido; dado legado mapeado para Manhã
   if (label === CHECKLIST_TURNO_NOITE) {
     return CHECKLIST_TURNO_NOITE;
   }
@@ -4026,11 +4057,9 @@ function horarioReferenciaForTurno_(turno) {
 function inferDefaultChecklistTurno_() {
   var hourText = Utilities.formatDate(new Date(), HANDOVER_TIMEZONE, 'HH');
   var hour = Number(hourText);
-  if (hour >= 5 && hour < 13) {
+  // v100 — dois turnos: Manhã (05–20h) e Noite (21h+/madrugada)
+  if (hour >= 5 && hour < 21) {
     return CHECKLIST_TURNO_MANHA;
-  }
-  if (hour >= 13 && hour < 21) {
-    return CHECKLIST_TURNO_TARDE;
   }
   return CHECKLIST_TURNO_NOITE;
 }
@@ -4067,6 +4096,16 @@ function ensureTodayChecklistForTurno_(turnoParam) {
     }
   } catch (purgeErr) {
     Logger.log('purgeChecklistRowsNotInTemplate_: ' + purgeErr);
+  }
+
+  // v100 — dedup: remove itens duplicados para este dia+turno antes de inserir
+  try {
+    var deduped = deduplicateChecklistForTurno_(sheet, headerCells, lastCol, dateKey, turno);
+    if (deduped > 0) {
+      Logger.log('deduplicateChecklistForTurno_ date=' + dateKey + ' turno=' + turno + ' removed=' + deduped);
+    }
+  } catch (dedupErr) {
+    Logger.log('deduplicateChecklistForTurno_: ' + dedupErr);
   }
 
   const existingKeys = new Set();
