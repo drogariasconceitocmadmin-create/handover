@@ -1011,7 +1011,6 @@
     if (s.itensPendentes === 0 && s.totalItens > 0) hint = 'Checklist de hoje já concluído.';
     else if (s.totalItens > 0) hint = s.itensPendentes + ' item(s) pendente(s).';
     el('checklist-generate-hint').textContent = hint;
-    el('checklist-sync-label').textContent = 'Atualizado ' + nowHHMM();
   }
 
   function renderChecklistCats(cl) {
@@ -1691,7 +1690,6 @@
   on('refresh-dashboard-btn',   'click',  refreshDashboardNow_);
   on('checklist-turno-select',  'change', function() { onChecklistTurnoChange_(this.value); });
   on('checklist-toggle-btn',    'click',  toggleChecklistPanel);
-  on('checklist-generate-btn',  'click',  refreshChecklistToday);
 
   // Filtros do checklist
   document.querySelectorAll('[data-check-filter]').forEach(function(b) {
