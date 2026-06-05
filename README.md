@@ -37,11 +37,16 @@ Reconstrução do sistema **"Handover e Checklist"** (legado: Google Apps Script
 
 ```
 handover-v2/
-├── web/                    # SPA estática (deploy Cloudflare Pages)
-│   ├── index.html
-│   ├── app.js
+├── web/                    # SPA estática (ES modules nativos, sem build)
+│   ├── index.html          # entry: <script type="module" src="main.js">
+│   ├── main.js             # fiação de eventos + boot (único com efeito no top-level)
+│   ├── state.js api.js utils.js norm.js icons.js   # base: estado, db, helpers
+│   ├── cards.js detalhes.js auditoria.js forms.js  # UI compartilhada + formulários
+│   ├── pendencias.js medicamentos.js compras.js comprador.js historico.js checklist.js  # domínios
+│   ├── dashboard.js auth.js # bundle/KPIs/tabs/sidebar + login/logout
 │   ├── styles.css
 │   └── config.js           # URL + anon key (público)
+├── tests/                  # smoke tests dos RPCs (node --test) — npm test
 ├── migracao/               # Import de dados + specs
 │   ├── import.mjs          # Script de importação CSV → Supabase
 │   ├── SPEC.md             # Contrato RPCs + schema

@@ -143,6 +143,17 @@ Sheets exporta em formato US: `M/D/YYYY` (mês primeiro). `normDate` e `normTime
 - **0013** — normalização PT-BR no banco: `_norm_nome_ptbr`, `_norm_med_ptbr`, aplicadas em `_medicamento_whatsapp_msg`. Corrige WhatsApp saindo com nome minúsculo. (Arquivos gravados já com `set search_path = public, extensions` — reaplicados na rodada da 0014 para limpar advisor `function_search_path_mutable`.)
 - **0014** — consistência de compras: corrige `handover_historico` (compras agora `IN ('Recebido na loja','Cancelado')`, antes `('Comprado','Cancelado')` que duplicava itens na fila e no histórico) + backfill dos 85 itens `Comprado` legados (importação mai/2026, faltas de estoque sem comprador/data) → `Recebido na loja`, com auditoria. `compras_reposicao` contém só faltas; encomendas de cliente vivem em `medicamentos` e não são tocadas.
 
+## Frontend modularizado (2026-06-05)
+
+`web/app.js` (monólito de ~2300 linhas) foi quebrado em **18 ES modules** nativos (sem build), carregados via `<script type="module" src="main.js">`. Compatível com CSP `script-src 'self'` e Cloudflare Pages.
+- **Base**: `state.js` (`G` — instância única), `api.js` (`db`, `rpcError`, `setOnSessionExpired`), `utils.js` (`el/ce/escHtml/fmt/toast/copiarInfo/markLastAction`), `norm.js` (`normNome/normMed/normTexto/normFone`), `icons.js`.
+- **UI**: `cards.js`, `detalhes.js`, `auditoria.js`, `forms.js` (criar/editar/saves).
+- **Domínios**: `pendencias.js`, `medicamentos.js`, `compras.js`, `comprador.js`, `historico.js`, `checklist.js`.
+- **Hub/entrada**: `dashboard.js` (`carregarBundle`, KPIs, `renderQueue`, `setMainTab`, `abrirApp`), `auth.js`, `main.js` (fiação + boot).
+- Regras: `G`/`db` importados nunca recriados; ciclo `ação→carregarBundle→render` só em runtime (sem chamada cruzada no top-level dos módulos, exceto `main.js`); `api.js` desloga via callback injetado (sem ciclo api→domínio); handlers com `this` continuam `function` (nunca arrow).
+- Verificação: `node --check` (18) + ESLint `no-undef` (0) + runtime no preview + `npm test`.
+- **Gotcha**: `node --check` só valida sintaxe — NÃO resolve imports. Use ESLint `no-undef` ou o probe de `import()` dinâmico no browser para pegar export/import faltando (foi assim que se achou `abrirApp` não importado no `main.js`).
+
 ## Erros históricos nos logs (já corrigidos, ignorar)
 
 | Erro | Causa | Status |
