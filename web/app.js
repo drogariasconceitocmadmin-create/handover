@@ -1221,9 +1221,9 @@
   ════════════════════════════════════════ */
   function openFormModal(cat, titulo) {
     el('form-modal-title').textContent = titulo || 'Novo registro';
-    el('category').value = cat;
     el('form-status').textContent = '';
     el('request-form').reset();
+    el('category').value = cat;   // APÓS reset() para não ser revertido ao padrão "Geral"
     el('autor').value = G.sessao ? (G.sessao.nome || G.sessao.usuario) : '';
     el('general-fields').classList.toggle('hidden', cat !== 'Geral');
     el('medicine-fields').classList.toggle('hidden', cat !== 'Medicamentos');
@@ -1581,14 +1581,14 @@
     });
     if (rpcError(res)) return;
     if (res.error) { toast('Erro: ' + (res.error.message || status), 'erro'); return; }
-    toast(status + '.', 'ok'); markLastAction(); renderComprador();
+    toast(status + '.', 'ok'); markLastAction(); carregarBundle();
   }
 
   async function compradorComprarReposicao(id) {
     var res = await db.rpc('handover_compra_reposicao_comprar', { p_token: G.token, p_id: id });
     if (rpcError(res)) return;
     if (res.error) { toast('Erro ao marcar.', 'erro'); return; }
-    toast('Comprado.', 'ok'); markLastAction(); renderComprador();
+    toast('Comprado.', 'ok'); markLastAction(); carregarBundle();
   }
 
   async function compradorCancelarReposicao(id) {
@@ -1599,7 +1599,7 @@
     });
     if (rpcError(res)) return;
     if (res.error) { toast('Erro ao cancelar.', 'erro'); return; }
-    toast('Cancelado.', 'ok'); markLastAction(); renderComprador();
+    toast('Cancelado.', 'ok'); markLastAction(); carregarBundle();
   }
 
   async function cancelarReposicao(id) {
