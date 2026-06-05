@@ -453,15 +453,22 @@
     var menuItems = [];
     menuItems.push({ label: 'Ver detalhes', fn: (function(pp) { return function() {
       abrirDetalhes(pp.titulo || '(sem título)', [
-        ['Título',       pp.titulo],
-        ['Descrição',    pp.descricao],
-        ['Urgência',     pp.urgencia],
-        ['Autor',        pp.autor],
-        ['Criado em',    fmt(pp.criado_em)],
-        ['Status',       pp.resolvido ? 'Resolvido' : 'Pendente'],
-        ['Resolvido por',pp.resolvido_por],
-        ['Última ação',  pp.ultima_acao_por ? pp.ultima_acao_por + (pp.ultima_acao_em ? ' · ' + fmt(pp.ultima_acao_em) : '') : null],
-        ['Vencimento',   pp.data_vencimento ? fmtData(pp.data_vencimento) + (pp.hora_vencimento ? ' ' + pp.hora_vencimento : '') : null],
+        { title: 'SOLICITAÇÃO', fields: [
+          ['Título',    pp.titulo],
+          ['Urgência',  pp.urgencia],
+          ['Autor',     pp.autor],
+          ['Criado em', fmt(pp.criado_em)],
+          ['Vencimento',pp.data_vencimento ? fmtData(pp.data_vencimento) + (pp.hora_vencimento ? ' ' + pp.hora_vencimento : '') : null],
+          ['Descrição', pp.descricao],
+        ]},
+        { title: 'STATUS', fields: [
+          ['Status',       pp.resolvido ? 'Resolvido' : 'Pendente'],
+          ['Resolvido por',pp.resolvido_por],
+        ]},
+        { title: 'ÚLTIMA AÇÃO', fields: [
+          ['Por', pp.ultima_acao_por],
+          ['Em',  pp.ultima_acao_em ? fmt(pp.ultima_acao_em) : null],
+        ]},
       ]);
     }; })(p) });
     menuItems.push({ label: 'Editar', fn: (function(pid) { return function() { editarItem(pid, 'Geral'); }; })(p.id) });
@@ -699,21 +706,29 @@
     var items = [];
     items.push({ label: 'Ver detalhes', fn: (function(mm) { return function() {
       abrirDetalhes(mm.Medicamento || '(sem nome)', [
-        ['Medicamento',  mm.Medicamento],
-        ['Tipo',         mm.Tipo],
-        ['Status',       mm.Status],
-        ['Cliente',      mm.Cliente],
-        ['Telefone',     mm.Telefone],
-        ['Atendente',    mm.Atendente],
-        ['Previsão',     fmtData(mm.Previsao_Entrega)],
-        ['Fornecedor',   mm.Fornecedor_Compra && mm.Fornecedor_Compra !== 'Não informado' ? mm.Fornecedor_Compra : null],
-        ['Código compra',mm.Codigo_Compra_Fornecedor],
-        ['Preço',        mm.Preco_Venda ? 'R$ ' + mm.Preco_Venda : null],
-        ['Pré-pago',     mm.Pre_Pago ? 'Sim' : 'Não'],
-        ['WhatsApp',     mm.Status_Aviso_WhatsApp || 'Não registrado'],
-        ['Recebimento',  mm.Forma_Recebimento],
-        ['Observação',   mm.Observacao_Solicitacao],
-        ['Última ação',  mm.Ultima_Acao_Por ? mm.Ultima_Acao_Por + (mm.Ultima_Acao_Em ? ' · ' + fmt(mm.Ultima_Acao_Em) : '') : null],
+        { title: 'SOLICITAÇÃO', fields: [
+          ['Tipo',        mm.Tipo],
+          ['Status',      mm.Status],
+          ['Atendente',   mm.Atendente],
+          ['Previsão',    fmtData(mm.Previsao_Entrega)],
+          ['Recebimento', mm.Forma_Recebimento],
+          ['Observação',  mm.Observacao_Solicitacao],
+        ]},
+        { title: 'CLIENTE', fields: [
+          ['Nome',     mm.Cliente],
+          ['Telefone', mm.Telefone],
+          ['Pré-pago', mm.Pre_Pago ? 'Sim' : null],
+        ]},
+        { title: 'COMPRA', fields: [
+          ['Fornecedor',    mm.Fornecedor_Compra && mm.Fornecedor_Compra !== 'Não informado' ? mm.Fornecedor_Compra : null],
+          ['Código compra', mm.Codigo_Compra_Fornecedor],
+          ['Preço',         mm.Preco_Venda ? 'R$ ' + mm.Preco_Venda : null],
+          ['WhatsApp',      mm.Status_Aviso_WhatsApp || 'Não registrado'],
+        ]},
+        { title: 'ÚLTIMA AÇÃO', fields: [
+          ['Por', mm.Ultima_Acao_Por],
+          ['Em',  mm.Ultima_Acao_Em ? fmt(mm.Ultima_Acao_Em) : null],
+        ]},
       ]);
     }; })(m) });
     if (s === 'Pendente') {
@@ -913,8 +928,47 @@
       ' <span class="badge">' + escHtml(r.Categoria_Compra || 'Reposição') + '</span>' +
       ' <span class="badge ' + statusCls + '">' + escHtml(r.Status_Compra || 'Pendente de compra') + '</span>';
     if (r.Prioridade === 'Urgente') badgesHtml += ' <span class="badge badge-urgente">Urgente</span>';
-    // Data_Solicitacao é timestamp ISO — usar fmt() e não fmtData()
-    c.main.appendChild(buildTop(badgesHtml, fmt(r.Data_Solicitacao), []));
+
+    var menuItems = [];
+    menuItems.push({ label: 'Ver detalhes', fn: (function(rr) { return function() {
+      abrirDetalhes(rr.Item || '(sem item)', [
+        { title: 'SOLICITAÇÃO', fields: [
+          ['Item / Produto',    rr.Item],
+          ['Categoria',         rr.Categoria_Compra],
+          ['Quantidade',        rr.Quantidade],
+          ['Prioridade',        rr.Prioridade],
+          ['Solicitante',       rr.Solicitante],
+          ['Data da solicitação', fmt(rr.Data_Solicitacao)],
+        ]},
+        { title: 'COMPRA', fields: [
+          ['Status compra',   rr.Status_Compra],
+          ['Status handover', rr.Status_Handover],
+          ['Observação',      rr.Observacao || rr.Motivo],
+          ['Fornecedor',      rr.Fornecedor_Sugerido],
+          ['Previsão desejada', fmtData(rr.Previsao_Desejada)],
+        ]},
+        { title: 'ÚLTIMA AÇÃO', fields: [
+          ['Por', rr.Ultima_Acao_Por],
+          ['Em',  rr.Ultima_Acao_Em ? fmt(rr.Ultima_Acao_Em) : null],
+        ]},
+      ]);
+    }; })(r) });
+    menuItems.push({ label: 'Copiar informações', fn: (function(rr) { return function() {
+      copiarInfo([
+        'Item: ' + (rr.Item || ''),
+        'Categoria: ' + (rr.Categoria_Compra || ''),
+        'Quantidade: ' + (rr.Quantidade || ''),
+        'Prioridade: ' + (rr.Prioridade || ''),
+        'Solicitante: ' + (rr.Solicitante || ''),
+        rr.Motivo ? 'Obs: ' + rr.Motivo : null,
+      ]);
+    }; })(r) });
+    var _perfil = (G.sessao || {}).perfil || '';
+    if (['gerente','admin'].indexOf(_perfil) >= 0) {
+      menuItems.push({ label: 'Cancelar', fn: (function(rid) { return function() { cancelarReposicao(rid); }; })(r.ID) });
+    }
+
+    c.main.appendChild(buildTop(badgesHtml, fmt(r.Data_Solicitacao), menuItems));
     c.main.appendChild(ce('div', 'qk-title', escHtml(r.Item || '(sem item)')));
     if (r.Motivo) c.main.appendChild(ce('div', 'qk-desc', escHtml(r.Motivo)));
     c.main.appendChild(buildMeta([
@@ -924,7 +978,6 @@
       ['PREVISÃO',     fmtData(r.Previsao_Desejada)],
       ['FORNECEDOR',   r.Fornecedor_Sugerido],
     ]));
-    var _perfil = (G.sessao || {}).perfil || '';
     if (['gerente','admin'].indexOf(_perfil) >= 0) {
       c.main.appendChild(buildActions([
         { label: 'Cancelar', cls: 'btn-queue-secondary',
@@ -1227,33 +1280,137 @@
   /* ════════════════════════════════════════
      AUDIT DRAWER
   ════════════════════════════════════════ */
+  var _auditAllData = [];
+  var _auditFilter  = 'todos';
+
   async function abrirAuditDrawer(id, titulo) {
-    el('audit-drawer-title').textContent = 'Auditoria — ' + (titulo || id);
-    el('audit-drawer-inner').innerHTML = '<p class="ho-muted">Carregando…</p>';
+    el('audit-drawer-title').textContent = 'Trilha de Auditoria';
+    el('audit-drawer-inner').innerHTML = '<p class="ho-muted" style="padding:16px;">Carregando…</p>';
     el('audit-drawer-overlay').classList.remove('hidden');
     el('audit-drawer-overlay').setAttribute('aria-hidden', 'false');
+    _auditFilter = 'todos';
+
     var res = await db.rpc('handover_audit_trail', { p_token: G.token, p_id: id });
     if (rpcError(res)) { closeAuditDrawer_(); return; }
-    if (res.error) { el('audit-drawer-inner').innerHTML = '<p class="ho-muted">Erro.</p>'; return; }
-    var itens = (res.data && res.data.auditoria) || [];
-    el('audit-drawer-inner')._auditData = itens;
-    if (!itens.length) { el('audit-drawer-inner').innerHTML = '<p class="ho-muted">Sem registros.</p>'; return; }
-    var html = '<div class="audit-list">';
+    if (res.error) { el('audit-drawer-inner').innerHTML = '<p class="ho-muted" style="padding:16px;">Erro ao carregar.</p>'; return; }
+    _auditAllData = (res.data && res.data.auditoria) || [];
+
+    renderAuditDrawerContent(titulo);
+  }
+
+  function renderAuditDrawerContent(titulo) {
+    var itens = _auditAllData;
+    if (!itens.length) { el('audit-drawer-inner').innerHTML = '<p class="ho-muted" style="padding:16px;">Sem registros.</p>'; return; }
+
+    // Calcular summary a partir dos eventos
+    var primeiroEvt  = itens[itens.length - 1];
+    var ultimoEvt    = itens[0];
+    var criadoPor    = primeiroEvt.Nome || primeiroEvt.Usuario || '—';
+    var ultimaAlter  = ultimoEvt.Nome || ultimoEvt.Usuario || '—';
+    var ultimaAlterEm= fmt(ultimoEvt.Data_Hora);
+    var totalEventos = itens.length;
+
+    // Status atual = último evento com Acao contendo 'Status' ou campo Status, senão o campo status do resumo
+    var statusEvt = itens.find(function(a) { return a.Campo === 'Status' || (a.Acao && a.Acao.toLowerCase().indexOf('status') >= 0); });
+    var statusAtual = statusEvt ? (statusEvt.Valor_Novo || statusEvt.Resumo || '—') : '—';
+
+    // Tipos únicos para filtros
+    var tiposMap = { todos: itens.length };
     itens.forEach(function(a) {
-      html += '<div class="audit-entry">' +
-        '<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:3px;">' +
-          '<strong>' + escHtml(a.Acao || '') + '</strong>' +
-          '<span style="font-size:11px;color:var(--muted)">' + escHtml(fmt(a.Data_Hora)) + '</span>' +
-        '</div>' +
-        (a.Campo ? '<div style="font-size:12px;color:var(--muted)">' + escHtml(a.Campo) + ': ' +
-          escHtml(a.Valor_Anterior||'—') + ' → ' + escHtml(a.Valor_Novo||'—') + '</div>' : '') +
-        (a.Resumo ? '<div style="font-size:12px;">' + escHtml(a.Resumo) + '</div>' : '') +
-        '<div style="font-size:11px;color:var(--muted)">' + escHtml(a.Nome || a.Usuario || '') + '</div>' +
-      '</div>';
+      var tipo = auditTipo(a);
+      tiposMap[tipo] = (tiposMap[tipo] || 0) + 1;
+    });
+    var filtros = ['todos', 'Criação', 'Edição', 'Status', 'Observações', 'WhatsApp', 'Erro'];
+
+    // Filtrar
+    var view = _auditFilter === 'todos' ? itens : itens.filter(function(a) { return auditTipo(a) === _auditFilter; });
+
+    var html = '';
+
+    // Header summary
+    html += '<div class="audit-summary">';
+    html +=   '<div class="audit-summary-title">' + escHtml(titulo || '—') + '</div>';
+    html +=   '<div class="audit-summary-meta">Criado por: ' + escHtml(criadoPor) + '</div>';
+    html +=   '<div class="audit-summary-meta">Última ação: ' + escHtml(ultimaAlter) + ' · ' + escHtml(ultimaAlterEm) + '</div>';
+    html +=   '<dl class="audit-stats">';
+    html +=     '<div><dt>CRIADO POR</dt><dd>' + escHtml(criadoPor) + '</dd></div>';
+    html +=     '<div><dt>ÚLTIMA ALTERAÇÃO</dt><dd>' + escHtml(ultimaAlter) + ' · ' + escHtml(ultimaAlterEm) + '</dd></div>';
+    html +=     '<div><dt>TOTAL DE EVENTOS</dt><dd>' + totalEventos + '</dd></div>';
+    if (statusAtual !== '—') {
+      html += '<div><dt>STATUS ATUAL</dt><dd>' + escHtml(statusAtual) + '</dd></div>';
+    }
+    html +=   '</dl>';
+    html += '</div>';
+
+    // Filtros tabs
+    html += '<div class="audit-filter-tabs">';
+    filtros.forEach(function(f) {
+      var count = tiposMap[f] || 0;
+      if (f !== 'todos' && !count) return;
+      var active = f === _auditFilter ? ' active' : '';
+      html += '<button type="button" class="audit-tab' + active + '" data-audit-f="' + escHtml(f) + '">' +
+        escHtml(f === 'todos' ? 'Todos' : f) +
+        (count ? '<span class="filter-count-badge">' + count + '</span>' : '') +
+        '</button>';
     });
     html += '</div>';
+
+    // Lista de eventos
+    html += '<div class="audit-list">';
+    if (!view.length) {
+      html += '<p class="ho-muted" style="padding:16px 0;">Nenhum evento para este filtro.</p>';
+    } else {
+      view.forEach(function(a) {
+        var tipo = auditTipo(a);
+        html += '<div class="audit-entry">';
+        html +=   '<div class="audit-entry-head">';
+        html +=     '<span class="audit-entry-date">' + escHtml(fmt(a.Data_Hora)) + '</span>';
+        html +=     '<span class="audit-tipo-tag audit-tipo-' + tipo.toLowerCase() + '">' + escHtml(tipo) + '</span>';
+        html +=   '</div>';
+        var acaoLabel = a.Nome ? (escHtml(a.Nome) + ' <span class="audit-acao-verb">' + escHtml(auditVerbo(a)) + '</span>') : escHtml(a.Acao || '');
+        html += '<div class="audit-entry-title">' + acaoLabel + '</div>';
+        if (a.Campo) {
+          html += '<div class="audit-entry-change">' +
+            '<span class="audit-campo">' + escHtml(a.Campo) + '</span>: ' +
+            '<span class="audit-val-old">' + escHtml(a.Valor_Anterior || '—') + '</span>' +
+            ' → <span class="audit-val-new">' + escHtml(a.Valor_Novo || '—') + '</span>' +
+          '</div>';
+        }
+        if (a.Resumo) html += '<div class="audit-entry-resumo">' + escHtml(a.Resumo) + '</div>';
+        html += '</div>';
+      });
+    }
+    html += '</div>';
+
     el('audit-drawer-inner').innerHTML = html;
+    el('audit-drawer-inner')._auditData = itens;
+
+    // Ligar filtros
+    el('audit-drawer-inner').querySelectorAll('[data-audit-f]').forEach(function(b) {
+      b.addEventListener('click', function() {
+        _auditFilter = b.getAttribute('data-audit-f');
+        renderAuditDrawerContent(titulo);
+      });
+    });
   }
+
+  function auditTipo(a) {
+    var acao = (a.Acao || '').toLowerCase();
+    if (acao.indexOf('cri') >= 0) return 'Criação';
+    if (acao.indexOf('status') >= 0 || a.Campo === 'Status') return 'Status';
+    if (acao.indexOf('whatsapp') >= 0 || acao.indexOf('whats') >= 0) return 'WhatsApp';
+    if (acao.indexOf('obs') >= 0 || a.Campo === 'Observacao') return 'Observações';
+    if (acao.indexOf('erro') >= 0) return 'Erro';
+    if (a.Campo || acao.indexOf('edit') >= 0 || acao.indexOf('alter') >= 0) return 'Edição';
+    return 'Edição';
+  }
+
+  function auditVerbo(a) {
+    var acao = (a.Acao || '');
+    if (a.Campo) return 'editou ' + a.Campo;
+    return acao.replace(new RegExp('^' + (a.Nome || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'i'), '');
+  }
+
   function closeAuditDrawer_() {
     el('audit-drawer-overlay').classList.add('hidden');
     el('audit-drawer-overlay').setAttribute('aria-hidden', 'true');
@@ -1274,15 +1431,23 @@
     el('card-detail-overlay').setAttribute('aria-hidden', 'true');
   }
 
-  function abrirDetalhes(titulo, campos) {
+  // sections: [{ title: 'SEÇÃO', fields: [['Label', valor], ...] }]
+  function abrirDetalhes(titulo, sections) {
     el('card-detail-title').textContent = titulo;
-    var html = '<dl class="detail-dl">';
-    campos.forEach(function(f) {
-      if (!f[1] && f[1] !== false) return;
-      html += '<div class="detail-row"><dt>' + escHtml(f[0]) + '</dt><dd>' + escHtml(String(f[1])) + '</dd></div>';
+    var html = '';
+    sections.forEach(function(sec) {
+      if (!sec) return;
+      var visibleFields = (sec.fields || []).filter(function(f) { return f[1] || f[1] === false; });
+      if (!visibleFields.length) return;
+      html += '<div class="detail-section">';
+      if (sec.title) html += '<div class="detail-section-title">' + escHtml(sec.title) + '</div>';
+      html += '<dl class="detail-dl">';
+      visibleFields.forEach(function(f) {
+        html += '<div class="detail-row"><dt>' + escHtml(f[0]) + '</dt><dd>' + escHtml(String(f[1])) + '</dd></div>';
+      });
+      html += '</dl></div>';
     });
-    html += '</dl>';
-    el('card-detail-body').innerHTML = html;
+    el('card-detail-body').innerHTML = html || '<p class="ho-muted">Sem informações.</p>';
     el('card-detail-overlay').classList.remove('hidden');
     el('card-detail-overlay').setAttribute('aria-hidden', 'false');
   }
