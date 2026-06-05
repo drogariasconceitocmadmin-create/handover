@@ -29,9 +29,9 @@ function validarRegistro() {
   const pinConfirm = el('pri-pin-confirm').value.trim();
   const codigo = el('pri-codigo-convite').value.trim().toUpperCase();
 
-  // Validar nome (3-50 chars)
-  if (nome.length < 3 || nome.length > 50) {
-    return 'Nome deve ter 3-50 caracteres.';
+  // Validar nome (deve estar selecionado)
+  if (!nome) {
+    return 'Selecione seu nome.';
   }
 
   // Validar PIN (4-8 dígitos)
@@ -118,9 +118,7 @@ export function setupRegistroListeners() {
   el('primeiro-acesso-submit').addEventListener('click', doRegistro);
 
   // Enter em campos
-  el('pri-nome').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') el('pri-pin').focus();
-  });
+  // (pri-nome é select, não tem Enter behavior)
   el('pri-pin').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') el('pri-pin-confirm').focus();
   });
@@ -136,8 +134,8 @@ export function setupRegistroListeners() {
     this.value = this.value.toUpperCase();
   });
 
-  // Limpar erro ao digitar
-  el('pri-nome').addEventListener('input', limparErroRegistro);
+  // Limpar erro ao digitar/mudar
+  el('pri-nome').addEventListener('change', limparErroRegistro);
   el('pri-pin').addEventListener('input', limparErroRegistro);
   el('pri-pin-confirm').addEventListener('input', limparErroRegistro);
   el('pri-codigo-convite').addEventListener('input', limparErroRegistro);
