@@ -66,19 +66,19 @@
         <span id="last-action-label" class="header-pill-value">—</span>
       </div>
       <div class="header-actions">
-        <button type="button" id="refresh-dashboard-btn" class="btn-header-secondary" onclick="refreshDashboardNow_()">Atualizar agora</button>
+        <button type="button" id="refresh-dashboard-btn" class="btn-header-secondary">Atualizar agora</button>
         <div id="novo-registro-dropdown" class="dropdown-root">
           <button type="button" id="novo-registro-trigger" class="btn-primary-header" aria-expanded="false">Novo registro ▾</button>
           <div id="novo-registro-menu" class="dropdown-panel hidden" role="menu">
-            <button type="button" class="dropdown-dd-item" role="menuitem" onclick="openNovoRegistroPendencia_()">
+            <button type="button" class="dropdown-dd-item" role="menuitem">
               <span class="dropdown-dd-ico" aria-hidden="true"><svg class="ico-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></span>
               <span><strong>Pendência da loja</strong><span class="dropdown-help">Registrar uma tarefa ou pendência</span></span>
             </button>
-            <button type="button" class="dropdown-dd-item" role="menuitem" onclick="openNovoRegistroEncomenda_()">
+            <button type="button" class="dropdown-dd-item" role="menuitem">
               <span class="dropdown-dd-ico" aria-hidden="true"><svg class="ico-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="9.5" width="13" height="5" rx="2.5" transform="rotate(-45 12 12)"/></svg></span>
               <span><strong>Encomenda de medicamentos</strong><span class="dropdown-help">Registrar encomenda de medicamentos</span></span>
             </button>
-            <button type="button" class="dropdown-dd-item" role="menuitem" onclick="openNovoRegistroCompraReposicao_()">
+            <button type="button" class="dropdown-dd-item" role="menuitem">
               <span class="dropdown-dd-ico" aria-hidden="true"><svg class="ico-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
               <span><strong>Compra e reposição</strong><span class="dropdown-help">Solicitar compra de estoque, limpeza, sacolas, papelaria e outros</span></span>
             </button>
@@ -151,24 +151,24 @@
         <h2 class="section-title" id="checklist-turn-title">Checklist do turno</h2>
         <div class="field checklist-turn-field">
           <label for="checklist-turno-select">Turno</label>
-          <select id="checklist-turno-select" onchange="onChecklistTurnoChange_(this.value)">
+          <select id="checklist-turno-select">
             <option value="Manhã">Manhã</option>
             <option value="Noite">Noite</option>
           </select>
         </div>
-        <button id="checklist-toggle-btn" type="button" class="light" onclick="toggleChecklistPanel()">Abrir checklist</button>
+        <button id="checklist-toggle-btn" type="button" class="light">Abrir checklist</button>
       </div>
       <div id="checklist-summary" class="checklist-summary"></div>
       <p id="checklist-generate-hint" class="checklist-hint"></p>
       <div class="filter-group checklist-filters" style="margin-bottom:8px;flex-wrap:wrap;">
-        <button type="button" class="filter-button active" data-check-filter="todos" onclick="setChecklistFilter('todos')">Todos</button>
-        <button type="button" class="filter-button" data-check-filter="pendentes" onclick="setChecklistFilter('pendentes')">Pendentes</button>
-        <button type="button" class="filter-button" data-check-filter="feitos" onclick="setChecklistFilter('feitos')">Feitos</button>
-        <button type="button" class="filter-button" data-check-filter="na" onclick="setChecklistFilter('na')">Não aplicáveis</button>
-        <button type="button" class="filter-button" data-check-filter="feitos_hoje" onclick="setChecklistFilter('feitos_hoje')">Feitos hoje</button>
+        <button type="button" class="filter-button active" data-check-filter="todos">Todos</button>
+        <button type="button" class="filter-button" data-check-filter="pendentes">Pendentes</button>
+        <button type="button" class="filter-button" data-check-filter="feitos">Feitos</button>
+        <button type="button" class="filter-button" data-check-filter="na">Não aplicáveis</button>
+        <button type="button" class="filter-button" data-check-filter="feitos_hoje">Feitos hoje</button>
       </div>
       <div class="toolbar-actions" style="margin-bottom:8px;display:flex;align-items:center;gap:12px;">
-        <button id="checklist-generate-btn" type="button" class="light" onclick="refreshChecklistToday()">Sincronizar checklist</button>
+        <button id="checklist-generate-btn" type="button" class="light">Sincronizar checklist</button>
         <span id="checklist-sync-label" class="ho-muted" style="font-size:12px;" aria-live="polite"></span>
       </div>
       <div id="checklist-content" class="hidden">
@@ -179,18 +179,18 @@
   </section>
 </main>
 
-<div id="audit-drawer-overlay" class="audit-drawer-overlay hidden" aria-hidden="true" onclick="onAuditDrawerOverlayClick_(event)">
-  <aside id="audit-drawer" class="audit-drawer" role="dialog" aria-modal="true" aria-labelledby="audit-drawer-title" onclick="event.stopPropagation()">
+<div id="audit-drawer-overlay" class="audit-drawer-overlay hidden" aria-hidden="true">
+  <aside id="audit-drawer" class="audit-drawer" role="dialog" aria-modal="true" aria-labelledby="audit-drawer-title">
     <header class="audit-drawer-head">
-      <button type="button" class="audit-drawer-back" onclick="closeAuditDrawer_()">← Voltar</button>
+      <button type="button" class="audit-drawer-back">← Voltar</button>
       <h2 id="audit-drawer-title" class="audit-drawer-title">Trilha de Auditoria</h2>
-      <button type="button" class="modal-icon-btn" onclick="closeAuditDrawer_()" aria-label="Fechar">×</button>
+      <button type="button" class="modal-icon-btn" aria-label="Fechar">×</button>
     </header>
     <div id="audit-drawer-status" class="audit-drawer-status hidden"></div>
     <div id="audit-drawer-inner"></div>
     <footer class="audit-drawer-foot">
-      <button type="button" class="btn-queue-secondary" onclick="copyAuditTrailToClipboard_()">Copiar trilha</button>
-      <button type="button" class="btn-queue-primary" onclick="closeAuditDrawer_()">Fechar</button>
+      <button type="button" class="btn-queue-secondary">Copiar trilha</button>
+      <button type="button" class="btn-queue-primary">Fechar</button>
     </footer>
   </aside>
 </div>
@@ -199,11 +199,11 @@
   <div class="modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="card-detail-title">
     <div class="modal-head">
       <h2 id="card-detail-title">Detalhes</h2>
-      <button type="button" class="modal-icon-btn" onclick="closeCardDetailOverlay_()" aria-label="Fechar">×</button>
+      <button type="button" class="modal-icon-btn" aria-label="Fechar">×</button>
     </div>
     <div id="card-detail-body" class="card-detail-body"></div>
     <div class="form-actions">
-      <button type="button" class="light" onclick="closeCardDetailOverlay_()">Fechar</button>
+      <button type="button" class="light">Fechar</button>
     </div>
   </div>
 </div>
@@ -278,7 +278,7 @@
             <thead><tr><th>Medicamento / produto</th><th class="col-qty">Qtd</th><th>Obs. do item</th><th class="col-rm"></th></tr></thead>
             <tbody id="itens-tbody"></tbody>
           </table>
-          <button type="button" class="light itens-add-btn" onclick="addItemRow_()">+ Adicionar item</button>
+          <button type="button" class="light itens-add-btn">+ Adicionar item</button>
         </div>
         <div class="field">
           <label for="atendente">Atendente</label>
@@ -325,9 +325,9 @@
             <label for="previsaoEntrega">Previsão de entrega</label>
             <input id="previsaoEntrega" name="previsaoEntrega" type="date">
             <div class="date-shortcuts">
-              <button type="button" class="light" onclick="setPrevisaoOffsetDays(1)">Amanhã</button>
-              <button type="button" class="light" onclick="setPrevisaoOffsetDays(2)">Depois de amanhã</button>
-              <button type="button" class="light" onclick="setPrevisaoOffsetDays(7)">Semana que vem</button>
+              <button type="button" class="light" data-days="1">Amanhã</button>
+              <button type="button" class="light" data-days="2">Depois de amanhã</button>
+              <button type="button" class="light" data-days="7">Semana que vem</button>
             </div>
           </div>
         </div>
@@ -354,7 +354,7 @@
             <thead><tr><th>Item / produto</th><th class="col-qty">Quantidade</th><th>Obs.</th><th class="col-rm"></th></tr></thead>
             <tbody id="rep-itens-tbody"></tbody>
           </table>
-          <button type="button" class="light itens-add-btn" onclick="addReposicaoItemRow_()">+ Adicionar item</button>
+          <button type="button" class="light itens-add-btn">+ Adicionar item</button>
         </div>
         <div class="field">
           <label for="reposicao-prioridade">Prioridade</label>
@@ -377,9 +377,9 @@
           <label for="reposicao-previsao">Previsão desejada (opcional)</label>
           <input id="reposicao-previsao" name="reposicaoPrevisao" type="date">
           <div class="date-shortcuts">
-            <button type="button" class="light" onclick="setReposicaoPrevisaoOffsetDays_(1)">Amanhã</button>
-            <button type="button" class="light" onclick="setReposicaoPrevisaoOffsetDays_(2)">Depois de amanhã</button>
-            <button type="button" class="light" onclick="setReposicaoPrevisaoOffsetDays_(7)">Semana que vem</button>
+            <button type="button" class="light" data-days="1">Amanhã</button>
+            <button type="button" class="light" data-days="2">Depois de amanhã</button>
+            <button type="button" class="light" data-days="7">Semana que vem</button>
           </div>
         </div>
       </div>
@@ -406,8 +406,8 @@
       <textarea id="med-cancel-motivo" rows="3" style="min-height:72px;resize:vertical;" placeholder="Ex.: cliente desistiu, produto indisponível..."></textarea>
     </div>
     <div class="form-actions">
-      <button type="button" class="light" onclick="closeCancelMedicationModal_()">Voltar</button>
-      <button type="button" onclick="confirmCancelMedicationModal_()">Cancelar solicitação</button>
+      <button type="button" class="light">Voltar</button>
+      <button type="button">Cancelar solicitação</button>
     </div>
   </div>
 </div>
@@ -423,8 +423,8 @@
       <input id="reopen-motivo-input" type="text" placeholder="Ex.: cliente voltou à loja">
     </div>
     <div class="form-actions">
-      <button type="button" class="light" onclick="cancelReopenHistoricoModal_()">Cancelar</button>
-      <button type="button" onclick="confirmReopenHistoricoModal_()">Confirmar reabertura</button>
+      <button type="button" class="light">Cancelar</button>
+      <button type="button">Confirmar reabertura</button>
     </div>
   </div>
 </div>

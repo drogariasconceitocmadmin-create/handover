@@ -1685,6 +1685,81 @@
     });
   });
 
+  // ── Handlers inline do HTML → addEventListener (CSP bloqueia onclick/onchange inline)
+  function on(id, evt, fn) { var e = el(id); if (e) e.addEventListener(evt, fn); }
+
+  on('refresh-dashboard-btn',   'click',  refreshDashboardNow_);
+  on('checklist-turno-select',  'change', function() { onChecklistTurnoChange_(this.value); });
+  on('checklist-toggle-btn',    'click',  toggleChecklistPanel);
+  on('checklist-generate-btn',  'click',  refreshChecklistToday);
+
+  // Filtros do checklist
+  document.querySelectorAll('[data-check-filter]').forEach(function(b) {
+    b.addEventListener('click', function() { setChecklistFilter(b.getAttribute('data-check-filter')); });
+  });
+
+  // Dropdown "Novo registro"
+  (function() {
+    var items = el('novo-registro-menu') && el('novo-registro-menu').querySelectorAll('.dropdown-dd-item');
+    if (!items || !items.length) return;
+    var fns = [openNovoRegistroPendencia_, openNovoRegistroEncomenda_, openNovoRegistroCompraReposicao_];
+    items.forEach(function(b, i) { if (fns[i]) b.addEventListener('click', fns[i]); });
+  })();
+
+  // Atalhos de data — event delegation no form-grid
+  el('request-form').addEventListener('click', function(e) {
+    var t = e.target;
+    if (!t.classList.contains('light')) return;
+    var days = t.getAttribute('data-days');
+    if (days === null) return;
+    var n = Number(days);
+    var field = t.closest('#med-encomenda-only') ? 'previsaoEntrega' :
+                t.closest('#reposicao-fields')   ? 'reposicao-previsao' : null;
+    if (field === 'previsaoEntrega') setPrevisaoOffsetDays(n);
+    else if (field === 'reposicao-previsao') setReposicaoPrevisaoOffsetDays_(n);
+  });
+
+  // + Adicionar item (medicamentos)
+  var addMedBtn = el('request-form') && el('request-form').querySelector('.itens-add-btn[data-tipo="med"]');
+  if (!addMedBtn) {
+    var allAddBtns = el('request-form') && el('request-form').querySelectorAll('.itens-add-btn');
+    if (allAddBtns && allAddBtns[0]) allAddBtns[0].addEventListener('click', addItemRow_);
+    if (allAddBtns && allAddBtns[1]) allAddBtns[1].addEventListener('click', addReposicaoItemRow_);
+  }
+
+  // Audit drawer
+  on('audit-drawer-overlay', 'click', function(e) { if (e.target === el('audit-drawer-overlay')) closeAuditDrawer_(); });
+  (function() {
+    var d = el('audit-drawer'); if (!d) return;
+    var back = d.querySelector('.audit-drawer-back');       if (back) back.addEventListener('click', closeAuditDrawer_);
+    var xBtn = d.querySelector('header .modal-icon-btn');   if (xBtn) xBtn.addEventListener('click', closeAuditDrawer_);
+    var copy = d.querySelector('.btn-queue-secondary');     if (copy) copy.addEventListener('click', copyAuditTrailToClipboard_);
+    var close= d.querySelector('.audit-drawer-foot .btn-queue-primary'); if (close) close.addEventListener('click', closeAuditDrawer_);
+  })();
+
+  // Modal cancelar medicamento
+  (function() {
+    var ov = el('med-cancel-overlay'); if (!ov) return;
+    var btns = ov.querySelectorAll('button');
+    if (btns[0]) btns[0].addEventListener('click', closeCancelMedicationModal_);
+    if (btns[1]) btns[1].addEventListener('click', confirmCancelMedicationModal_);
+  })();
+
+  // Modal reabrir histórico
+  (function() {
+    var ov = el('reopen-confirm-overlay'); if (!ov) return;
+    var btns = ov.querySelectorAll('button');
+    if (btns[0]) btns[0].addEventListener('click', cancelReopenHistoricoModal_);
+    if (btns[1]) btns[1].addEventListener('click', confirmReopenHistoricoModal_);
+  })();
+
+  // Card detail overlay fechar
+  (function() {
+    var ov = el('card-detail-overlay'); if (!ov) return;
+    var btns = ov.querySelectorAll('button');
+    btns.forEach(function(b) { b.addEventListener('click', closeCardDetailOverlay_); });
+  })();
+
   /* ════════════════════════════════════════
      GLOBAIS (chamados pelo HTML via onclick)
   ════════════════════════════════════════ */
