@@ -16,8 +16,9 @@
     checklistFilter: 'todos',
     checklistOpen  : true,
     pendFilter : 'pendentes',
-    medFilter  : 'todos',
-    medSearch  : '',
+    medFilter     : 'todos',
+    medSearch     : '',
+    comprasFilter : 'pendentes',
     medCancelId: null,
     reopenId   : null,
     reopenOrigem: null,
@@ -814,18 +815,48 @@
   function renderCompras() {
     var list = (G.bundle && G.bundle.comprasReposicao) || [];
     el('queue-section-heading').textContent = 'Compras e reposição';
-    el('queue-filters-host').innerHTML = '';
-    el('queue-subtitle').textContent = 'Compras · ' + list.length + ' item(s) pendente(s)';
-    renderQueueList(list, renderCardCompra);
+
+    var cPend = list.filter(function(r) { return r.Status_Compra === 'Pendente de compra'; }).length;
+    var cTodos = list.length;
+    var cNaoE = list.filter(function(r) { return r.Status_Compra === 'Não encontrado'; }).length;
+
+    var f = G.comprasFilter || 'pendentes';
+
+    el('queue-filters-host').innerHTML =
+      '<div class="filter-group">' +
+      filterChip('cf', 'pendentes',      'Pendentes',       cPend,  f) +
+      filterChip('cf', 'todos',          'Todos',           cTodos, f) +
+      filterChip('cf', 'nao_encontrado', 'Não encontrados', cNaoE,  f) +
+      '</div>';
+
+    el('queue-filters-host').querySelectorAll('.filter-button').forEach(function(b) {
+      b.addEventListener('click', function() {
+        G.comprasFilter = b.getAttribute('data-cf');
+        renderCompras();
+      });
+    });
+
+    var view = list.filter(function(r) {
+      if (f === 'pendentes')      return r.Status_Compra === 'Pendente de compra';
+      if (f === 'nao_encontrado') return r.Status_Compra === 'Não encontrado';
+      return true;
+    });
+
+    el('queue-subtitle').textContent =
+      'Compras e reposição · Filtro: ' + f + ' · ' + view.length + ' registro(s)';
+
+    renderQueueList(view, renderCardCompra);
   }
 
   function renderCardCompra(r) {
     var c = buildCard('qk-stripe-geral');
-    var badgesHtml = '<span class="qk-type-tag">COMPRAS</span>' +
+    var statusCls = r.Status_Compra === 'Não encontrado' ? 'status-cancelado' : 'status-pendente';
+    var badgesHtml = '<span class="qk-type-tag">COMPRAS E REPOSIÇÃO</span>' +
       ' <span class="badge">' + escHtml(r.Categoria_Compra || 'Reposição') + '</span>' +
-      ' <span class="badge status-pendente">Pendente de compra</span>';
+      ' <span class="badge ' + statusCls + '">' + escHtml(r.Status_Compra || 'Pendente de compra') + '</span>';
     if (r.Prioridade === 'Urgente') badgesHtml += ' <span class="badge badge-urgente">Urgente</span>';
-    c.main.appendChild(buildTop(badgesHtml, fmtData(r.Data_Solicitacao), []));
+    // Data_Solicitacao é timestamp ISO — usar fmt() e não fmtData()
+    c.main.appendChild(buildTop(badgesHtml, fmt(r.Data_Solicitacao), []));
     c.main.appendChild(ce('div', 'qk-title', escHtml(r.Item || '(sem item)')));
     if (r.Motivo) c.main.appendChild(ce('div', 'qk-desc', escHtml(r.Motivo)));
     c.main.appendChild(buildMeta([
