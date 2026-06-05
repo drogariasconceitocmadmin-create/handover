@@ -451,7 +451,31 @@
     if (overdue) badgesHtml += ' <span class="badge deadline-vencido">Vencido</span>';
 
     var menuItems = [];
+    menuItems.push({ label: 'Ver detalhes', fn: (function(pp) { return function() {
+      abrirDetalhes(pp.titulo || '(sem título)', [
+        ['Título',       pp.titulo],
+        ['Descrição',    pp.descricao],
+        ['Urgência',     pp.urgencia],
+        ['Autor',        pp.autor],
+        ['Criado em',    fmt(pp.criado_em)],
+        ['Status',       pp.resolvido ? 'Resolvido' : 'Pendente'],
+        ['Resolvido por',pp.resolvido_por],
+        ['Última ação',  pp.ultima_acao_por ? pp.ultima_acao_por + (pp.ultima_acao_em ? ' · ' + fmt(pp.ultima_acao_em) : '') : null],
+        ['Vencimento',   pp.data_vencimento ? fmtData(pp.data_vencimento) + (pp.hora_vencimento ? ' ' + pp.hora_vencimento : '') : null],
+      ]);
+    }; })(p) });
     menuItems.push({ label: 'Editar', fn: (function(pid) { return function() { editarItem(pid, 'Geral'); }; })(p.id) });
+    menuItems.push({ label: 'Ver trilha de auditoria', fn: (function(pid, ptit) { return function() { abrirAuditDrawer(pid, ptit); }; })(p.id, p.titulo) });
+    menuItems.push({ label: 'Copiar informações', fn: (function(pp) { return function() {
+      copiarInfo([
+        'Pendência: ' + (pp.titulo || ''),
+        pp.descricao ? 'Descrição: ' + pp.descricao : null,
+        'Urgência: ' + (pp.urgencia || 'Normal'),
+        'Autor: ' + (pp.autor || ''),
+        'Status: ' + (pp.resolvido ? 'Resolvido' : 'Pendente'),
+        'Data: ' + fmt(pp.criado_em),
+      ]);
+    }; })(p) });
     if (!p.resolvido) {
       menuItems.push({ label: 'Marcar como resolvido', fn: function() { resolverPend(p.id, true); } });
     } else {
@@ -673,6 +697,25 @@
   function acoesMed(m) {
     var s = m.Status;
     var items = [];
+    items.push({ label: 'Ver detalhes', fn: (function(mm) { return function() {
+      abrirDetalhes(mm.Medicamento || '(sem nome)', [
+        ['Medicamento',  mm.Medicamento],
+        ['Tipo',         mm.Tipo],
+        ['Status',       mm.Status],
+        ['Cliente',      mm.Cliente],
+        ['Telefone',     mm.Telefone],
+        ['Atendente',    mm.Atendente],
+        ['Previsão',     fmtData(mm.Previsao_Entrega)],
+        ['Fornecedor',   mm.Fornecedor_Compra && mm.Fornecedor_Compra !== 'Não informado' ? mm.Fornecedor_Compra : null],
+        ['Código compra',mm.Codigo_Compra_Fornecedor],
+        ['Preço',        mm.Preco_Venda ? 'R$ ' + mm.Preco_Venda : null],
+        ['Pré-pago',     mm.Pre_Pago ? 'Sim' : 'Não'],
+        ['WhatsApp',     mm.Status_Aviso_WhatsApp || 'Não registrado'],
+        ['Recebimento',  mm.Forma_Recebimento],
+        ['Observação',   mm.Observacao_Solicitacao],
+        ['Última ação',  mm.Ultima_Acao_Por ? mm.Ultima_Acao_Por + (mm.Ultima_Acao_Em ? ' · ' + fmt(mm.Ultima_Acao_Em) : '') : null],
+      ]);
+    }; })(m) });
     if (s === 'Pendente') {
       items.push({ label: 'Marcar como comprado', fn: function() { acaoMed('comprar', m.ID); } });
       items.push({ label: 'Cancelar solicitação', fn: function() { abrirCancelarMed(m.ID, m.Medicamento, m.Cliente); } });
@@ -683,7 +726,19 @@
       if (m.Telefone) items.push({ label: 'Enviar WhatsApp', fn: function() { acaoWhatsApp(m.ID); } });
     }
     items.push({ label: 'Editar', fn: (function(mid) { return function() { editarItem(mid, 'Medicamentos'); }; })(m.ID) });
-    items.push({ label: 'Trilha de auditoria', fn: function() { abrirAuditDrawer(m.ID, m.Medicamento); } });
+    items.push({ label: 'Ver trilha de auditoria', fn: function() { abrirAuditDrawer(m.ID, m.Medicamento); } });
+    items.push({ label: 'Copiar informações', fn: (function(mm) { return function() {
+      copiarInfo([
+        'Medicamento: ' + (mm.Medicamento || ''),
+        'Tipo: ' + (mm.Tipo || ''),
+        'Status: ' + (mm.Status || ''),
+        mm.Cliente    ? 'Cliente: '   + mm.Cliente    : null,
+        mm.Telefone   ? 'Telefone: '  + mm.Telefone   : null,
+        mm.Atendente  ? 'Atendente: ' + mm.Atendente  : null,
+        mm.Previsao_Entrega ? 'Previsão: ' + fmtData(mm.Previsao_Entrega) : null,
+        mm.Preco_Venda ? 'Preço: R$ ' + mm.Preco_Venda : null,
+      ]);
+    }; })(m) });
     return items;
   }
 
@@ -1217,6 +1272,26 @@
   function closeCardDetailOverlay_() {
     el('card-detail-overlay').classList.add('hidden');
     el('card-detail-overlay').setAttribute('aria-hidden', 'true');
+  }
+
+  function abrirDetalhes(titulo, campos) {
+    el('card-detail-title').textContent = titulo;
+    var html = '<dl class="detail-dl">';
+    campos.forEach(function(f) {
+      if (!f[1] && f[1] !== false) return;
+      html += '<div class="detail-row"><dt>' + escHtml(f[0]) + '</dt><dd>' + escHtml(String(f[1])) + '</dd></div>';
+    });
+    html += '</dl>';
+    el('card-detail-body').innerHTML = html;
+    el('card-detail-overlay').classList.remove('hidden');
+    el('card-detail-overlay').setAttribute('aria-hidden', 'false');
+  }
+
+  function copiarInfo(linhas) {
+    var txt = linhas.filter(Boolean).join('\n');
+    navigator.clipboard.writeText(txt)
+      .then(function() { toast('Copiado.', 'ok'); })
+      .catch(function() { toast('Erro ao copiar.', 'erro'); });
   }
 
   /* ════════════════════════════════════════
