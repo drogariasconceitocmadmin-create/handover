@@ -1,0 +1,41 @@
+/* ============================================================
+   Conceito Indica — Webfonts
+   Hanken Grotesk (latin subset) — the single brand typeface.
+   Self-hosted .woff2 binaries live alongside this file.
+   ============================================================ */
+
+@font-face {
+  font-family: "Hanken Grotesk";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./HankenGrotesk-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Hanken Grotesk";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./HankenGrotesk-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Hanken Grotesk";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./HankenGrotesk-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Hanken Grotesk";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./HankenGrotesk-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Hanken Grotesk";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("./HankenGrotesk-800.woff2") format("woff2");
+}

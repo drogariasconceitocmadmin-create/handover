@@ -1,0 +1,111 @@
+/* ============================================================
+   Conceito Indica — Color tokens
+   ------------------------------------------------------------
+   Philosophy (from the redesign): COLOR IS MEANING.
+   Surfaces are warm near-white / warm near-black neutrals.
+   Saturated color is reserved for STATE only:
+     green  = ok / positive / brand action
+     amber  = attention / pending
+     red    = critical / negative / destructive
+   ------------------------------------------------------------
+   :root          → Day theme (default)
+   .night, [data-theme="night"] → Night theme
+   ============================================================ */
+
+:root {
+  /* ---- Raw brand palette ---- */
+  --ci-green-700: #0a7a51;
+  --ci-green-600: #0c8f5f;   /* brand */
+  --ci-green-500: #16a06a;
+  --ci-green-100: #eafaf2;   /* brand-soft */
+  --ci-teal:      #1fb9b3;   /* icon accent (line-icon secondary stroke) */
+
+  --ci-red-600:   #d33b34;
+  --ci-red-100:   #fdeceb;
+  --ci-amber-600: #b7791f;
+  --ci-amber-100: #fbf3e3;
+
+  --ci-pink:      #e7398e;   /* user / avatar accent */
+
+  /* Warm neutral ramp (day) */
+  --ci-paper:     #fbfbfa;
+  --ci-white:     #ffffff;
+  --ci-n-050:     #f3f2ef;
+  --ci-n-100:     #ecebe7;
+  --ci-n-300:     #9a9a93;
+  --ci-n-500:     #6c6c66;
+  --ci-ink:       #1a1a17;
+  --ci-rail:      #14140f;   /* near-black warm rail/sidebar */
+
+  /* ---- Semantic surface + text (day) ---- */
+  --bg:         var(--ci-paper);     /* app canvas */
+  --panel:      var(--ci-white);     /* cards, sheets, surfaces */
+  --rail:       var(--ci-rail);      /* left navigation rail */
+
+  --ink:        var(--ci-ink);       /* primary text */
+  --ink-2:      var(--ci-n-500);     /* secondary text */
+  --ink-3:      var(--ci-n-300);     /* tertiary / muted text */
+
+  --line:       var(--ci-n-100);     /* default border / hairline */
+  --line-2:     var(--ci-n-050);     /* faint fill / inner divider */
+
+  /* ---- Semantic state (day) ---- */
+  --brand:      var(--ci-green-600);
+  --brand-soft: var(--ci-green-100);
+  --pos:        var(--ci-green-600);
+  --neg:        var(--ci-red-600);
+  --neg-soft:   var(--ci-red-100);
+  --warn:       var(--ci-amber-600);
+  --warn-soft:  var(--ci-amber-100);
+
+  /* on-brand text colour (text that sits on a --brand fill) */
+  --on-brand:   #ffffff;
+
+  /* ---- Aliases (descriptive names for consumers) ---- */
+  --surface-app:    var(--bg);
+  --surface-card:   var(--panel);
+  --surface-sunken: var(--line-2);
+  --text-strong:    var(--ink);
+  --text-body:      var(--ink-2);
+  --text-muted:     var(--ink-3);
+  --border-default: var(--line);
+  --border-faint:   var(--line-2);
+}
+
+/* ============================================================
+   NIGHT THEME — warm near-black surfaces, brighter brand.
+   Apply by adding .night (or data-theme="night") to a root.
+   ============================================================ */
+.night,
+[data-theme="night"] {
+  --bg:         #131210;
+  --panel:      #1c1b16;
+  --rail:       #0e0d0a;
+  --raise:      #272519;   /* one step above panel (controls) */
+
+  --ink:        #f3f2ec;
+  --ink-2:      #b9b8ad;
+  --ink-3:      #908f83;
+
+  --line:       #2d2b22;
+  --line-2:     #242219;
+
+  --brand:      #1fae77;
+  --brand-soft: #122a1f;
+  --pos:        #2bbe83;
+  --neg:        #f3625a;
+  --neg-soft:   #2c1614;
+  --warn:       #e0a23c;
+  --warn-soft:  #2a2012;
+
+  --on-brand:   #06231a;   /* dark green-ink reads better on bright brand */
+
+  --surface-app:    var(--bg);
+  --surface-card:   var(--panel);
+  --surface-sunken: var(--line-2);
+  --text-strong:    var(--ink);
+  --text-body:      var(--ink-2);
+  --text-muted:     var(--ink-3);
+  --border-default: var(--line);
+  --border-faint:   var(--line-2);
+}

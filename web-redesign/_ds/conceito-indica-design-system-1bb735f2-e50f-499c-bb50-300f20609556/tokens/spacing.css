@@ -1,0 +1,48 @@
+/* ============================================================
+   Conceito Indica — Spacing, radius, elevation, layout
+   ------------------------------------------------------------
+   Dense, productivity-first software. One corner radius does
+   ~90% of the work (12px). Borders are warm hairlines, not
+   black. Shadows are soft, low-spread, and used sparingly —
+   hierarchy comes from TONE first, elevation second.
+   ============================================================ */
+
+:root {
+  /* ---- Spacing scale (4px base) ---- */
+  --sp-1:  4px;
+  --sp-2:  6px;
+  --sp-3:  8px;
+  --sp-4:  11px;
+  --sp-5:  14px;
+  --sp-6:  16px;
+  --sp-7:  20px;
+  --sp-8:  24px;
+  --sp-9:  32px;
+  --sp-10: 40px;
+
+  /* ---- Radius ---- */
+  --radius-xs:  6px;   /* pills, small chips, tags */
+  --radius-sm:  8px;   /* inputs, list rows, icon tiles */
+  --radius-md:  9px;   /* buttons, segmented controls */
+  --radius:     12px;  /* DEFAULT — cards, panels, sheets */
+  --radius-lg:  14px;
+  --radius-pill: 999px;
+
+  /* ---- Border widths ---- */
+  --bw-hair: 1px;
+  --bw-ring: 1.5px;    /* focus / selected ring */
+
+  /* ---- Elevation (soft, warm-tuned) ---- */
+  --shadow-xs:  0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md:  0 6px 24px rgba(20, 20, 15, 0.06);
+  --shadow-lg:  0 10px 30px rgba(0, 0, 0, 0.14);
+  --shadow-pop: 0 12px 28px rgba(0, 0, 0, 0.34);   /* flyouts on the dark rail */
+
+  /* ---- Focus ring ---- */
+  --ring: 0 0 0 var(--bw-ring) var(--brand), 0 0 0 4px var(--brand-soft);
+
+  /* ---- Rail / layout constants ---- */
+  --rail-w:      232px;   /* expanded navigation rail */
+  --rail-w-mini: 64px;    /* collapsed rail */
+}
