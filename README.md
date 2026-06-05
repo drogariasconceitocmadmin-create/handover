@@ -63,6 +63,11 @@ node server.js                    # → http://localhost:8777
 # Deploy produção
 npx wrangler pages deploy web/ --project-name handover-conceito
 
+# Smoke tests dos RPCs (login isaque/1254, dados __TESTE__ com teardown)
+npm test
+# O ciclo de medicamento só roda com service key (p/ hard-delete de teardown):
+$env:SUPABASE_SERVICE_ROLE_KEY="<service_role_key>"; npm test
+
 # Importar dados do Sheets (precisar setar env vars primeiro)
 $env:SUPABASE_URL="https://pxswpufbkisdniojwdtt.supabase.co"
 $env:SUPABASE_SERVICE_ROLE_KEY="<service_role_key>"
