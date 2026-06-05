@@ -13,7 +13,7 @@
 | Deploy | Cloudflare Pages — `npx wrangler pages deploy web/ --project-name handover-conceito` |
 | Supabase projeto | `pxswpufbkisdniojwdtt` (sa-east-1) |
 | Supabase URL | `https://pxswpufbkisdniojwdtt.supabase.co` |
-| Migrations aplicadas | `0001`–`0011` todas no ar |
+| Migrations aplicadas | `0001`–`0013` no ar (`0014` em aplicação) |
 | Fases frontend | F1–F7 **concluídas** |
 | Smoke test | ✅ 2026-06-05 — 17 RPCs, 100% OK |
 
@@ -136,6 +136,12 @@ Sheets exporta em formato US: `M/D/YYYY` (mês primeiro). `normDate` e `normTime
 | isaque | funcionario | 1254 (teste) |
 
 ---
+
+## Migrations 0012–0014 (pós-auditoria 2026-06-05)
+
+- **0012** — estado `Recebido na loja` em `compras_reposicao`. Máquina: `Pendente de compra → Comprado → Recebido na loja`. RPC `handover_compra_reposicao_receber`. `handover_dashboard_bundle` passou a excluir `('Recebido na loja','Cancelado')` da fila ativa (antes era `('Comprado','Cancelado')`) → itens `Comprado` ficam visíveis aguardando recebimento.
+- **0013** — normalização PT-BR no banco: `_norm_nome_ptbr`, `_norm_med_ptbr`, aplicadas em `_medicamento_whatsapp_msg`. Corrige WhatsApp saindo com nome minúsculo. (Arquivos gravados já com `set search_path = public, extensions` — reaplicados na rodada da 0014 para limpar advisor `function_search_path_mutable`.)
+- **0014** — consistência de compras: corrige `handover_historico` (compras agora `IN ('Recebido na loja','Cancelado')`, antes `('Comprado','Cancelado')` que duplicava itens na fila e no histórico) + backfill dos 85 itens `Comprado` legados (importação mai/2026, faltas de estoque sem comprador/data) → `Recebido na loja`, com auditoria. `compras_reposicao` contém só faltas; encomendas de cliente vivem em `medicamentos` e não são tocadas.
 
 ## Erros históricos nos logs (já corrigidos, ignorar)
 

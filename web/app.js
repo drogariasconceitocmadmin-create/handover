@@ -77,6 +77,16 @@
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
+  // Telefone: limpa máscara/ruído deixando só dígitos. Remove um 0 de prefixo
+  // interurbano se sobrar (ex: "011 98765-4321" → "11987654321"). NÃO prefixa 55 —
+  // o backend (_normalize_br_phone) cuida disso ao montar o link de WhatsApp.
+  function normFone(str) {
+    if (!str) return str;
+    var d = String(str).replace(/\D/g, '');
+    if (d.length > 11 && d.charAt(0) === '0') d = d.slice(1);
+    return d;
+  }
+
   /* ── utils ── */
   function el(id) { return document.getElementById(id); }
   function ce(tag, cls, html) {
@@ -344,8 +354,21 @@
   /* ════════════════════════════════════════
      QUEUE DISPATCH
   ════════════════════════════════════════ */
+  // Abas com busca por texto e o placeholder de cada uma
+  var _SEARCH_TABS = {
+    medicamentos:      'Buscar por medicamento, cliente, telefone, atendente...',
+    pendencias:        'Buscar por título, descrição, autor...',
+    compras_reposicao: 'Buscar por item, categoria, solicitante, observação...'
+  };
+
   function renderQueue() {
-    el('med-search-wrap').classList.toggle('hidden', G.currentTab !== 'medicamentos');
+    var ph = _SEARCH_TABS[G.currentTab];
+    el('med-search-wrap').classList.toggle('hidden', !ph);
+    if (ph) {
+      var inp = el('med-queue-search');
+      inp.setAttribute('placeholder', ph);
+      inp.value = G.medSearch || '';
+    }
     el('historico-filters-panel').classList.add('hidden');
     if (G.currentTab === 'pendencias')        renderPendencias();
     else if (G.currentTab === 'medicamentos') renderMedicamentos();
@@ -469,16 +492,24 @@
       });
     });
 
+    var search = (G.medSearch || '').trim().toLowerCase();
     var view = list.filter(function(p) {
-      if (G.pendFilter === 'resolvidos') return p.resolvido;
-      if (G.pendFilter === 'urgentes')   return !p.resolvido && p.urgencia === 'Urgente';
-      if (G.pendFilter === 'vencidos')   return !p.resolvido && (isVencido(p.data_vencimento) || isHoje(p.data_vencimento));
-      if (G.pendFilter === 'todos')      return true;
-      return !p.resolvido;
+      var ok;
+      if (G.pendFilter === 'resolvidos')      ok = p.resolvido;
+      else if (G.pendFilter === 'urgentes')   ok = !p.resolvido && p.urgencia === 'Urgente';
+      else if (G.pendFilter === 'vencidos')   ok = !p.resolvido && (isVencido(p.data_vencimento) || isHoje(p.data_vencimento));
+      else if (G.pendFilter === 'todos')      ok = true;
+      else                                    ok = !p.resolvido;
+      if (ok && search) {
+        var txt = [p.titulo, p.descricao, p.autor, p.urgencia].join(' ').toLowerCase();
+        ok = txt.indexOf(search) >= 0;
+      }
+      return ok;
     });
 
     el('queue-subtitle').textContent =
-      'Pendências · Filtro: ' + G.pendFilter + ' · ' + view.length + ' registro(s)';
+      'Pendências · Filtro: ' + G.pendFilter + (search ? ' · busca "' + search + '"' : '') +
+      ' · ' + view.length + ' registro(s)';
 
     renderQueueList(view, renderCardPend);
   }
@@ -958,15 +989,24 @@
       });
     });
 
+    var search = (G.medSearch || '').trim().toLowerCase();
     var view = list.filter(function(r) {
-      if (f === 'pendentes')      return r.Status_Compra === 'Pendente de compra';
-      if (f === 'comprados')      return r.Status_Compra === 'Comprado';
-      if (f === 'nao_encontrado') return r.Status_Compra === 'Não encontrado';
-      return true;
+      var ok;
+      if (f === 'pendentes')           ok = r.Status_Compra === 'Pendente de compra';
+      else if (f === 'comprados')      ok = r.Status_Compra === 'Comprado';
+      else if (f === 'nao_encontrado') ok = r.Status_Compra === 'Não encontrado';
+      else                             ok = true;
+      if (ok && search) {
+        var txt = [r.Item, r.Categoria_Compra, r.Solicitante, r.Observacao, r.Motivo, r.Fornecedor_Sugerido]
+          .join(' ').toLowerCase();
+        ok = txt.indexOf(search) >= 0;
+      }
+      return ok;
     });
 
     el('queue-subtitle').textContent =
-      'Compras e reposição · Filtro: ' + f + ' · ' + view.length + ' registro(s)';
+      'Compras e reposição · Filtro: ' + f + (search ? ' · busca "' + search + '"' : '') +
+      ' · ' + view.length + ' registro(s)';
 
     renderQueueList(view, renderCardCompra);
   }
@@ -1763,7 +1803,7 @@
       if (!prev) { el('form-status').textContent = 'Informe a previsão de entrega.'; return; }
       payload.itens = itens;
       payload.cliente = normNome(el('cliente').value.trim());
-      payload.telefone = el('telefone').value.trim();
+      payload.telefone = normFone(el('telefone').value);
       payload.prePago  = el('prePago').checked;
       payload.formaRecebimento = el('formaRecebimento').value;
       payload.previsaoEntrega  = prev;
@@ -1853,7 +1893,7 @@
     } else {
       payload.medicamento           = normMed(el('medicamento').value.trim())            || null;
       payload.cliente               = normNome(el('cliente').value.trim())               || null;
-      payload.telefone              = el('telefone').value.trim()                        || null;
+      payload.telefone              = normFone(el('telefone').value)                     || null;
       payload.precoVenda            = el('precoVenda').value.trim().replace(',', '.')    || null;
       payload.observacaoSolicitacao = normTexto(el('observacaoSolicitacao').value.trim())|| null;
       payload.prePago               = el('prePago').checked;
@@ -2160,7 +2200,9 @@
   });
   el('med-queue-search').addEventListener('input', function() {
     G.medSearch = this.value;
-    if (G.currentTab === 'medicamentos') renderMedicamentos();
+    if (G.currentTab === 'medicamentos')           renderMedicamentos();
+    else if (G.currentTab === 'pendencias')        renderPendencias();
+    else if (G.currentTab === 'compras_reposicao') renderCompras();
   });
   el('form-modal-overlay').addEventListener('click', function(e) { if (e.target === el('form-modal-overlay')) closeFormModal_(); });
   el('card-detail-overlay').addEventListener('click', function(e) { if (e.target === el('card-detail-overlay')) closeCardDetailOverlay_(); });
@@ -2170,6 +2212,7 @@
       var tab = btn.getAttribute('data-main-tab');
       if (tab === 'historico') G.historico = null;
       if (tab === 'comprador') G.compradorCache = null;  // dados frescos ao entrar na aba
+      G.medSearch = '';                                  // busca limpa ao trocar de aba
       setMainTab(tab);
     });
   });

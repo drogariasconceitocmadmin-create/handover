@@ -5,3 +5,8 @@ migracao/*.csv
 .claude/
 .serena/
 package-lock.json
+
+# Artefatos de referência / scratch (não versionar)
+response.json
+migracao/Code.gp.txt
+migracao/html original.html

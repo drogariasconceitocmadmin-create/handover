@@ -47,7 +47,7 @@ handover-v2/
 │   ├── SPEC.md             # Contrato RPCs + schema
 │   ├── CHECKLIST_TEMPLATES.md
 │   └── *.csv               # CSVs exportados do Sheets legado
-├── supabase/migrations/    # Migrations 0001–0011 (aplicadas via Supabase MCP)
+├── supabase/migrations/    # Migrations 0001–0014 (aplicadas via Supabase MCP)
 ├── server.js               # Servidor estático local (porta 8777)
 └── MEMORY.md               # Decisões técnicas, gotchas, estado atual
 ```

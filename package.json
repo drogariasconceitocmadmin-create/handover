@@ -1,6 +1,6 @@
 {
-  "devDependencies": {
-    "chrome-cookies-secure": "^3.0.2"
+  "scripts": {
+    "test": "node --test tests/"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.107.0"
