@@ -98,11 +98,11 @@ export function renderSummary() {
   el('tab-badge-checklist').textContent         = clPend;
 
   el('operation-summary').innerHTML = [
-    hoKpiCell('kpi-pend',  false, pend,  'PENDÊNCIAS',         'Solicitações gerais',  'pendencias',   'pendentes',      false),
-    hoKpiCell('kpi-urg',   true,  urg,   'URGENTES',           'Prioridade na loja',   'pendencias',   'urgentes',       urg > 0),
-    hoKpiCell('kpi-enc',   false, medAt, 'ENCOMENDAS',         'Faltas e encomendas',  'medicamentos', 'pendentes',      false),
-    hoKpiCell('kpi-wav',   false, semAv, 'COMPRADOS S/ AVISO', 'Avisar o cliente',     'medicamentos', 'comprados_sem_av', false),
-    hoKpiCell('kpi-venc',  false, kVenc, 'VENCIDOS / HOJE',    'Cobrar ainda hoje',    'medicamentos', 'vencidos',       kVenc > 0),
+    hoKpiCell('kpi-pend',  icoClip_(),  pend,  'Pendências',          'Solicitações gerais',   'pendencias',   'pendentes',       false,      'var(--ink)'),
+    hoKpiCell('kpi-urg',   icoAlert_(), urg,   'Urgentes',            'Prioridade na loja',    'pendencias',   'urgentes',        urg > 0,    'var(--neg)'),
+    hoKpiCell('kpi-enc',   icoPill_(),  medAt, 'Medicamentos solicitados', 'Solicitados abertos', 'medicamentos', 'pendentes',    false,      'var(--brand)'),
+    hoKpiCell('kpi-wav',   icoWA_(),    semAv, 'Comprados sem aviso', 'Avisar o cliente',      'medicamentos', 'comprados_sem_av', false,    'var(--warn)'),
+    hoKpiCell('kpi-venc',  icoAlert_(), kVenc, 'Vencidos / Hoje',     'Cobrar ainda hoje',     'medicamentos', 'vencidos',        kVenc > 0, 'var(--neg)'),
     hoKpiCardChecklist(cl),
   ].join('');
 
@@ -123,15 +123,19 @@ export function renderSummary() {
   });
 }
 
-function hoKpiCell(id, _unused, value, label, sub, tab, filter, alert) {
+function hoKpiCell(id, icon, value, label, sub, tab, filter, alert, icoColor) {
   var alertCls = alert ? ' alert' : '';
   var navAttrs = tab
     ? ' data-kpi-tab="' + tab + '"' + (filter ? ' data-kpi-filter="' + filter + '"' : '') + ' role="button" tabindex="0"'
     : '';
+  var icoHtml = icon
+    ? '<div class="ho-kpi-ico" style="color:' + (icoColor || 'var(--ink-2)') + '">' + icon + '</div>'
+    : '';
   return '<div class="ho-kcell' + alertCls + '"' + navAttrs + ' id="' + id + '">' +
-    '<div class="ho-kpi">' +
-      '<div class="ho-kpi-l">' + escHtml(label) + '</div>' +
+    icoHtml +
+    '<div class="ho-kpi-r">' +
       '<div class="ho-kpi-v">' + escHtml(String(value)) + '</div>' +
+      '<div class="ho-kpi-l">' + escHtml(label) + '</div>' +
       '<div class="ho-kpi-s">' + escHtml(sub) + '</div>' +
     '</div>' +
   '</div>';
@@ -177,17 +181,13 @@ var _TAB_TITLES = {
 /* ── ABAS ── */
 export function setMainTab(tab) {
   G.currentTab = tab;
-  // Update rail items (new layout uses .ho-rail-item)
-  document.querySelectorAll('.ho-rail-item').forEach(function(b) {
+  // Update horizontal tab bar
+  document.querySelectorAll('.ho-tab').forEach(function(b) {
     b.classList.toggle('active', b.getAttribute('data-main-tab') === tab);
   });
-  // Also update legacy .main-tab if present
-  document.querySelectorAll('.main-tab').forEach(function(b) {
-    b.classList.toggle('active', b.getAttribute('data-main-tab') === tab);
-  });
-  // Update topbar title
-  var titleEl = el('ho-topbar-title');
-  if (titleEl) titleEl.textContent = _TAB_TITLES[tab] || tab;
+  // Show/hide sidebar: hidden when checklist is active (full-width)
+  var sidebar = el('ho-sidebar');
+  if (sidebar) sidebar.classList.toggle('hidden', tab === 'checklist');
   var isCL = (tab === 'checklist');
   el('panel-queue-wrap').classList.toggle('hidden', isCL);
   el('panel-checklist').classList.toggle('hidden', !isCL);

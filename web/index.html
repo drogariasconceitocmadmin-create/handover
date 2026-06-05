@@ -21,9 +21,6 @@
 </head>
 <body>
 
-<!-- Dot matrix canvas background -->
-<canvas id="ho-dot-matrix" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;display:block;"></canvas>
-
 <!-- ── Login overlay ── -->
 <div id="handover-login-overlay" class="ho-login" role="dialog" aria-modal="true" aria-labelledby="handover-login-title">
   <div class="ho-login-card">
@@ -85,7 +82,7 @@
       <input id="pri-codigo-convite" class="ho-input" type="text" placeholder="Código recebido" autocomplete="off" style="text-transform:uppercase;">
     </div>
     <p id="primeiro-acesso-error" class="ho-login-error" role="alert"></p>
-    <button type="button" id="primeiro-acesso-submit" class="ho-btn ho-btn--brand ho-btn--block" style="margin-top:6px;">Registrar</button>
+    <button type="button" id="primeiro-acesso-submit" class="ho-btn ho-btn--primary ho-btn--block" style="margin-top:6px;">Registrar</button>
     <div class="ho-login-row">
       <button type="button" id="primeiro-acesso-voltar" class="ho-link">Voltar ao login</button>
     </div>
@@ -95,175 +92,207 @@
 <!-- ── App shell ── -->
 <div id="app-shell" class="ho-app hidden" aria-hidden="true">
 
-  <!-- Left rail -->
-  <div class="ho-rail-wrap">
-    <nav class="ho-rail" id="ho-rail">
-      <div class="ho-rail-brand">
-        <div class="ho-rail-mark"></div>
-        <div class="ho-rail-brand-tx">
-          <b>Handover</b>
-          <small>Drogarias Conceito</small>
-        </div>
-      </div>
+  <!-- ── Topbar ── -->
+  <header class="ho-topbar">
 
-      <div class="ho-rail-items">
-        <button type="button" class="ho-rail-item active" data-main-tab="pendencias">
-          <span class="ho-rail-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></span>
-          <span class="ho-rail-lbl">Pendências</span>
-          <span class="ho-rail-badge" id="tab-badge-pendencias">0</span>
-        </button>
-        <button type="button" class="ho-rail-item" data-main-tab="medicamentos">
-          <span class="ho-rail-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></span>
-          <span class="ho-rail-lbl">Encomendas</span>
-          <span class="ho-rail-badge" id="tab-badge-medicamentos">0</span>
-        </button>
-        <button type="button" class="ho-rail-item" data-main-tab="compras_reposicao">
-          <span class="ho-rail-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
-          <span class="ho-rail-lbl">Compras e reposição</span>
-          <span class="ho-rail-badge" id="tab-badge-compras-reposicao">0</span>
-        </button>
-        <button type="button" class="ho-rail-item" data-main-tab="checklist">
-          <span class="ho-rail-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-          <span class="ho-rail-lbl">Checklist</span>
-          <span class="ho-rail-badge ho-rail-badge--green" id="tab-badge-checklist">0</span>
-        </button>
-        <button type="button" class="ho-rail-item" data-main-tab="historico">
-          <span class="ho-rail-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
-          <span class="ho-rail-lbl">Histórico</span>
-        </button>
-        <button type="button" class="ho-rail-item hidden" data-main-tab="comprador" id="tab-comprador">
-          <span class="ho-rail-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg></span>
-          <span class="ho-rail-lbl">Comprador</span>
-          <span class="ho-rail-badge" id="tab-badge-comprador">0</span>
-        </button>
+    <!-- Brand -->
+    <div class="ho-topbar-brand">
+      <div class="ho-brand-mark"></div>
+      <div class="ho-brand-tx">
+        <strong>Handover</strong>
+        <span>Drogarias Conceito</span>
       </div>
+    </div>
 
-      <div class="ho-rail-user" id="ho-rail-user">
-        <div class="ho-rail-avatar" id="operador-avatar-char">?</div>
-        <div class="ho-rail-user-tx">
-          <b id="operador-atual-rail">Operador</b>
-        </div>
+    <!-- Operador -->
+    <div class="ho-topbar-operator">
+      <div class="ho-op-avatar" id="operador-avatar-char">?</div>
+      <div class="ho-op-info">
+        <span class="ho-op-sup">Operador atual</span>
+        <span class="ho-op-name" id="operador-atual-rail">—</span>
       </div>
-    </nav>
-  </div>
+    </div>
 
-  <!-- Main area -->
-  <div class="ho-main">
+    <div class="ho-topbar-divider"></div>
 
-    <!-- Topbar -->
-    <header class="ho-topbar">
-      <div class="ho-title">
-        <span id="ho-topbar-title">Pendências</span>
-      </div>
-      <div class="ho-spacer"></div>
-      <div class="ho-syncs">
-        <span class="k">Atualizado</span>
-        <span class="v" id="last-sync-label">—</span>
-      </div>
-      <button type="button" id="refresh-dashboard-btn" class="ho-icbtn" aria-label="Atualizar agora" title="Atualizar">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+    <!-- Timestamps -->
+    <div class="ho-topbar-times">
+      <div><span class="ho-top-k">Última atualização</span> <span class="ho-top-v" id="last-sync-label">—</span></div>
+      <div><span class="ho-top-k">Última ação</span> <span class="ho-top-v" id="last-action-label">—</span></div>
+    </div>
+
+    <!-- Actions -->
+    <button type="button" id="refresh-dashboard-btn" class="ho-btn ho-btn--ghost ho-btn--sm">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+      Atualizar agora
+    </button>
+
+    <div id="novo-registro-dropdown" class="ho-dd">
+      <button type="button" id="novo-registro-trigger" class="ho-btn ho-btn--primary" aria-expanded="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        Novo registro
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
       </button>
-      <button type="button" id="ho-theme-toggle" class="ho-icbtn" aria-label="Alternar tema" title="Tema">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-      </button>
-
-      <!-- Hidden fields kept for JS compatibility -->
-      <input id="operador-atual" type="hidden" name="operador-atual" autocomplete="name">
-      <span id="last-action-label" style="display:none;"></span>
-
-      <div id="novo-registro-dropdown" class="ho-dd">
-        <button type="button" id="novo-registro-trigger" class="ho-btn ho-btn--primary" aria-expanded="false">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-          Novo registro
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      <div id="novo-registro-menu" class="ho-dd-menu hidden" role="menu">
+        <button type="button" class="ho-dd-item" role="menuitem">
+          <span class="ho-dd-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></span>
+          <span class="ho-dd-tx"><b>Pendência da loja</b><span>Registrar uma tarefa ou pendência</span></span>
         </button>
-        <div id="novo-registro-menu" class="ho-dd-menu hidden" role="menu">
-          <button type="button" class="ho-dd-item" role="menuitem">
-            <span class="ho-dd-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></span>
-            <span class="ho-dd-tx"><b>Pendência da loja</b><span>Registrar uma tarefa ou pendência</span></span>
-          </button>
-          <button type="button" class="ho-dd-item" role="menuitem">
-            <span class="ho-dd-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></span>
-            <span class="ho-dd-tx"><b>Encomenda de medicamentos</b><span>Registrar encomenda de medicamentos</span></span>
-          </button>
-          <button type="button" class="ho-dd-item" role="menuitem">
-            <span class="ho-dd-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
-            <span class="ho-dd-tx"><b>Compra e reposição</b><span>Solicitar compra de estoque, limpeza, sacolas e outros</span></span>
-          </button>
+        <button type="button" class="ho-dd-item" role="menuitem">
+          <span class="ho-dd-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></span>
+          <span class="ho-dd-tx"><b>Encomenda de medicamentos</b><span>Registrar encomenda de medicamentos</span></span>
+        </button>
+        <button type="button" class="ho-dd-item" role="menuitem">
+          <span class="ho-dd-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+          <span class="ho-dd-tx"><b>Compra e reposição</b><span>Solicitar compra de estoque, limpeza, sacolas e outros</span></span>
+        </button>
+      </div>
+    </div>
+
+    <button type="button" id="ho-theme-toggle" class="ho-icbtn" aria-label="Alternar tema" title="Tema claro/escuro">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+    </button>
+
+    <button type="button" id="handover-logout-btn" class="ho-btn ho-btn--ghost ho-btn--sm">Sair</button>
+
+    <!-- Hidden compat -->
+    <input id="operador-atual" type="hidden" name="operador-atual" autocomplete="name">
+    <span id="last-action-label-legacy" style="display:none;"></span>
+  </header>
+
+  <!-- ── KPI Strip ── -->
+  <div id="operation-summary" class="ho-kstrip"></div>
+
+  <!-- ── Tab bar ── -->
+  <nav class="ho-tabbar" aria-label="Seções principais">
+    <button type="button" class="ho-tab active" data-main-tab="pendencias">
+      Fila de pendências
+      <span class="ho-tab-badge" id="tab-badge-pendencias">0</span>
+    </button>
+    <button type="button" class="ho-tab" data-main-tab="medicamentos">
+      Medicamentos solicitados
+      <span class="ho-tab-badge" id="tab-badge-medicamentos">0</span>
+    </button>
+    <button type="button" class="ho-tab" data-main-tab="compras_reposicao">
+      Compras e reposição
+      <span class="ho-tab-badge" id="tab-badge-compras-reposicao">0</span>
+    </button>
+    <button type="button" class="ho-tab" data-main-tab="checklist">
+      Checklist
+      <span class="ho-tab-badge ho-tab-badge--brand" id="tab-badge-checklist">0</span>
+    </button>
+    <button type="button" class="ho-tab" data-main-tab="historico">
+      Histórico / Resolvidos
+    </button>
+    <button type="button" class="ho-tab hidden" data-main-tab="comprador" id="tab-comprador">
+      Comprador
+      <span class="ho-tab-badge" id="tab-badge-comprador">0</span>
+    </button>
+  </nav>
+
+  <!-- ── Workspace ── -->
+  <div class="ho-workspace">
+
+    <!-- Main content scroll -->
+    <div class="ho-content ho-scroll">
+
+      <!-- Queue panel (pendencias / medicamentos / compras / historico / comprador) -->
+      <section id="panel-queue-wrap">
+
+        <div id="queue-section-head" class="ho-sechead">
+          <div>
+            <div class="ho-eyebrow">Passagem de turno</div>
+            <h2 id="queue-section-heading">Fila de pendências</h2>
+            <p id="queue-subtitle" class="ho-sechead-sub"></p>
+            <p id="queue-section-lede" class="hidden"></p>
+          </div>
+        </div>
+
+        <div class="ho-toolbar">
+          <div id="med-search-wrap" class="ho-search hidden">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input id="med-queue-search" type="search" placeholder="Buscar..." autocomplete="off">
+          </div>
+          <div id="queue-filters-host" class="ho-filters"></div>
+          <div id="historico-filters-panel" class="ho-filters historico-filters hidden"></div>
+        </div>
+
+        <div id="queue-list" class="ho-qlist"></div>
+
+        <div id="queue-empty" class="ho-empty hidden">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <b>Nada por aqui</b>
+          <span>Nenhum item para o filtro selecionado.</span>
+        </div>
+
+        <div id="queue-status" class="status" aria-live="polite"></div>
+
+      </section>
+
+      <!-- Checklist panel (full-width when checklist tab active) -->
+      <section id="panel-checklist" class="hidden">
+
+        <div class="ho-sechead">
+          <div>
+            <div class="ho-eyebrow">Rotina do turno</div>
+            <h2 id="checklist-turn-title">Checklist do turno</h2>
+            <p>Tarefas obrigatórias de abertura, limpeza e operação.</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+            <label for="checklist-turno-select" style="font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;">Turno</label>
+            <select id="checklist-turno-select" class="ho-select" style="width:auto;min-width:100px;">
+              <option value="Manhã">Manhã</option>
+              <option value="Noite">Noite</option>
+            </select>
+            <button id="checklist-toggle-btn" type="button" class="ho-btn ho-btn--ghost ho-btn--sm">Fechar checklist</button>
+          </div>
+        </div>
+
+        <div id="checklist-summary" class="checklist-summary"></div>
+        <p id="checklist-generate-hint" class="checklist-hint"></p>
+
+        <div class="ho-filters" style="margin-bottom:14px;">
+          <button type="button" class="ho-filter active" data-check-filter="todos">Todos</button>
+          <button type="button" class="ho-filter" data-check-filter="pendentes">Pendentes</button>
+          <button type="button" class="ho-filter" data-check-filter="feitos">Feitos</button>
+          <button type="button" class="ho-filter" data-check-filter="na">Não aplicáveis</button>
+          <button type="button" class="ho-filter" data-check-filter="feitos_hoje">Feitos hoje</button>
+        </div>
+
+        <div id="checklist-content" class="hidden">
+          <div id="checklist-categories" class="checklist-categories"></div>
+        </div>
+        <div id="checklist-status" class="status" aria-live="polite"></div>
+
+      </section>
+
+    </div><!-- /ho-content -->
+
+    <!-- ── Right sidebar ── -->
+    <aside class="ho-sidebar" id="ho-sidebar">
+
+      <div class="ho-sidebar-block">
+        <div class="ho-sidebar-blk-head">
+          <span>Checklist do turno</span>
+          <button type="button" class="ho-link" id="sidebar-checklist-goto">Abrir</button>
+        </div>
+        <div id="sidebar-checklist-body">
+          <p class="ho-muted" style="font-size:12px;margin:8px 0;">Carregando...</p>
         </div>
       </div>
 
-      <button type="button" id="handover-logout-btn" class="ho-btn ho-btn--ghost ho-btn--sm">Sair</button>
-    </header>
+      <div class="ho-sidebar-block">
+        <div class="ho-sidebar-blk-head">
+          <span>Histórico / Resolvidos</span>
+        </div>
+        <div id="sidebar-historico-body">
+          <p class="ho-muted" style="font-size:12px;margin:8px 0;">Carrega ao abrir a aba Histórico.</p>
+        </div>
+      </div>
 
-    <!-- Content -->
-    <div class="ho-scroll">
-      <div class="ho-page">
+    </aside>
 
-        <!-- KPI strip -->
-        <div id="operation-summary" class="ho-kstrip"></div>
-
-        <!-- Queue panel (pendencias, medicamentos, compras, historico, comprador) -->
-        <section id="panel-queue-wrap" class="ho-panel">
-          <div id="queue-section-head" class="ho-sechead">
-            <div>
-              <div class="ho-eyebrow">Passagem de turno</div>
-              <h2 id="queue-section-heading">Fila de pendências</h2>
-              <p id="queue-subtitle" class="ho-sechead-sub"></p>
-            </div>
-          </div>
-          <div class="ho-toolbar">
-            <div id="med-search-wrap" class="ho-search hidden">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              <input id="med-queue-search" type="search" placeholder="Buscar..." autocomplete="off">
-            </div>
-            <div id="queue-filters-host" class="ho-filters"></div>
-            <div id="historico-filters-panel" class="ho-filters historico-filters hidden"></div>
-          </div>
-          <div id="queue-list" class="ho-qlist"></div>
-          <div id="queue-empty" class="ho-empty hidden">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            <b>Nada por aqui</b>
-            <span>Nenhum item para o filtro selecionado.</span>
-          </div>
-          <div id="queue-status" class="status" aria-live="polite"></div>
-        </section>
-
-        <!-- Checklist panel -->
-        <section id="panel-checklist" class="ho-panel hidden">
-          <div class="ho-sechead">
-            <div>
-              <div class="ho-eyebrow">Rotina do turno</div>
-              <h2 id="checklist-turn-title">Checklist do turno</h2>
-              <p>Tarefas obrigatórias de abertura, limpeza e operação.</p>
-            </div>
-            <div class="field checklist-turn-field" style="flex:0 0 auto;">
-              <label for="checklist-turno-select" style="font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;">Turno</label>
-              <select id="checklist-turno-select" class="ho-select" style="width:auto;min-width:110px;">
-                <option value="Manhã">Manhã</option>
-                <option value="Noite">Noite</option>
-              </select>
-            </div>
-          </div>
-          <div id="checklist-summary" class="checklist-summary"></div>
-          <p id="checklist-generate-hint" class="checklist-hint"></p>
-          <div class="ho-filters" style="margin-bottom:14px;">
-            <button type="button" class="ho-filter active" data-check-filter="todos">Todos</button>
-            <button type="button" class="ho-filter" data-check-filter="pendentes">Pendentes</button>
-            <button type="button" class="ho-filter" data-check-filter="feitos">Feitos</button>
-            <button type="button" class="ho-filter" data-check-filter="na">Não aplicáveis</button>
-            <button type="button" class="ho-filter" data-check-filter="feitos_hoje">Feitos hoje</button>
-          </div>
-          <div id="checklist-content" class="hidden">
-            <div id="checklist-categories" class="checklist-categories"></div>
-          </div>
-          <div id="checklist-status" class="status" aria-live="polite"></div>
-          <button id="checklist-toggle-btn" type="button" class="ho-btn ho-btn--secondary" style="display:none;">Abrir checklist</button>
-        </section>
-
-      </div><!-- /ho-page -->
-    </div><!-- /ho-scroll -->
-  </div><!-- /ho-main -->
+  </div><!-- /ho-workspace -->
 
   <!-- ── Modals (all IDs preserved) ── -->
 

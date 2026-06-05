@@ -65,18 +65,8 @@ el('med-queue-search').addEventListener('input', function() {
 el('form-modal-overlay').addEventListener('click', function(e) { if (e.target === el('form-modal-overlay')) closeFormModal_(); });
 el('card-detail-overlay').addEventListener('click', function(e) { if (e.target === el('card-detail-overlay')) closeCardDetailOverlay_(); });
 
-document.querySelectorAll('.main-tab').forEach(function(btn) {
-  btn.addEventListener('click', function() {
-    var tab = btn.getAttribute('data-main-tab');
-    if (tab === 'historico') G.historico = null;
-    if (tab === 'comprador') G.compradorCache = null;
-    G.medSearch = '';
-    setMainTab(tab);
-  });
-});
-
-// Rail items (new left-nav layout)
-document.querySelectorAll('.ho-rail-item').forEach(function(btn) {
+// Horizontal tab bar
+document.querySelectorAll('.ho-tab').forEach(function(btn) {
   btn.addEventListener('click', function() {
     var tab = btn.getAttribute('data-main-tab');
     if (!tab) return;
@@ -86,6 +76,9 @@ document.querySelectorAll('.ho-rail-item').forEach(function(btn) {
     setMainTab(tab);
   });
 });
+
+// Sidebar "Abrir checklist" button
+on('sidebar-checklist-goto', 'click', function() { setMainTab('checklist'); });
 
 // ── Handlers inline do HTML → addEventListener (CSP bloqueia onclick/onchange inline)
 function on(id, evt, fn) { var e = el(id); if (e) e.addEventListener(evt, fn); }
