@@ -26,7 +26,7 @@
 * { box-sizing: border-box; }
 html { max-width: 100%; overflow-x: hidden; }
 body { margin: 0; max-width: 100%; background: linear-gradient(180deg, var(--bg) 0%, var(--bg-alt) 40%); color: var(--text); font-family: system-ui, -apple-system, 'Segoe UI', Arial, Helvetica, sans-serif; overflow-x: hidden; }
-.page { min-width: 0; max-width: min(100%, 1560px); width: 100%; margin: 0 auto; padding: 14px clamp(14px, 2vw, 22px) 32px; }
+.page { min-width: 0; width: 100%; margin: 0 auto; padding: 14px clamp(14px, 2vw, 22px) 32px; }
 .hidden { display: none !important; }
 
 /* LOGIN */
@@ -447,4 +447,4 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 @media (max-width: 640px) { .page { padding: 10px; } .summary-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); } .app-header-right { justify-content: flex-start; } .dropdown-panel { left: 0; right: auto; min-width: min(320px, calc(100vw - 24px)); } .queue-actions button, .check-actions button, .form-actions button, .toolbar-actions button { flex: 1 1 calc(50% - 6px); } }
 @media (max-width: 720px) { .audit-drawer { width: 100vw; } }
 @media (max-width: 500px) { .card-detail-body .detail-section dl { grid-template-columns: 1fr; } .grp-items-table th:nth-child(2), .grp-items-table td:nth-child(2) { display: none; } .grp-item-actions { justify-content: flex-start; margin-top: 2px; } }
-@media (max-width: 1366px) { .desk-layout { grid-template-columns: minmax(0, 1fr) minmax(240px, 28%); gap: 12px; } .summary-strip { gap: 8px; } .kpi-card { padding: 11px 12px; } .kpi-card .value { font-size: 26px; } }
+@media (max-width: 1366px) { .summary-strip { gap: 8px; } .kpi-card { padding: 11px 12px; } .kpi-card .value { font-size: 26px; } }
