@@ -216,12 +216,25 @@
     el('tab-badge-checklist').textContent       = clPend;
 
     el('operation-summary').innerHTML = [
-      kpiCard('kpi-blue',   icoClip_(),   'PENDÊNCIAS',           pend,  'Solicitações gerais'),
-      kpiCard('kpi-red',    icoAlert_(),  'URGENTES',              urg,  'Prioridade na loja'),
-      kpiCard('kpi-green',  icoPill_(),   'ENCOMENDAS',           medAt, 'Faltas e encomendas'),
-      kpiCard('kpi-orange', icoWA_(),     'COMPRADOS SEM AVISO',  semAv, 'WhatsApp pendente'),
+      kpiCard('kpi-blue',   icoClip_(),   'PENDÊNCIAS',           pend,  'Solicitações gerais',   'pendencias',    'pendentes'),
+      kpiCard('kpi-red',    icoAlert_(),  'URGENTES',              urg,  'Prioridade na loja',    'pendencias',    'urgentes'),
+      kpiCard('kpi-green',  icoPill_(),   'ENCOMENDAS',           medAt, 'Faltas e encomendas',   'medicamentos',  'pendentes'),
+      kpiCard('kpi-orange', icoWA_(),     'COMPRADOS SEM AVISO',  semAv, 'WhatsApp pendente',     'medicamentos',  'comprados_sem_av'),
       kpiCardChecklist(cl),
     ].join('');
+
+    // Ligar click nos cards de navegação
+    el('operation-summary').querySelectorAll('[data-kpi-tab]').forEach(function(card) {
+      card.addEventListener('click', function() {
+        var tab    = card.getAttribute('data-kpi-tab');
+        var filter = card.getAttribute('data-kpi-filter');
+        setMainTab(tab);
+        if (filter) {
+          if (tab === 'pendencias')   { G.pendFilter = filter; renderPendencias(); }
+          if (tab === 'medicamentos') { G.medFilter  = filter; renderMedicamentos(); }
+        }
+      });
+    });
   }
 
   function kpiCardChecklist(cl) {
@@ -232,7 +245,7 @@
     var feitos   = s ? s.itensFeitos         : 0;
     var na       = s ? s.itensNaoAplicaveis  : 0;
     var progr    = s ? s.percentualConcluido : 0;
-    return '<div class="kpi-card kpi-cl kpi-cl-detail">' +
+    return '<div class="kpi-card kpi-cl kpi-cl-detail kpi-link" data-kpi-tab="checklist" role="button" tabindex="0">' +
       '<div class="kpi-ico">' + icoCheck_() + '</div>' +
       '<div class="kpi-body">' +
         '<div class="label">CHECKLIST · <strong style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;">' + escHtml(turno) + '</strong></div>' +
@@ -248,8 +261,12 @@
     '</div>';
   }
 
-  function kpiCard(cls, ico, label, value, sub) {
-    return '<div class="kpi-card ' + cls + '">' +
+  function kpiCard(cls, ico, label, value, sub, tab, filter) {
+    var navAttrs = tab
+      ? ' data-kpi-tab="' + tab + '"' + (filter ? ' data-kpi-filter="' + filter + '"' : '') + ' role="button" tabindex="0"'
+      : '';
+    var navCls = tab ? ' kpi-link' : '';
+    return '<div class="kpi-card ' + cls + navCls + '"' + navAttrs + '>' +
       '<div class="kpi-ico">' + ico + '</div>' +
       '<div class="kpi-body">' +
         '<div class="label">' + escHtml(label) + '</div>' +
