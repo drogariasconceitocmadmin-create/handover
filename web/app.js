@@ -30,6 +30,53 @@
     _autoRefreshTimer: null,
   };
 
+  /* ── normalização PT-BR ──
+     Aplicada em TODOS os saves para garantir padrão de escrita,
+     independente de o operador digitar em caixa alta, baixa ou mista. */
+
+  // Artigos e preposições que ficam em minúsculo no meio de nomes
+  var _PREP = /^(de|da|do|dos|das|e|a|o|em|com|por|para|sem|sob|até|ao|à|às|no|na|nos|nas|num|numa|uns|umas|ao|à)$/i;
+
+  // Nome próprio: cada palavra começa com maiúscula, preposições PT-BR em minúsculo
+  function normNome(str) {
+    if (!str) return str;
+    return str.trim().replace(/\s+/g, ' ')
+      .split(' ')
+      .map(function(w, i) {
+        if (!w) return w;
+        if (i > 0 && _PREP.test(w)) return w.toLowerCase();
+        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      }).join(' ');
+  }
+
+  // Medicamento / item: Title Case com regras farmacêuticas
+  // - Tokens com dígitos (500mg, 400/57mg): deixa números, lowercase as unidades
+  // - Tokens com + ou / sem dígitos (Amox+Clav): Title Case em cada parte
+  // - Palavras normais: Title Case
+  function normMed(str) {
+    if (!str) return str;
+    return str.trim().replace(/\s+/g, ' ')
+      .split(' ')
+      .map(function(w, i) {
+        if (!w) return w;
+        if (i > 0 && _PREP.test(w)) return w.toLowerCase();
+        // Token com dígito: lowercase as letras (unidades: mg, ml, mcg, g, ui, etc.)
+        if (/\d/.test(w)) return w.replace(/[A-Z]/g, function(c) { return c.toLowerCase(); });
+        // Token com + ou / (ex: Amox+Clav): Title Case de cada segmento
+        if (/[+\/]/.test(w)) {
+          return w.toLowerCase().replace(/(^|[+\/])([a-z])/g, function(m, sep, c) { return sep + c.toUpperCase(); });
+        }
+        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      }).join(' ');
+  }
+
+  // Texto livre: primeira letra da string maiúscula, resto preservado
+  function normTexto(str) {
+    if (!str) return str;
+    str = str.trim().replace(/\s+/g, ' ');
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
   /* ── utils ── */
   function el(id) { return document.getElementById(id); }
   function ce(tag, cls, html) {
@@ -1559,8 +1606,8 @@
   }
 
   async function salvarGeral() {
-    var titulo = el('tituloGeral').value.trim();
-    var desc   = el('descricao').value.trim();
+    var titulo = normTexto(el('tituloGeral').value.trim());
+    var desc   = normTexto(el('descricao').value.trim());
     var urg    = el('urgenciaGeral').value;
     if (!titulo && !desc) { el('form-status').textContent = 'Informe título ou descrição.'; return; }
     var res = await db.rpc('handover_pendencia_criar', { p_token: G.token, p_titulo: titulo, p_descricao: desc, p_urgencia: urg });
@@ -1575,11 +1622,11 @@
     var fn    = el('fornecedorCompra').value;
     var cod   = el('codigoCompraFornecedor').value.trim();
     var preco = el('precoVenda').value.trim().replace(',', '.');
-    var obs   = el('observacaoSolicitacao').value.trim();
-    var payload = { tipo:tipo, atendente:aten, fornecedorCompra:fn, codigoCompraFornecedor:cod,
+    var obs   = normTexto(el('observacaoSolicitacao').value.trim());
+    var payload = { tipo:tipo, atendente:normNome(aten), fornecedorCompra:fn, codigoCompraFornecedor:cod,
                     precoVenda:preco||null, observacaoSolicitacao:obs };
     if (tipo === 'Falta') {
-      var med = el('medicamento').value.trim();
+      var med = normMed(el('medicamento').value.trim());
       if (!med) { el('form-status').textContent = 'Informe o medicamento.'; return; }
       if (!aten) { el('form-status').textContent = 'Informe o atendente.'; return; }
       payload.medicamento = med;
@@ -1589,13 +1636,13 @@
       var itens = [];
       rows.forEach(function(tr) {
         var m = tr.querySelector('[name$="_m"]'); var q = tr.querySelector('[name$="_q"]'); var o = tr.querySelector('[name$="_o"]');
-        if (m && m.value.trim()) itens.push({ medicamento:m.value.trim(), quantidade:q&&q.value||'1', observacaoItem:o&&o.value.trim()||'' });
+        if (m && m.value.trim()) itens.push({ medicamento:normMed(m.value.trim()), quantidade:q&&q.value||'1', observacaoItem:normTexto(o&&o.value.trim()||'') });
       });
       if (!itens.length) { el('form-status').textContent = 'Adicione ao menos um medicamento.'; return; }
       var prev = el('previsaoEntrega').value;
       if (!prev) { el('form-status').textContent = 'Informe a previsão de entrega.'; return; }
       payload.itens = itens;
-      payload.cliente = el('cliente').value.trim();
+      payload.cliente = normNome(el('cliente').value.trim());
       payload.telefone = el('telefone').value.trim();
       payload.prePago  = el('prePago').checked;
       payload.formaRecebimento = el('formaRecebimento').value;
@@ -1613,11 +1660,11 @@
     var itens = [];
     rows.forEach(function(tr) {
       var i = tr.querySelector('[name$="_i"]'); var q = tr.querySelector('[name$="_q"]'); var o = tr.querySelector('[name$="_o"]');
-      if (i && i.value.trim()) itens.push({ item:i.value.trim(), quantidade:q&&q.value||'', observacaoItem:o&&o.value.trim()||'' });
+      if (i && i.value.trim()) itens.push({ item:normMed(i.value.trim()), quantidade:q&&q.value||'', observacaoItem:normTexto(o&&o.value.trim()||'') });
     });
     if (!itens.length) { el('form-status').textContent = 'Adicione ao menos um item.'; return; }
     var payload = { itens:itens, prioridade:el('reposicao-prioridade').value,
-                    observacao:el('reposicao-observacao').value.trim(),
+                    observacao:normTexto(el('reposicao-observacao').value.trim()),
                     fornecedorSugerido:el('reposicao-fornecedor').value.trim(),
                     previsaoDesejada:el('reposicao-previsao').value||null };
     var res = await db.rpc('handover_compra_reposicao_criar', { p_token: G.token, p_payload: payload });
@@ -1671,8 +1718,8 @@
   async function salvarEdicao(cat) {
     var payload = {};
     if (cat === 'Geral') {
-      payload.titulo    = el('tituloGeral').value.trim();
-      payload.descricao = el('descricao').value.trim();
+      payload.titulo    = normTexto(el('tituloGeral').value.trim());
+      payload.descricao = normTexto(el('descricao').value.trim());
       payload.urgencia  = el('urgenciaGeral').value;
       if (el('geral-tem-vencimento').checked) {
         payload.dataVencimento = el('geral-data-vencimento').value || null;
@@ -1684,13 +1731,13 @@
         el('form-status').textContent = 'Informe título ou descrição.'; return;
       }
     } else {
-      payload.medicamento           = el('medicamento').value.trim()                     || null;
-      payload.cliente               = el('cliente').value.trim()                         || null;
-      payload.telefone              = el('telefone').value.trim()                         || null;
-      payload.precoVenda            = el('precoVenda').value.trim().replace(',', '.')     || null;
-      payload.observacaoSolicitacao = el('observacaoSolicitacao').value.trim()           || null;
+      payload.medicamento           = normMed(el('medicamento').value.trim())            || null;
+      payload.cliente               = normNome(el('cliente').value.trim())               || null;
+      payload.telefone              = el('telefone').value.trim()                        || null;
+      payload.precoVenda            = el('precoVenda').value.trim().replace(',', '.')    || null;
+      payload.observacaoSolicitacao = normTexto(el('observacaoSolicitacao').value.trim())|| null;
       payload.prePago               = el('prePago').checked;
-      payload.formaRecebimento      = el('formaRecebimento').value                       || null;
+      payload.formaRecebimento      = el('formaRecebimento').value                      || null;
       if (el('previsaoEntrega').value) payload.previsaoEntrega = el('previsaoEntrega').value;
     }
     var id = G.editId, orig = G.editOrigem;
