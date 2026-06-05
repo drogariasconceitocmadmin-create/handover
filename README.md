@@ -28,8 +28,9 @@ Reconstrução do sistema **"Handover e Checklist"** (legado: Google Apps Script
 | F5 | Polimento: normalização PascalCase, KPIs corretos | ✅ |
 | F6 | Deploy Cloudflare Pages | ✅ |
 | F7 | Importação dados reais do Sheets | ✅ |
+| **Convites** | Sistema de primeiro acesso (novo user se registra via código) | ✅ |
 
-**Smoke test:** 2026-06-05 — 17 RPCs testados, 100% operacionais, 4 usuários ativos.
+**Smoke test:** 2026-06-05 — 7 testes, 6 pass / 1 skip (inclui convites, medicamentos, pendências, histórico).
 
 ---
 
@@ -56,6 +57,27 @@ handover-v2/
 ├── server.js               # Servidor estático local (porta 8777)
 └── MEMORY.md               # Decisões técnicas, gotchas, estado atual
 ```
+
+---
+
+## Como usar
+
+### Login tradicional
+1. Abra https://handover-conceito.pages.dev
+2. Digite `usuario` (ex: `isaque`) e `PIN` (ex: `1254`)
+3. Clique "Entrar" → dashboard abre
+
+### Primeiro acesso (novo usuário)
+1. Na tela de login, clique **"Primeiro acesso?"**
+2. Preencha:
+   - **Seu nome completo** (ex: João Silva)
+   - **PIN** (4-8 dígitos, escolha uma senha)
+   - **Confirmar PIN** (repita)
+   - **Código de convite** (8-12 caracteres, fornecido por admin)
+3. Clique "Registrar"
+4. Se válido, **auto-loga** no dashboard (novo usuário, perfil=operador)
+
+**Nota:** Admin (marco) gera códigos de convite via RPC `handover_convite_gerar(token)`. Código válido por 30 dias, uma única vez.
 
 ---
 

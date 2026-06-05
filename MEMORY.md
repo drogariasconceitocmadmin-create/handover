@@ -13,9 +13,9 @@
 | Deploy | Cloudflare Pages — `npx wrangler pages deploy web/ --project-name handover-conceito` |
 | Supabase projeto | `pxswpufbkisdniojwdtt` (sa-east-1) |
 | Supabase URL | `https://pxswpufbkisdniojwdtt.supabase.co` |
-| Migrations aplicadas | `0001`–`0013` no ar (`0014` em aplicação) |
-| Fases frontend | F1–F7 **concluídas** |
-| Smoke test | ✅ 2026-06-05 — 17 RPCs, 100% OK |
+| Migrations aplicadas | `0001`–`0015` no ar |
+| Fases frontend | F1–F7 + Convites **concluídas** |
+| Smoke test | ✅ 6 pass / 1 skip — testa convites também |
 
 ---
 
@@ -153,6 +153,47 @@ Sheets exporta em formato US: `M/D/YYYY` (mês primeiro). `normDate` e `normTime
 - Regras: `G`/`db` importados nunca recriados; ciclo `ação→carregarBundle→render` só em runtime (sem chamada cruzada no top-level dos módulos, exceto `main.js`); `api.js` desloga via callback injetado (sem ciclo api→domínio); handlers com `this` continuam `function` (nunca arrow).
 - Verificação: `node --check` (18) + ESLint `no-undef` (0) + runtime no preview + `npm test`.
 - **Gotcha**: `node --check` só valida sintaxe — NÃO resolve imports. Use ESLint `no-undef` ou o probe de `import()` dinâmico no browser para pegar export/import faltando (foi assim que se achou `abrirApp` não importado no `main.js`).
+
+## Sistema de Convites — Primeiro Acesso (2026-06-05)
+
+**Fluxo:**
+1. Admin (ex: marco) loga → clica menu "Novo registro" ou Admin UI → gera código via `handover_convite_gerar(p_token)` → recebe código único (ex: `A7K2M9X5`, válido 30 dias)
+2. Novo user na tela de login clica "Primeiro acesso?" → digita: nome completo, PIN (4-8 dígitos), código de convite
+3. Frontend chama `handover_convite_registrar(p_codigo, p_nome, p_pin)` (anon, sem autenticação prévia)
+4. RPC cria usuário (nome, usuario gerado automaticamente ex: "joão" ou "joão1" se houver conflict, pin_hash bcrypt, perfil='operador'), marca convite como usado, cria sessão
+5. Retorna token + session → frontend seta localStorage → auto-login → dashboard
+
+**RPCs:**
+- `handover_convite_gerar(p_token)` — admin only, retorna `{success, codigo, expira_em, criado_em}`
+- `handover_convite_registrar(p_codigo, p_nome, p_pin)` — public/anon, retorna `{success, token, usuario, nome, perfil}` ou `{success: false, erro: "genérico"}`
+
+**UI:**
+- Link "Primeiro acesso?" na tela de login → modal alternativo
+- Form: nome (3-50), PIN (4-8 dígitos), Confirmar PIN, Código de convite (8-12, uppercase)
+- Validações client: length, format, PIN match
+- Auto-uppercase código, limpa erro ao digitar, Enter entre campos
+
+**Segurança:**
+- Código one-time use (marcado `usado_por`, `usado_em` após sucesso)
+- Expira em 30 dias
+- Erro genérico ("Código inválido ou expirado") não revela se existe, expirou ou foi usado (constant-time)
+- Novo user sempre `operador`, nunca admin
+- PIN bcrypt hasheado (pgcrypto), nunca plaintext
+
+**Teste:**
+- `npm test` — novo teste "convite: gerar → registrar → auto-login" (passa; requer isaque=admin ou TOKEN de admin para gerar)
+
+**Usuários — Perfis atualizados (2026-06-05):**
+```
+usuario  | nome    | perfil
+---------|---------|----------
+isaque   | Isaque  | operador
+ainale   | Ainale  | operador
+priscila | Priscila| operador
+jelcinei | Jelcinei| gerente
+carlos   | Carlos  | comprador (era admin)
+marco    | Marco   | admin
+```
 
 ## Erros históricos nos logs (já corrigidos, ignorar)
 
