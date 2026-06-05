@@ -8,54 +8,61 @@
              script-src 'self' https://cdn.jsdelivr.net;
              connect-src 'self' https://pxswpufbkisdniojwdtt.supabase.co;
              style-src 'self';
+             font-src 'self';
              img-src 'self' data: https://drive.google.com https://lh3.googleusercontent.com;
              base-uri 'none'; form-action 'none'">
   <title>Handover - Drogarias Conceito</title>
+  <link rel="stylesheet" href="fonts/fonts.css">
+  <link rel="stylesheet" href="tokens/colors.css">
+  <link rel="stylesheet" href="tokens/typography.css">
+  <link rel="stylesheet" href="tokens/spacing.css">
+  <link rel="stylesheet" href="tokens/motion.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<div id="handover-login-overlay" class="handover-login-overlay" role="dialog" aria-modal="true" aria-labelledby="handover-login-title">
-  <div class="handover-login-card ho-card ho-card-pad">
-    <div class="handover-login-brand">
-      <div class="handover-login-symbol-ring">
-        <img id="handover-login-logo" class="brand-logo-img hidden" alt="Drogarias Conceito">
-      </div>
-      <span id="handover-login-brand-text" class="brand-mark">Drogarias Conceito</span>
-      <span class="ho-muted" style="font-size:13px;line-height:1.35;">Handover — acesso com PIN</span>
+<!-- Dot matrix canvas background -->
+<canvas id="ho-dot-matrix" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;display:block;"></canvas>
+
+<!-- ── Login overlay ── -->
+<div id="handover-login-overlay" class="ho-login" role="dialog" aria-modal="true" aria-labelledby="handover-login-title">
+  <div class="ho-login-card">
+    <div class="ho-login-brand">
+      <div class="ho-login-mark"></div>
+      <b>Drogarias Conceito</b>
+      <span>Handover — acesso com PIN</span>
     </div>
-    <h1 id="handover-login-title" class="handover-login-title">Entrar</h1>
-    <p id="handover-login-status" class="handover-login-status ho-muted hidden"></p>
-    <div class="field">
+    <h1 id="handover-login-title">Entrar</h1>
+    <p id="handover-login-status" class="ho-login-status hidden"></p>
+    <div class="ho-field">
       <label for="handover-login-usuario">Usuário</label>
-      <input id="handover-login-usuario" type="text" autocomplete="username" spellcheck="false">
+      <input id="handover-login-usuario" class="ho-input" type="text" autocomplete="username" spellcheck="false">
     </div>
-    <div class="field">
+    <div class="ho-field">
       <label for="handover-login-pin">PIN</label>
-      <input id="handover-login-pin" type="password" inputmode="numeric" autocomplete="current-password" spellcheck="false">
+      <input id="handover-login-pin" class="ho-input" type="password" inputmode="numeric" autocomplete="current-password" spellcheck="false">
     </div>
-    <p id="handover-login-error" class="handover-login-error" role="alert"></p>
-    <button type="button" id="handover-login-submit" class="btn-primary-header" style="width:100%;margin-top:6px;">Entrar</button>
-    <div style="margin-top:12px;text-align:center;">
-      <button type="button" id="handover-primeiro-acesso-toggle" class="link-like" style="color:#666;font-size:13px;text-decoration:underline;cursor:pointer;border:none;background:none;padding:0;">Primeiro acesso?</button>
+    <p id="handover-login-error" class="ho-login-error" role="alert"></p>
+    <button type="button" id="handover-login-submit" class="ho-btn ho-btn--primary ho-btn--block" style="margin-top:6px;">Entrar</button>
+    <div class="ho-login-row">
+      <button type="button" id="handover-primeiro-acesso-toggle" class="ho-link">Primeiro acesso?</button>
     </div>
   </div>
 </div>
 
-<div id="primeiro-acesso-overlay" class="handover-login-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="primeiro-acesso-title">
-  <div class="handover-login-card ho-card ho-card-pad">
-    <div class="handover-login-brand">
-      <div class="handover-login-symbol-ring">
-        <img id="primeiro-acesso-logo" class="brand-logo-img hidden" alt="Drogarias Conceito">
-      </div>
-      <span id="primeiro-acesso-brand-text" class="brand-mark">Drogarias Conceito</span>
-      <span class="ho-muted" style="font-size:13px;line-height:1.35;">Registre-se — primeiro acesso</span>
+<!-- ── Primeiro acesso overlay ── -->
+<div id="primeiro-acesso-overlay" class="ho-login hidden" role="dialog" aria-modal="true" aria-labelledby="primeiro-acesso-title">
+  <div class="ho-login-card">
+    <div class="ho-login-brand">
+      <div class="ho-login-mark"></div>
+      <b>Drogarias Conceito</b>
+      <span>Registre-se — primeiro acesso</span>
     </div>
-    <h1 id="primeiro-acesso-title" class="handover-login-title">Criar conta</h1>
-    <p id="primeiro-acesso-status" class="handover-login-status ho-muted hidden"></p>
-    <div class="field">
+    <h1 id="primeiro-acesso-title">Criar conta</h1>
+    <p id="primeiro-acesso-status" class="ho-login-status hidden"></p>
+    <div class="ho-field">
       <label for="pri-nome">Selecione seu nome</label>
-      <select id="pri-nome">
+      <select id="pri-nome" class="ho-select">
         <option value="">— Escolha —</option>
         <option value="Isaque">Isaque</option>
         <option value="Ainale">Ainale</option>
@@ -65,307 +72,398 @@
         <option value="Marco">Marco</option>
       </select>
     </div>
-    <div class="field">
+    <div class="ho-field">
       <label for="pri-pin">PIN (4-8 dígitos)</label>
-      <input id="pri-pin" type="password" inputmode="numeric" placeholder="Ex: 1234" autocomplete="new-password" spellcheck="false">
+      <input id="pri-pin" class="ho-input" type="password" inputmode="numeric" placeholder="Ex: 1234" autocomplete="new-password">
     </div>
-    <div class="field">
+    <div class="ho-field">
       <label for="pri-pin-confirm">Confirmar PIN</label>
-      <input id="pri-pin-confirm" type="password" inputmode="numeric" placeholder="Repita o PIN" autocomplete="new-password" spellcheck="false">
+      <input id="pri-pin-confirm" class="ho-input" type="password" inputmode="numeric" placeholder="Repita o PIN" autocomplete="new-password">
     </div>
-    <div class="field">
+    <div class="ho-field">
       <label for="pri-codigo-convite">Código de convite</label>
-      <input id="pri-codigo-convite" type="text" placeholder="Código recebido" autocomplete="off" spellcheck="false" style="text-transform:uppercase;">
+      <input id="pri-codigo-convite" class="ho-input" type="text" placeholder="Código recebido" autocomplete="off" style="text-transform:uppercase;">
     </div>
-    <p id="primeiro-acesso-error" class="handover-login-error" role="alert"></p>
-    <button type="button" id="primeiro-acesso-submit" class="btn-primary-header" style="width:100%;margin-top:6px;">Registrar</button>
-    <div style="margin-top:12px;text-align:center;">
-      <button type="button" id="primeiro-acesso-voltar" class="link-like" style="color:#666;font-size:13px;text-decoration:underline;cursor:pointer;border:none;background:none;padding:0;">Voltar ao login</button>
+    <p id="primeiro-acesso-error" class="ho-login-error" role="alert"></p>
+    <button type="button" id="primeiro-acesso-submit" class="ho-btn ho-btn--brand ho-btn--block" style="margin-top:6px;">Registrar</button>
+    <div class="ho-login-row">
+      <button type="button" id="primeiro-acesso-voltar" class="ho-link">Voltar ao login</button>
     </div>
   </div>
 </div>
 
-<div id="app-shell" class="hidden" aria-hidden="true">
-<main class="page">
-  <header class="app-header">
-    <div class="app-header-left">
-      <img id="handover-brand-logo" class="brand-logo-img hidden" alt="Drogarias Conceito">
-      <span id="handover-brand-text" class="brand-mark">Drogarias Conceito</span>
-      <span class="brand-sep" aria-hidden="true"></span>
-      <span class="brand-product">Handover</span>
-    </div>
-    <div class="app-header-right">
-      <div class="header-pill operador-pill">
-        <span class="operador-avatar" id="operador-avatar-char" aria-hidden="true">?</span>
-        <label class="field">
-          <span class="header-pill-label">Operador atual</span>
-          <input id="operador-atual" type="text" name="operador-atual" autocomplete="name" readonly tabindex="-1" placeholder="—">
-        </label>
-      </div>
-      <button type="button" id="handover-logout-btn" class="btn-header-secondary">Sair</button>
-      <div class="header-pill">
-        <span class="header-pill-label">Última atualização</span>
-        <span id="last-sync-label" class="header-pill-value">—</span>
-      </div>
-      <div class="header-pill">
-        <span class="header-pill-label">Última ação</span>
-        <span id="last-action-label" class="header-pill-value">—</span>
-      </div>
-      <div class="header-actions">
-        <button type="button" id="refresh-dashboard-btn" class="btn-header-secondary">Atualizar agora</button>
-        <div id="novo-registro-dropdown" class="dropdown-root">
-          <button type="button" id="novo-registro-trigger" class="btn-primary-header" aria-expanded="false">Novo registro ▾</button>
-          <div id="novo-registro-menu" class="dropdown-panel hidden" role="menu">
-            <button type="button" class="dropdown-dd-item" role="menuitem">
-              <span class="dropdown-dd-ico" aria-hidden="true"><svg class="ico-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></span>
-              <span><strong>Pendência da loja</strong><span class="dropdown-help">Registrar uma tarefa ou pendência</span></span>
-            </button>
-            <button type="button" class="dropdown-dd-item" role="menuitem">
-              <span class="dropdown-dd-ico" aria-hidden="true"><svg class="ico-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="9.5" width="13" height="5" rx="2.5" transform="rotate(-45 12 12)"/></svg></span>
-              <span><strong>Encomenda de medicamentos</strong><span class="dropdown-help">Registrar encomenda de medicamentos</span></span>
-            </button>
-            <button type="button" class="dropdown-dd-item" role="menuitem">
-              <span class="dropdown-dd-ico" aria-hidden="true"><svg class="ico-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
-              <span><strong>Compra e reposição</strong><span class="dropdown-help">Solicitar compra de estoque, limpeza, sacolas, papelaria e outros</span></span>
-            </button>
-          </div>
+<!-- ── App shell ── -->
+<div id="app-shell" class="ho-app hidden" aria-hidden="true">
+
+  <!-- Left rail -->
+  <div class="ho-rail-wrap">
+    <nav class="ho-rail" id="ho-rail">
+      <div class="ho-rail-brand">
+        <div class="ho-rail-mark"></div>
+        <div class="ho-rail-brand-tx">
+          <b>Handover</b>
+          <small>Drogarias Conceito</small>
         </div>
       </div>
-    </div>
-  </header>
 
-  <section id="operation-summary" class="summary-strip"></section>
+      <div class="ho-rail-items">
+        <button type="button" class="ho-rail-item active" data-main-tab="pendencias">
+          <span class="ho-rail-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></span>
+          <span class="ho-rail-lbl">Pendências</span>
+          <span class="ho-rail-badge" id="tab-badge-pendencias">0</span>
+        </button>
+        <button type="button" class="ho-rail-item" data-main-tab="medicamentos">
+          <span class="ho-rail-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></span>
+          <span class="ho-rail-lbl">Encomendas</span>
+          <span class="ho-rail-badge" id="tab-badge-medicamentos">0</span>
+        </button>
+        <button type="button" class="ho-rail-item" data-main-tab="compras_reposicao">
+          <span class="ho-rail-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+          <span class="ho-rail-lbl">Compras e reposição</span>
+          <span class="ho-rail-badge" id="tab-badge-compras-reposicao">0</span>
+        </button>
+        <button type="button" class="ho-rail-item" data-main-tab="checklist">
+          <span class="ho-rail-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span class="ho-rail-lbl">Checklist</span>
+          <span class="ho-rail-badge ho-rail-badge--green" id="tab-badge-checklist">0</span>
+        </button>
+        <button type="button" class="ho-rail-item" data-main-tab="historico">
+          <span class="ho-rail-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
+          <span class="ho-rail-lbl">Histórico</span>
+        </button>
+        <button type="button" class="ho-rail-item hidden" data-main-tab="comprador" id="tab-comprador">
+          <span class="ho-rail-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg></span>
+          <span class="ho-rail-lbl">Comprador</span>
+          <span class="ho-rail-badge" id="tab-badge-comprador">0</span>
+        </button>
+      </div>
 
-  <nav class="main-tabs tabs-premium" aria-label="Áreas principais">
-    <button type="button" class="main-tab active" data-main-tab="pendencias">
-      <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></span>
-      <span>Pendências</span>
-      <span class="tab-badge" id="tab-badge-pendencias">0</span>
-    </button>
-    <button type="button" class="main-tab" data-main-tab="medicamentos">
-      <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="9.5" width="13" height="5" rx="2.5" transform="rotate(-45 12 12)"/></svg></span>
-      <span>Encomendas</span>
-      <span class="tab-badge" id="tab-badge-medicamentos">0</span>
-    </button>
-    <button type="button" class="main-tab" data-main-tab="compras_reposicao">
-      <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
-      <span>Compras e reposição</span>
-      <span class="tab-badge" id="tab-badge-compras-reposicao">0</span>
-    </button>
-    <button type="button" class="main-tab" data-main-tab="checklist">
-      <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-      <span>Checklist</span>
-      <span class="tab-badge tab-badge-green" id="tab-badge-checklist">0</span>
-    </button>
-    <button type="button" class="main-tab" data-main-tab="historico">
-      <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
-      <span>Histórico</span>
-      <span class="tab-badge tab-badge-muted" id="tab-badge-historico">–</span>
-    </button>
-    <button type="button" class="main-tab hidden" data-main-tab="comprador" id="tab-comprador">
-      <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
-      <span>Comprador</span>
-      <span class="tab-badge" id="tab-badge-comprador">0</span>
-    </button>
-  </nav>
+      <div class="ho-rail-user" id="ho-rail-user">
+        <div class="ho-rail-avatar" id="operador-avatar-char">?</div>
+        <div class="ho-rail-user-tx">
+          <b id="operador-atual-rail">Operador</b>
+        </div>
+      </div>
+    </nav>
+  </div>
 
-  <section id="panel-queue-wrap" class="main-tab-panel" data-main-tab-panel="queue">
-    <div class="desk-layout desk-queue-layout">
-      <div class="desk-main">
-        <section class="card queue-panel-head">
-          <h2 id="queue-section-heading">Fila de pendências</h2>
-          <p id="queue-section-lede" class="queue-lede ho-muted hidden"></p>
-          <p id="queue-subtitle" class="queue-subtitle ho-muted"></p>
-          <div id="med-search-wrap" class="med-search-row hidden">
-            <label for="med-queue-search" class="ho-muted" style="display:block;font-size:12px;font-weight:700;margin-bottom:4px;">Buscar</label>
-            <input id="med-queue-search" type="search" placeholder="Buscar por medicamento, cliente, telefone, atendente..." autocomplete="off">
+  <!-- Main area -->
+  <div class="ho-main">
+
+    <!-- Topbar -->
+    <header class="ho-topbar">
+      <div class="ho-title">
+        <span id="ho-topbar-title">Pendências</span>
+      </div>
+      <div class="ho-spacer"></div>
+      <div class="ho-syncs">
+        <span class="k">Atualizado</span>
+        <span class="v" id="last-sync-label">—</span>
+      </div>
+      <button type="button" id="refresh-dashboard-btn" class="ho-icbtn" aria-label="Atualizar agora" title="Atualizar">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+      </button>
+      <button type="button" id="ho-theme-toggle" class="ho-icbtn" aria-label="Alternar tema" title="Tema">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+
+      <!-- Hidden fields kept for JS compatibility -->
+      <input id="operador-atual" type="hidden" name="operador-atual" autocomplete="name">
+      <span id="last-action-label" style="display:none;"></span>
+
+      <div id="novo-registro-dropdown" class="ho-dd">
+        <button type="button" id="novo-registro-trigger" class="ho-btn ho-btn--primary" aria-expanded="false">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          Novo registro
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div id="novo-registro-menu" class="ho-dd-menu hidden" role="menu">
+          <button type="button" class="ho-dd-item" role="menuitem">
+            <span class="ho-dd-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></span>
+            <span class="ho-dd-tx"><b>Pendência da loja</b><span>Registrar uma tarefa ou pendência</span></span>
+          </button>
+          <button type="button" class="ho-dd-item" role="menuitem">
+            <span class="ho-dd-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></span>
+            <span class="ho-dd-tx"><b>Encomenda de medicamentos</b><span>Registrar encomenda de medicamentos</span></span>
+          </button>
+          <button type="button" class="ho-dd-item" role="menuitem">
+            <span class="ho-dd-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+            <span class="ho-dd-tx"><b>Compra e reposição</b><span>Solicitar compra de estoque, limpeza, sacolas e outros</span></span>
+          </button>
+        </div>
+      </div>
+
+      <button type="button" id="handover-logout-btn" class="ho-btn ho-btn--ghost ho-btn--sm">Sair</button>
+    </header>
+
+    <!-- Content -->
+    <div class="ho-scroll">
+      <div class="ho-page">
+
+        <!-- KPI strip -->
+        <div id="operation-summary" class="ho-kstrip"></div>
+
+        <!-- Queue panel (pendencias, medicamentos, compras, historico, comprador) -->
+        <section id="panel-queue-wrap" class="ho-panel">
+          <div id="queue-section-head" class="ho-sechead">
+            <div>
+              <div class="ho-eyebrow">Passagem de turno</div>
+              <h2 id="queue-section-heading">Fila de pendências</h2>
+              <p id="queue-subtitle" class="ho-sechead-sub"></p>
+            </div>
           </div>
-          <div id="queue-filters-host"></div>
-          <div id="historico-filters-panel" class="historico-filters hidden"></div>
-          <div id="queue-list" class="queue-list"></div>
-          <div id="queue-empty" class="empty-box hidden">Nenhum item para o filtro selecionado.</div>
+          <div class="ho-toolbar">
+            <div id="med-search-wrap" class="ho-search hidden">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input id="med-queue-search" type="search" placeholder="Buscar..." autocomplete="off">
+            </div>
+            <div id="queue-filters-host" class="ho-filters"></div>
+            <div id="historico-filters-panel" class="ho-filters historico-filters hidden"></div>
+          </div>
+          <div id="queue-list" class="ho-qlist"></div>
+          <div id="queue-empty" class="ho-empty hidden">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <b>Nada por aqui</b>
+            <span>Nenhum item para o filtro selecionado.</span>
+          </div>
           <div id="queue-status" class="status" aria-live="polite"></div>
         </section>
-      </div>
-      <aside class="desk-sidebar" id="desk-sidebar-queue" aria-label="Histórico recente" style="display:none;"></aside>
-    </div>
-  </section>
 
-  <section id="panel-checklist" class="main-tab-panel hidden" data-main-tab-panel="checklist">
-    <section class="card checklist-shell">
-      <div class="checklist-top">
-        <h2 class="section-title" id="checklist-turn-title">Checklist do turno</h2>
-        <div class="field checklist-turn-field">
-          <label for="checklist-turno-select">Turno</label>
-          <select id="checklist-turno-select">
-            <option value="Manhã">Manhã</option>
-            <option value="Noite">Noite</option>
-          </select>
-        </div>
-        <button id="checklist-toggle-btn" type="button" class="light">Abrir checklist</button>
-      </div>
-      <div id="checklist-summary" class="checklist-summary"></div>
-      <p id="checklist-generate-hint" class="checklist-hint"></p>
-      <div class="filter-group checklist-filters" style="margin-bottom:8px;flex-wrap:wrap;">
-        <button type="button" class="filter-button active" data-check-filter="todos">Todos</button>
-        <button type="button" class="filter-button" data-check-filter="pendentes">Pendentes</button>
-        <button type="button" class="filter-button" data-check-filter="feitos">Feitos</button>
-        <button type="button" class="filter-button" data-check-filter="na">Não aplicáveis</button>
-        <button type="button" class="filter-button" data-check-filter="feitos_hoje">Feitos hoje</button>
-      </div>
-      <div id="checklist-content" class="hidden">
-        <div id="checklist-categories" class="checklist-categories"></div>
-      </div>
-      <div id="checklist-status" class="status" aria-live="polite"></div>
-    </section>
-  </section>
-</main>
+        <!-- Checklist panel -->
+        <section id="panel-checklist" class="ho-panel hidden">
+          <div class="ho-sechead">
+            <div>
+              <div class="ho-eyebrow">Rotina do turno</div>
+              <h2 id="checklist-turn-title">Checklist do turno</h2>
+              <p>Tarefas obrigatórias de abertura, limpeza e operação.</p>
+            </div>
+            <div class="field checklist-turn-field" style="flex:0 0 auto;">
+              <label for="checklist-turno-select" style="font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;">Turno</label>
+              <select id="checklist-turno-select" class="ho-select" style="width:auto;min-width:110px;">
+                <option value="Manhã">Manhã</option>
+                <option value="Noite">Noite</option>
+              </select>
+            </div>
+          </div>
+          <div id="checklist-summary" class="checklist-summary"></div>
+          <p id="checklist-generate-hint" class="checklist-hint"></p>
+          <div class="ho-filters" style="margin-bottom:14px;">
+            <button type="button" class="ho-filter active" data-check-filter="todos">Todos</button>
+            <button type="button" class="ho-filter" data-check-filter="pendentes">Pendentes</button>
+            <button type="button" class="ho-filter" data-check-filter="feitos">Feitos</button>
+            <button type="button" class="ho-filter" data-check-filter="na">Não aplicáveis</button>
+            <button type="button" class="ho-filter" data-check-filter="feitos_hoje">Feitos hoje</button>
+          </div>
+          <div id="checklist-content" class="hidden">
+            <div id="checklist-categories" class="checklist-categories"></div>
+          </div>
+          <div id="checklist-status" class="status" aria-live="polite"></div>
+          <button id="checklist-toggle-btn" type="button" class="ho-btn ho-btn--secondary" style="display:none;">Abrir checklist</button>
+        </section>
 
-<div id="audit-drawer-overlay" class="audit-drawer-overlay hidden" aria-hidden="true">
-  <aside id="audit-drawer" class="audit-drawer" role="dialog" aria-modal="true" aria-labelledby="audit-drawer-title">
-    <header class="audit-drawer-head">
-      <button type="button" class="audit-drawer-back">← Voltar</button>
-      <h2 id="audit-drawer-title" class="audit-drawer-title">Trilha de Auditoria</h2>
-      <button type="button" class="modal-icon-btn" aria-label="Fechar">×</button>
-    </header>
-    <div id="audit-drawer-status" class="audit-drawer-status hidden"></div>
-    <div id="audit-drawer-inner"></div>
-    <footer class="audit-drawer-foot">
-      <button type="button" class="btn-queue-secondary">Copiar trilha</button>
-      <button type="button" class="btn-queue-primary">Fechar</button>
-    </footer>
-  </aside>
-</div>
+      </div><!-- /ho-page -->
+    </div><!-- /ho-scroll -->
+  </div><!-- /ho-main -->
 
-<div id="card-detail-overlay" class="modal-overlay hidden" aria-hidden="true">
-  <div class="modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="card-detail-title">
-    <div class="modal-head">
-      <h2 id="card-detail-title">Detalhes</h2>
-      <button type="button" class="modal-icon-btn" aria-label="Fechar">×</button>
-    </div>
-    <div id="card-detail-body" class="card-detail-body"></div>
-    <div class="form-actions">
-      <button type="button" class="light">Fechar</button>
+  <!-- ── Modals (all IDs preserved) ── -->
+
+  <div id="audit-drawer-overlay" class="audit-drawer-overlay hidden" aria-hidden="true">
+    <aside id="audit-drawer" class="audit-drawer" role="dialog" aria-modal="true" aria-labelledby="audit-drawer-title">
+      <header class="audit-drawer-head">
+        <button type="button" class="audit-drawer-back">← Voltar</button>
+        <h2 id="audit-drawer-title" class="audit-drawer-title">Trilha de Auditoria</h2>
+        <button type="button" class="modal-icon-btn" aria-label="Fechar">×</button>
+      </header>
+      <div id="audit-drawer-status" class="audit-drawer-status hidden"></div>
+      <div id="audit-drawer-inner"></div>
+      <footer class="audit-drawer-foot">
+        <button type="button" class="btn-queue-secondary">Copiar trilha</button>
+        <button type="button" class="btn-queue-primary">Fechar</button>
+      </footer>
+    </aside>
+  </div>
+
+  <div id="card-detail-overlay" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="card-detail-title">
+      <div class="modal-head">
+        <h2 id="card-detail-title">Detalhes</h2>
+        <button type="button" class="modal-icon-btn" aria-label="Fechar">×</button>
+      </div>
+      <div id="card-detail-body" class="card-detail-body"></div>
+      <div class="form-actions">
+        <button type="button" class="light">Fechar</button>
+      </div>
     </div>
   </div>
-</div>
 
-<div id="form-modal-overlay" class="modal-overlay hidden" aria-hidden="true">
-  <div class="modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="form-modal-title">
-    <div class="modal-head">
-      <h2 id="form-modal-title">Novo registro</h2>
-      <button type="button" id="form-modal-close" class="modal-icon-btn" aria-label="Fechar">×</button>
-    </div>
-    <form id="request-form" class="form-grid">
-      <div class="field" style="display:none;">
-        <label for="category">Categoria</label>
-        <select id="category" name="category">
-          <option value="Geral">Geral</option>
-          <option value="Medicamentos">Medicamentos</option>
-          <option value="Compras_Reposicao">Compras_Reposicao</option>
-        </select>
+  <div id="form-modal-overlay" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="form-modal-title">
+      <div class="modal-head">
+        <h2 id="form-modal-title">Novo registro</h2>
+        <button type="button" id="form-modal-close" class="modal-icon-btn" aria-label="Fechar">×</button>
       </div>
-
-      <div id="general-fields">
-        <div class="field">
-          <label for="tituloGeral">Título / Assunto</label>
-          <input id="tituloGeral" name="tituloGeral" type="text" placeholder="Resumo curto da solicitação">
-        </div>
-        <div class="field">
-          <label for="urgenciaGeral">Urgência</label>
-          <select id="urgenciaGeral" name="urgenciaGeral">
-            <option value="Normal">Normal</option>
-            <option value="Urgente">Urgente</option>
+      <form id="request-form" class="form-grid">
+        <div class="field" style="display:none;">
+          <label for="category">Categoria</label>
+          <select id="category" name="category">
+            <option value="Geral">Geral</option>
+            <option value="Medicamentos">Medicamentos</option>
+            <option value="Compras_Reposicao">Compras_Reposicao</option>
           </select>
         </div>
-        <div class="checkbox-row field">
-          <input id="geral-tem-vencimento" name="geralTemVencimento" type="checkbox">
-          <label for="geral-tem-vencimento" style="margin:0;">Tem vencimento / prazo</label>
-        </div>
-        <div id="geral-vencimento-fields" class="hidden">
+
+        <div id="general-fields">
           <div class="field">
-            <label for="geral-data-vencimento">Data de vencimento</label>
-            <input id="geral-data-vencimento" name="geralDataVencimento" type="date">
+            <label for="tituloGeral">Título / Assunto</label>
+            <input id="tituloGeral" name="tituloGeral" type="text" placeholder="Resumo curto da solicitação">
           </div>
           <div class="field">
-            <label for="geral-hora-vencimento">Hora limite (opcional)</label>
-            <input id="geral-hora-vencimento" name="geralHoraVencimento" type="time">
+            <label for="urgenciaGeral">Urgência</label>
+            <select id="urgenciaGeral" name="urgenciaGeral">
+              <option value="Normal">Normal</option>
+              <option value="Urgente">Urgente</option>
+            </select>
           </div>
-        </div>
-        <div class="field">
-          <label for="autor">Autor</label>
-          <input id="autor" name="autor" autocomplete="name" readonly title="Preenchido pelo Operador atual">
-        </div>
-        <div class="field">
-          <label for="descricao">Descrição</label>
-          <textarea id="descricao" name="descricao"></textarea>
-        </div>
-      </div>
-
-      <div id="medicine-fields" class="hidden">
-        <div class="field">
-          <label for="tipo">Tipo</label>
-          <select id="tipo" name="tipo">
-            <option value="Encomenda">Encomenda</option>
-            <option value="Falta">Falta</option>
-          </select>
-        </div>
-        <div class="field" id="med-medicamento-field">
-          <label for="medicamento">Medicamento</label>
-          <input id="medicamento" name="medicamento">
-        </div>
-        <div id="med-itens-table-wrapper" class="hidden field">
-          <label>Itens da encomenda <span style="font-weight:400;font-size:0.83em;color:var(--muted)">(mínimo 1)</span></label>
-          <table class="itens-table" id="med-itens-table">
-            <thead><tr><th>Medicamento / produto</th><th class="col-qty">Qtd</th><th>Obs. do item</th><th class="col-rm"></th></tr></thead>
-            <tbody id="itens-tbody"></tbody>
-          </table>
-          <button type="button" class="light itens-add-btn">+ Adicionar item</button>
-        </div>
-        <div class="field">
-          <label for="atendente">Atendente</label>
-          <input id="atendente" name="atendente">
-        </div>
-        <div class="field" id="med-fornecedor-compra-field">
-          <label for="fornecedorCompra">Fornecedor de compra</label>
-          <select id="fornecedorCompra" name="fornecedorCompra">
-            <option value="Não informado">Não informado</option>
-            <option value="Panpharma">Panpharma</option>
-            <option value="Santa Cruz">Santa Cruz</option>
-          </select>
-        </div>
-        <div class="field hidden" id="med-codigo-compra-field">
-          <label for="codigoCompraFornecedor">Código de compra do produto</label>
-          <input id="codigoCompraFornecedor" name="codigoCompraFornecedor" type="text" autocomplete="off" placeholder="Código no site do fornecedor">
-        </div>
-        <div class="field" id="preco-venda-field">
-          <label for="precoVenda">Preço de venda</label>
-          <input id="precoVenda" name="precoVenda" type="text" inputmode="decimal" placeholder="R$ 0,00">
-        </div>
-        <div id="med-encomenda-only">
           <div class="checkbox-row field">
-            <input id="prePago" name="prePago" type="checkbox">
-            <label for="prePago" style="margin:0;">Pré-pago</label>
+            <input id="geral-tem-vencimento" name="geralTemVencimento" type="checkbox">
+            <label for="geral-tem-vencimento" style="margin:0;">Tem vencimento / prazo</label>
+          </div>
+          <div id="geral-vencimento-fields" class="hidden">
+            <div class="field">
+              <label for="geral-data-vencimento">Data de vencimento</label>
+              <input id="geral-data-vencimento" name="geralDataVencimento" type="date">
+            </div>
+            <div class="field">
+              <label for="geral-hora-vencimento">Hora limite (opcional)</label>
+              <input id="geral-hora-vencimento" name="geralHoraVencimento" type="time">
+            </div>
           </div>
           <div class="field">
-            <label for="formaRecebimento">Forma de recebimento</label>
-            <select id="formaRecebimento" name="formaRecebimento">
-              <option value="A combinar">A combinar</option>
-              <option value="Retira na loja">Retira na loja</option>
-              <option value="Entregar no endereço cadastrado">Entregar no endereço cadastrado</option>
+            <label for="autor">Autor</label>
+            <input id="autor" name="autor" autocomplete="name" readonly title="Preenchido pelo Operador atual">
+          </div>
+          <div class="field">
+            <label for="descricao">Descrição</label>
+            <textarea id="descricao" name="descricao"></textarea>
+          </div>
+        </div>
+
+        <div id="medicine-fields" class="hidden">
+          <div class="field">
+            <label for="tipo">Tipo</label>
+            <select id="tipo" name="tipo">
+              <option value="Encomenda">Encomenda</option>
+              <option value="Falta">Falta</option>
+            </select>
+          </div>
+          <div class="field" id="med-medicamento-field">
+            <label for="medicamento">Medicamento</label>
+            <input id="medicamento" name="medicamento">
+          </div>
+          <div id="med-itens-table-wrapper" class="hidden field">
+            <label>Itens da encomenda <span style="font-weight:400;font-size:0.83em;color:var(--ink-3)">(mínimo 1)</span></label>
+            <table class="itens-table" id="med-itens-table">
+              <thead><tr><th>Medicamento / produto</th><th class="col-qty">Qtd</th><th>Obs. do item</th><th class="col-rm"></th></tr></thead>
+              <tbody id="itens-tbody"></tbody>
+            </table>
+            <button type="button" class="light itens-add-btn">+ Adicionar item</button>
+          </div>
+          <div class="field">
+            <label for="atendente">Atendente</label>
+            <input id="atendente" name="atendente">
+          </div>
+          <div class="field" id="med-fornecedor-compra-field">
+            <label for="fornecedorCompra">Fornecedor de compra</label>
+            <select id="fornecedorCompra" name="fornecedorCompra">
+              <option value="Não informado">Não informado</option>
+              <option value="Panpharma">Panpharma</option>
+              <option value="Santa Cruz">Santa Cruz</option>
+            </select>
+          </div>
+          <div class="field hidden" id="med-codigo-compra-field">
+            <label for="codigoCompraFornecedor">Código de compra do produto</label>
+            <input id="codigoCompraFornecedor" name="codigoCompraFornecedor" type="text" autocomplete="off" placeholder="Código no site do fornecedor">
+          </div>
+          <div class="field" id="preco-venda-field">
+            <label for="precoVenda">Preço de venda</label>
+            <input id="precoVenda" name="precoVenda" type="text" inputmode="decimal" placeholder="R$ 0,00">
+          </div>
+          <div id="med-encomenda-only">
+            <div class="checkbox-row field">
+              <input id="prePago" name="prePago" type="checkbox">
+              <label for="prePago" style="margin:0;">Pré-pago</label>
+            </div>
+            <div class="field">
+              <label for="formaRecebimento">Forma de recebimento</label>
+              <select id="formaRecebimento" name="formaRecebimento">
+                <option value="A combinar">A combinar</option>
+                <option value="Retira na loja">Retira na loja</option>
+                <option value="Entregar no endereço cadastrado">Entregar no endereço cadastrado</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="cliente">Cliente</label>
+              <input id="cliente" name="cliente">
+            </div>
+            <div class="field">
+              <label for="telefone">Telefone</label>
+              <input id="telefone" name="telefone" placeholder="(11) 91234-5678">
+            </div>
+            <div class="field" id="med-previsao-entrega-field">
+              <label for="previsaoEntrega">Previsão de entrega</label>
+              <input id="previsaoEntrega" name="previsaoEntrega" type="date">
+              <div class="date-shortcuts">
+                <button type="button" class="light" data-days="1">Amanhã</button>
+                <button type="button" class="light" data-days="2">Depois de amanhã</button>
+                <button type="button" class="light" data-days="7">Semana que vem</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="observacaoSolicitacao">Observação da solicitação</label>
+            <textarea id="observacaoSolicitacao" name="observacaoSolicitacao" rows="3" style="min-height:72px;resize:vertical;" placeholder="Ex.: cliente aceita similar, urgência, laboratório específico..."></textarea>
+          </div>
+        </div>
+
+        <div id="reposicao-fields" class="hidden">
+          <div id="rep-single-fields" class="hidden">
+            <div class="field">
+              <label for="reposicao-item">Item / produto</label>
+              <input id="reposicao-item" name="reposicaoItem" type="text" placeholder="Ex.: Detergente, sacola P, papel A4">
+            </div>
+            <div class="field">
+              <label for="reposicao-quantidade">Quantidade ou descrição da necessidade</label>
+              <input id="reposicao-quantidade" name="reposicaoQuantidade" type="text" placeholder="Ex.: 10 un, 2 caixas">
+            </div>
+          </div>
+          <div id="rep-itens-table-wrapper" class="field">
+            <label>Itens da compra</label>
+            <table class="itens-table" id="rep-itens-table">
+              <thead><tr><th>Item / produto</th><th class="col-qty">Quantidade</th><th>Obs.</th><th class="col-rm"></th></tr></thead>
+              <tbody id="rep-itens-tbody"></tbody>
+            </table>
+            <button type="button" class="light itens-add-btn">+ Adicionar item</button>
+          </div>
+          <div class="field">
+            <label for="reposicao-prioridade">Prioridade</label>
+            <select id="reposicao-prioridade" name="reposicaoPrioridade">
+              <option value="Baixa">Baixa</option>
+              <option value="Normal" selected>Normal</option>
+              <option value="Alta">Alta</option>
+              <option value="Urgente">Urgente</option>
             </select>
           </div>
           <div class="field">
-            <label for="cliente">Cliente</label>
-            <input id="cliente" name="cliente">
+            <label for="reposicao-observacao">Observação (opcional)</label>
+            <textarea id="reposicao-observacao" name="reposicaoObservacao" rows="2" style="min-height:56px;resize:vertical;"></textarea>
           </div>
           <div class="field">
-            <label for="telefone">Telefone</label>
-            <input id="telefone" name="telefone" placeholder="(11) 91234-5678">
+            <label for="reposicao-fornecedor">Fornecedor sugerido (opcional)</label>
+            <input id="reposicao-fornecedor" name="reposicaoFornecedor" type="text">
           </div>
-          <div class="field" id="med-previsao-entrega-field">
-            <label for="previsaoEntrega">Previsão de entrega</label>
-            <input id="previsaoEntrega" name="previsaoEntrega" type="date">
+          <div class="field">
+            <label for="reposicao-previsao">Previsão desejada (opcional)</label>
+            <input id="reposicao-previsao" name="reposicaoPrevisao" type="date">
             <div class="date-shortcuts">
               <button type="button" class="light" data-days="1">Amanhã</button>
               <button type="button" class="light" data-days="2">Depois de amanhã</button>
@@ -373,107 +471,55 @@
             </div>
           </div>
         </div>
-        <div class="field">
-          <label for="observacaoSolicitacao">Observação da solicitação</label>
-          <textarea id="observacaoSolicitacao" name="observacaoSolicitacao" rows="3" style="min-height:72px;resize:vertical;" placeholder="Ex.: cliente aceita similar, urgência, laboratório específico..."></textarea>
-        </div>
-      </div>
 
-      <div id="reposicao-fields" class="hidden">
-        <div id="rep-single-fields" class="hidden">
-          <div class="field">
-            <label for="reposicao-item">Item / produto</label>
-            <input id="reposicao-item" name="reposicaoItem" type="text" placeholder="Ex.: Detergente, sacola P, papel A4">
-          </div>
-          <div class="field">
-            <label for="reposicao-quantidade">Quantidade ou descrição da necessidade</label>
-            <input id="reposicao-quantidade" name="reposicaoQuantidade" type="text" placeholder="Ex.: 10 un, 2 caixas">
-          </div>
+        <div class="form-actions">
+          <button id="save-button" type="submit">Salvar</button>
+          <button type="button" id="form-modal-cancel" class="light">Cancelar</button>
         </div>
-        <div id="rep-itens-table-wrapper" class="field">
-          <label>Itens da compra</label>
-          <table class="itens-table" id="rep-itens-table">
-            <thead><tr><th>Item / produto</th><th class="col-qty">Quantidade</th><th>Obs.</th><th class="col-rm"></th></tr></thead>
-            <tbody id="rep-itens-tbody"></tbody>
-          </table>
-          <button type="button" class="light itens-add-btn">+ Adicionar item</button>
-        </div>
-        <div class="field">
-          <label for="reposicao-prioridade">Prioridade</label>
-          <select id="reposicao-prioridade" name="reposicaoPrioridade">
-            <option value="Baixa">Baixa</option>
-            <option value="Normal" selected>Normal</option>
-            <option value="Alta">Alta</option>
-            <option value="Urgente">Urgente</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="reposicao-observacao">Observação (opcional)</label>
-          <textarea id="reposicao-observacao" name="reposicaoObservacao" rows="2" style="min-height:56px;resize:vertical;"></textarea>
-        </div>
-        <div class="field">
-          <label for="reposicao-fornecedor">Fornecedor sugerido (opcional)</label>
-          <input id="reposicao-fornecedor" name="reposicaoFornecedor" type="text">
-        </div>
-        <div class="field">
-          <label for="reposicao-previsao">Previsão desejada (opcional)</label>
-          <input id="reposicao-previsao" name="reposicaoPrevisao" type="date">
-          <div class="date-shortcuts">
-            <button type="button" class="light" data-days="1">Amanhã</button>
-            <button type="button" class="light" data-days="2">Depois de amanhã</button>
-            <button type="button" class="light" data-days="7">Semana que vem</button>
-          </div>
-        </div>
-      </div>
+        <div id="form-status" class="status" aria-live="polite"></div>
+      </form>
+    </div>
+  </div>
 
+  <div id="med-cancel-overlay" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="med-cancel-title">
+      <div class="modal-head">
+        <h2 id="med-cancel-title">Cancelar solicitação?</h2>
+      </div>
+      <p class="ho-muted" style="margin-top:0;">Esta ação marcará o pedido como Cancelado.</p>
+      <p id="med-cancel-summary-med" class="ho-muted" style="margin:8px 0 0;"></p>
+      <p id="med-cancel-summary-cli-wrap" class="ho-muted hidden" style="margin:4px 0 0;"><span id="med-cancel-summary-cli"></span></p>
+      <div class="field" style="margin-top:12px;">
+        <label for="med-cancel-motivo">Motivo do cancelamento</label>
+        <textarea id="med-cancel-motivo" rows="3" style="min-height:72px;resize:vertical;" placeholder="Ex.: cliente desistiu, produto indisponível..."></textarea>
+      </div>
       <div class="form-actions">
-        <button id="save-button" type="submit">Salvar</button>
-        <button type="button" id="form-modal-cancel" class="light">Cancelar</button>
+        <button type="button" class="light">Voltar</button>
+        <button type="button">Cancelar solicitação</button>
       </div>
-      <div id="form-status" class="status" aria-live="polite"></div>
-    </form>
+    </div>
   </div>
-</div>
 
-<div id="med-cancel-overlay" class="modal-overlay hidden" aria-hidden="true">
-  <div class="modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="med-cancel-title">
-    <div class="modal-head">
-      <h2 id="med-cancel-title">Cancelar solicitação?</h2>
-    </div>
-    <p class="ho-muted" style="margin-top:0;">Esta ação marcará o pedido como Cancelado.</p>
-    <p id="med-cancel-summary-med" class="ho-muted" style="margin:8px 0 0;"></p>
-    <p id="med-cancel-summary-cli-wrap" class="ho-muted hidden" style="margin:4px 0 0;"><span id="med-cancel-summary-cli"></span></p>
-    <div class="field" style="margin-top:12px;">
-      <label for="med-cancel-motivo">Motivo do cancelamento</label>
-      <textarea id="med-cancel-motivo" rows="3" style="min-height:72px;resize:vertical;" placeholder="Ex.: cliente desistiu, produto indisponível..."></textarea>
-    </div>
-    <div class="form-actions">
-      <button type="button" class="light">Voltar</button>
-      <button type="button">Cancelar solicitação</button>
-    </div>
-  </div>
-</div>
-
-<div id="reopen-confirm-overlay" class="modal-overlay hidden" aria-hidden="true">
-  <div class="modal-dialog card" role="dialog" aria-modal="true">
-    <div class="modal-head">
-      <h2 id="reopen-modal-title">Reabrir registro</h2>
-    </div>
-    <p class="ho-muted" id="reopen-modal-desc">O item será recriado como pendência e o histórico mantém a trilha de quem resolveu e quem reabriu.</p>
-    <div class="field">
-      <label for="reopen-motivo-input">Motivo (opcional)</label>
-      <input id="reopen-motivo-input" type="text" placeholder="Ex.: cliente voltou à loja">
-    </div>
-    <div class="form-actions">
-      <button type="button" class="light">Cancelar</button>
-      <button type="button">Confirmar reabertura</button>
+  <div id="reopen-confirm-overlay" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal-dialog card" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h2 id="reopen-modal-title">Reabrir registro</h2>
+      </div>
+      <p class="ho-muted" id="reopen-modal-desc">O item será recriado como pendência e o histórico mantém a trilha de quem resolveu e quem reabriu.</p>
+      <div class="field">
+        <label for="reopen-motivo-input">Motivo (opcional)</label>
+        <input id="reopen-motivo-input" type="text" placeholder="Ex.: cliente voltou à loja">
+      </div>
+      <div class="form-actions">
+        <button type="button" class="light">Cancelar</button>
+        <button type="button">Confirmar reabertura</button>
+      </div>
     </div>
   </div>
-</div>
 
 </div><!-- /app-shell -->
 
-<div id="toast-root" aria-live="polite"></div>
+<div id="toast-root" class="ho-toasts" aria-live="polite"></div>
 
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

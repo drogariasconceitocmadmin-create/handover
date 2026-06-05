@@ -69,8 +69,20 @@ document.querySelectorAll('.main-tab').forEach(function(btn) {
   btn.addEventListener('click', function() {
     var tab = btn.getAttribute('data-main-tab');
     if (tab === 'historico') G.historico = null;
-    if (tab === 'comprador') G.compradorCache = null;  // dados frescos ao entrar na aba
-    G.medSearch = '';                                  // busca limpa ao trocar de aba
+    if (tab === 'comprador') G.compradorCache = null;
+    G.medSearch = '';
+    setMainTab(tab);
+  });
+});
+
+// Rail items (new left-nav layout)
+document.querySelectorAll('.ho-rail-item').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var tab = btn.getAttribute('data-main-tab');
+    if (!tab) return;
+    if (tab === 'historico') G.historico = null;
+    if (tab === 'comprador') G.compradorCache = null;
+    G.medSearch = '';
     setMainTab(tab);
   });
 });
@@ -89,7 +101,7 @@ document.querySelectorAll('[data-check-filter]').forEach(function(b) {
 
 // Dropdown "Novo registro"
 (function() {
-  var items = el('novo-registro-menu') && el('novo-registro-menu').querySelectorAll('.dropdown-dd-item');
+  var items = el('novo-registro-menu') && el('novo-registro-menu').querySelectorAll('.ho-dd-item, .dropdown-dd-item');
   if (!items || !items.length) return;
   var fns = [openNovoRegistroPendencia_, openNovoRegistroEncomenda_, openNovoRegistroCompraReposicao_];
   items.forEach(function(b, i) { if (fns[i]) b.addEventListener('click', fns[i]); });
@@ -151,6 +163,56 @@ on('audit-drawer-overlay', 'click', function(e) { if (e.target === el('audit-dra
 
 // Primeiro acesso (registro via convite)
 setupRegistroListeners();
+
+/* ── THEME TOGGLE ── */
+(function() {
+  var savedTheme = localStorage.getItem('ho-theme') || '';
+  if (savedTheme === 'night') {
+    document.documentElement.classList.add('night');
+    document.body.classList.add('night');
+    var shell = el('app-shell'); if (shell) shell.classList.add('night');
+  }
+  on('ho-theme-toggle', 'click', function() {
+    var isNight = document.body.classList.toggle('night');
+    document.documentElement.classList.toggle('night', isNight);
+    var s = el('app-shell'); if (s) s.classList.toggle('night', isNight);
+    var login = el('handover-login-overlay'); if (login) login.classList.toggle('night', isNight);
+    localStorage.setItem('ho-theme', isNight ? 'night' : '');
+  });
+})();
+
+/* ── DOT MATRIX CANVAS ── */
+(function() {
+  var canvas = el('ho-dot-matrix');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var raf;
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  function draw() {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    var isDark = document.body.classList.contains('night');
+    var dotColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.035)';
+    var spacing = 22;
+    ctx.fillStyle = dotColor;
+    for (var x = spacing; x < canvas.width; x += spacing) {
+      for (var y = spacing; y < canvas.height; y += spacing) {
+        ctx.beginPath();
+        ctx.arc(x, y, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+  resize();
+  draw();
+  window.addEventListener('resize', function() { resize(); draw(); });
+  // Redraw when theme changes
+  var themeBtn = el('ho-theme-toggle');
+  if (themeBtn) themeBtn.addEventListener('click', function() { setTimeout(draw, 20); });
+})();
 
 /* ── BOOT ── */
 if (G.token && G.sessao) { abrirApp(); }

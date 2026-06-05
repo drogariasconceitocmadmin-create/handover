@@ -1,0 +1,67 @@
+/* ============================================================
+   Conceito Indica — Typography tokens
+   ------------------------------------------------------------
+   One typeface: Hanken Grotesk — a warm, slightly humanist
+   grotesque. Tight tracking on headings (-0.02em), generous
+   weights (800 for hero numbers). Numbers ALWAYS tabular so
+   currency columns align (font-variant-numeric: tabular-nums).
+   The brand also enables the "ss01" stylistic set.
+   ============================================================ */
+
+:root {
+  /* ---- Families ---- */
+  --font-sans: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-num:  "Hanken Grotesk", system-ui, sans-serif; /* used with tabular-nums */
+
+  /* ---- Type scale (px) ---- */
+  --fs-2xs: 11px;   /* eyebrow / section label (UPPERCASE, tracked) */
+  --fs-xs:  12px;   /* captions, meta, table head */
+  --fs-sm:  13px;   /* secondary UI text */
+  --fs-base:13.5px; /* body / default control text */
+  --fs-md:  15px;   /* card titles */
+  --fs-lg:  16px;   /* prominent labels, money in lists */
+  --fs-xl:  20px;   /* screen title (h1) */
+  --fs-2xl: 22px;   /* KPI value */
+  --fs-3xl: 25px;   /* chart total */
+  --fs-4xl: 32px;   /* hero numerals */
+
+  /* ---- Weights ---- */
+  --fw-regular: 400;  /* @kind font */
+  --fw-medium:  500;  /* @kind font */
+  --fw-semibold:600;  /* @kind font */
+  --fw-bold:    700;  /* @kind font */
+  --fw-extra:   800;  /* @kind font */
+
+  /* ---- Line heights ---- */
+  --lh-tight:  1.1;   /* @kind font */
+  --lh-snug:   1.25;  /* @kind font */
+  --lh-normal: 1.45;  /* @kind font */
+
+  /* ---- Tracking ---- */
+  --ls-tight:   -0.02em;  /* @kind font */
+  --ls-snug:    -0.01em;  /* @kind font */
+  --ls-normal:  0;        /* @kind font */
+  --ls-eyebrow: 0.06em;   /* @kind font */
+  --ls-wide:    0.13em;   /* @kind font */
+
+  /* ---- Roles (shorthand custom props) ---- */
+  --text-h1:      var(--fw-bold) var(--fs-xl)/var(--lh-tight) var(--font-sans);
+  --text-kpi:     var(--fw-extra) var(--fs-2xl)/var(--lh-tight) var(--font-sans);
+  --text-card:    var(--fw-bold) var(--fs-md)/var(--lh-snug) var(--font-sans);
+  --text-body:    var(--fw-regular) var(--fs-base)/var(--lh-normal) var(--font-sans);
+  --text-meta:    var(--fw-regular) var(--fs-xs)/var(--lh-snug) var(--font-sans);
+}
+
+/* Base element defaults (opt-in: consumers may apply to their root) */
+:where(.ci-root) {
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: var(--bg);
+  font-feature-settings: "ss01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Utility: tabular numerals for any money / metric run */
+.ci-num,
+:where(.ci-root) .num { font-variant-numeric: tabular-nums; }

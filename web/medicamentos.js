@@ -34,7 +34,6 @@ export function renderMedicamentos() {
 
   var f = G.medFilter;
   el('queue-filters-host').innerHTML =
-    '<div class="filter-group" style="flex-wrap:wrap;">' +
     filterChip('mf', 'pendentes',         'Pendentes',           cPend,  f) +
     filterChip('mf', 'todos',             'Todos',               cTodos, f) +
     filterChip('mf', 'Falta',             'Faltas',              cFalt,  f) +
@@ -45,10 +44,9 @@ export function renderMedicamentos() {
     filterChip('mf', 'Cancelado',         'Cancelados',          cCanc,  f) +
     filterChip('mf', 'Não encontrado',    'Não encontrados',     cNaoE,  f) +
     filterChip('mf', 'vencidos',          'Vencidos/Hoje',       cVenc,  f) +
-    filterChip('mf', 'res_parcial',       'Resolvidos parcialmente', cResPar, f) +
-    '</div>';
+    filterChip('mf', 'res_parcial',       'Resolvidos parcialmente', cResPar, f);
 
-  el('queue-filters-host').querySelectorAll('.filter-button').forEach(function(b) {
+  el('queue-filters-host').querySelectorAll('.ho-filter, .filter-button').forEach(function(b) {
     b.addEventListener('click', function() {
       G.medFilter = b.getAttribute('data-mf');
       renderMedicamentos();

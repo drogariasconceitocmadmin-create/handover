@@ -7,7 +7,7 @@ export function filterChip(nsAttr, val, label, count, current) {
   var badge  = count !== undefined
     ? '<span class="filter-count-badge">' + count + '</span>'
     : '';
-  return '<button type="button" class="filter-button' + active + '" data-' + nsAttr + '="' + val + '">' +
+  return '<button type="button" class="ho-filter' + active + '" data-' + nsAttr + '="' + val + '">' +
     escHtml(label) + badge + '</button>';
 }
 

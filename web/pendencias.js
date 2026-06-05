@@ -21,15 +21,13 @@ export function renderPendencias() {
   var cRes   = list.filter(function(p) { return p.resolvido; }).length;
 
   el('queue-filters-host').innerHTML =
-    '<div class="filter-group">' +
     filterChip('pf', 'pendentes',    'Pendentes',   cPend,  G.pendFilter) +
     filterChip('pf', 'todos',        'Todos',        cTodos, G.pendFilter) +
     filterChip('pf', 'urgentes',     'Urgentes',     cUrg,   G.pendFilter) +
     filterChip('pf', 'vencidos',     'Vencidos/Hoje',cVenc,  G.pendFilter) +
-    filterChip('pf', 'resolvidos',   'Resolvidos',   cRes,   G.pendFilter) +
-    '</div>';
+    filterChip('pf', 'resolvidos',   'Resolvidos',   cRes,   G.pendFilter);
 
-  el('queue-filters-host').querySelectorAll('.filter-button').forEach(function(b) {
+  el('queue-filters-host').querySelectorAll('.ho-filter, .filter-button').forEach(function(b) {
     b.addEventListener('click', function() {
       G.pendFilter = b.getAttribute('data-pf');
       renderPendencias();

@@ -15,9 +15,12 @@ export function abrirApp() {
   el('handover-login-overlay').classList.add('hidden');
   var shell = el('app-shell');
   shell.classList.remove('hidden'); shell.setAttribute('aria-hidden', 'false');
-  el('operador-atual').value = G.sessao.nome || G.sessao.usuario;
-  el('operador-avatar-char').textContent = (G.sessao.nome || '?').charAt(0).toUpperCase();
-  el('autor').value = G.sessao.nome || G.sessao.usuario;
+  var nome = G.sessao.nome || G.sessao.usuario;
+  var initials = (nome || '?').charAt(0).toUpperCase();
+  el('operador-atual').value = nome;
+  el('operador-avatar-char').textContent = initials;
+  if (el('operador-atual-rail')) el('operador-atual-rail').textContent = nome;
+  el('autor').value = nome;
   el('checklist-turno-select').value = turnoDefault();
   var perfil = G.sessao.perfil || '';
   var tabComp = el('tab-comprador');
@@ -84,82 +87,107 @@ export function renderSummary() {
   var pend  = ger.filter(function(r) { return !r.resolvido; }).length;
   var urg   = ger.filter(function(r) { return !r.resolvido && r.urgencia === 'Urgente'; }).length;
   // KPI Encomendas = só itens Pendente (aguardando compra), igual v1.
-  // Comprados (já adquiridos aguardando entrega) aparecem no KPI separado abaixo.
   var medAt = meds.filter(function(m) { return m.Status === 'Pendente'; }).length;
   var semAv = meds.filter(function(m) { return m.Status === 'Comprado' && m.Status_Aviso_WhatsApp !== 'Tentativa registrada'; }).length;
+  var kVenc = meds.filter(function(m) { return m.Status === 'Pendente' && m.Data_Vencimento; }).length;
   var clPend = cl && cl.summary ? cl.summary.itensPendentes : 0;
 
-  el('tab-badge-pendencias').textContent      = pend;
-  el('tab-badge-medicamentos').textContent    = medAt;
+  el('tab-badge-pendencias').textContent        = pend;
+  el('tab-badge-medicamentos').textContent      = medAt;
   el('tab-badge-compras-reposicao').textContent = comp.length;
-  el('tab-badge-checklist').textContent       = clPend;
+  el('tab-badge-checklist').textContent         = clPend;
 
   el('operation-summary').innerHTML = [
-    kpiCard('kpi-blue',   icoClip_(),   'PENDÊNCIAS',           pend,  'Solicitações gerais',   'pendencias',    'pendentes'),
-    kpiCard('kpi-red',    icoAlert_(),  'URGENTES',              urg,  'Prioridade na loja',    'pendencias',    'urgentes'),
-    kpiCard('kpi-green',  icoPill_(),   'ENCOMENDAS',           medAt, 'Faltas e encomendas',   'medicamentos',  'pendentes'),
-    kpiCard('kpi-orange', icoWA_(),     'COMPRADOS SEM AVISO',  semAv, 'WhatsApp pendente',     'medicamentos',  'comprados_sem_av'),
-    kpiCardChecklist(cl),
+    hoKpiCell('kpi-pend',  false, pend,  'PENDÊNCIAS',         'Solicitações gerais',  'pendencias',   'pendentes',      false),
+    hoKpiCell('kpi-urg',   true,  urg,   'URGENTES',           'Prioridade na loja',   'pendencias',   'urgentes',       urg > 0),
+    hoKpiCell('kpi-enc',   false, medAt, 'ENCOMENDAS',         'Faltas e encomendas',  'medicamentos', 'pendentes',      false),
+    hoKpiCell('kpi-wav',   false, semAv, 'COMPRADOS S/ AVISO', 'Avisar o cliente',     'medicamentos', 'comprados_sem_av', false),
+    hoKpiCell('kpi-venc',  false, kVenc, 'VENCIDOS / HOJE',    'Cobrar ainda hoje',    'medicamentos', 'vencidos',       kVenc > 0),
+    hoKpiCardChecklist(cl),
   ].join('');
 
-  // Ligar click nos cards de navegação
-  el('operation-summary').querySelectorAll('[data-kpi-tab]').forEach(function(card) {
-    card.addEventListener('click', function() {
-      var tab    = card.getAttribute('data-kpi-tab');
-      var filter = card.getAttribute('data-kpi-filter');
+  // Ligar click nos cells de navegação
+  el('operation-summary').querySelectorAll('[data-kpi-tab]').forEach(function(cell) {
+    cell.addEventListener('click', function() {
+      var tab    = cell.getAttribute('data-kpi-tab');
+      var filter = cell.getAttribute('data-kpi-filter');
       setMainTab(tab);
       if (filter) {
         if (tab === 'pendencias')   { G.pendFilter = filter; renderPendencias(); }
         if (tab === 'medicamentos') { G.medFilter  = filter; renderMedicamentos(); }
       }
     });
+    cell.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cell.click(); }
+    });
   });
 }
 
-function kpiCardChecklist(cl) {
-  var s = cl && cl.summary ? cl.summary : null;
-  var turno    = (cl && cl.turno)                  || '—';
-  var total    = s ? s.totalItens          : 0;
-  var pend     = s ? s.itensPendentes      : 0;
-  var feitos   = s ? s.itensFeitos         : 0;
-  var na       = s ? s.itensNaoAplicaveis  : 0;
-  var progr    = s ? s.percentualConcluido : 0;
-  return '<div class="kpi-card kpi-cl kpi-cl-detail kpi-link" data-kpi-tab="checklist" role="button" tabindex="0">' +
-    '<div class="kpi-ico">' + icoCheck_() + '</div>' +
-    '<div class="kpi-body">' +
-      '<div class="label">CHECKLIST · <strong style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;">' + escHtml(turno) + '</strong></div>' +
-      '<div class="kpi-cl-stat-grid">' +
-        '<div class="cs-item"><span class="cs-l">Total</span><span class="cs-v">' + total + '</span></div>' +
-        '<div class="cs-item"><span class="cs-l">Pendentes</span><span class="cs-v">' + pend + '</span></div>' +
-        '<div class="cs-item"><span class="cs-l">Feitos</span><span class="cs-v">' + feitos + '</span></div>' +
-        '<div class="cs-item"><span class="cs-l">N/A</span><span class="cs-v">' + na + '</span></div>' +
-      '</div>' +
-      '<div class="kpi-cl-prog"><span style="width:' + progr + '%"></span></div>' +
-      '<div class="sub" style="margin-top:4px;">' + progr + '% concluído</div>' +
+function hoKpiCell(id, _unused, value, label, sub, tab, filter, alert) {
+  var alertCls = alert ? ' alert' : '';
+  var navAttrs = tab
+    ? ' data-kpi-tab="' + tab + '"' + (filter ? ' data-kpi-filter="' + filter + '"' : '') + ' role="button" tabindex="0"'
+    : '';
+  return '<div class="ho-kcell' + alertCls + '"' + navAttrs + ' id="' + id + '">' +
+    '<div class="ho-kpi">' +
+      '<div class="ho-kpi-l">' + escHtml(label) + '</div>' +
+      '<div class="ho-kpi-v">' + escHtml(String(value)) + '</div>' +
+      '<div class="ho-kpi-s">' + escHtml(sub) + '</div>' +
     '</div>' +
   '</div>';
 }
 
-function kpiCard(cls, ico, label, value, sub, tab, filter) {
-  var navAttrs = tab
-    ? ' data-kpi-tab="' + tab + '"' + (filter ? ' data-kpi-filter="' + filter + '"' : '') + ' role="button" tabindex="0"'
-    : '';
-  var navCls = tab ? ' kpi-link' : '';
-  return '<div class="kpi-card ' + cls + navCls + '"' + navAttrs + '>' +
-    '<div class="kpi-ico">' + ico + '</div>' +
-    '<div class="kpi-body">' +
-      '<div class="label">' + escHtml(label) + '</div>' +
-      '<div class="value">' + escHtml(String(value)) + '</div>' +
-      '<div class="sub">' + escHtml(String(sub)) + '</div>' +
-    '</div></div>';
+function hoKpiCardChecklist(cl) {
+  var s = cl && cl.summary ? cl.summary : null;
+  var turno  = (cl && cl.turno)             || '—';
+  var total  = s ? s.totalItens             : 0;
+  var pend   = s ? s.itensPendentes         : 0;
+  var feitos = s ? s.itensFeitos            : 0;
+  var na     = s ? s.itensNaoAplicaveis     : 0;
+  var progr  = s ? s.percentualConcluido    : 0;
+  return '<div class="ho-kcell" data-kpi-tab="checklist" role="button" tabindex="0">' +
+    '<div class="ho-kpi">' +
+      '<div class="ho-kpi-l">CHECKLIST · ' + escHtml(turno) + '</div>' +
+      '<div class="ho-kpi-v">' + progr + '%</div>' +
+      '<div class="ho-kpi-s" style="display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;margin-top:6px;">' +
+        '<span>' + total + ' itens</span>' +
+        '<span>' + pend + ' pend.</span>' +
+        '<span>' + feitos + ' feitos</span>' +
+        '<span>' + na + ' N/A</span>' +
+      '</div>' +
+      '<div style="height:4px;border-radius:99px;background:var(--line-2);overflow:hidden;margin-top:8px;">' +
+        '<div style="height:100%;width:' + progr + '%;background:var(--brand);border-radius:99px;transition:width .5s var(--ease-out);"></div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
 }
+/* Keep old kpiCardChecklist name as alias for any callers */
+var kpiCardChecklist = hoKpiCardChecklist;
+
+/* ── TAB TITLES ── */
+var _TAB_TITLES = {
+  pendencias:        'Pendências',
+  medicamentos:      'Encomendas',
+  compras_reposicao: 'Compras e reposição',
+  checklist:         'Checklist',
+  historico:         'Histórico',
+  comprador:         'Comprador',
+};
 
 /* ── ABAS ── */
 export function setMainTab(tab) {
   G.currentTab = tab;
+  // Update rail items (new layout uses .ho-rail-item)
+  document.querySelectorAll('.ho-rail-item').forEach(function(b) {
+    b.classList.toggle('active', b.getAttribute('data-main-tab') === tab);
+  });
+  // Also update legacy .main-tab if present
   document.querySelectorAll('.main-tab').forEach(function(b) {
     b.classList.toggle('active', b.getAttribute('data-main-tab') === tab);
   });
+  // Update topbar title
+  var titleEl = el('ho-topbar-title');
+  if (titleEl) titleEl.textContent = _TAB_TITLES[tab] || tab;
   var isCL = (tab === 'checklist');
   el('panel-queue-wrap').classList.toggle('hidden', isCL);
   el('panel-checklist').classList.toggle('hidden', !isCL);
@@ -193,10 +221,10 @@ export function renderQueue() {
 
 /* ── SIDEBAR ── */
 export function renderSidebar() {
-  // Checklist
+  // Sidebar removed in new design — no-op guard
   var cl = G.bundle && G.bundle.checklistTurno;
   var body = el('sidebar-checklist-body');
-  if (!body) return; // elemento removido do DOM
+  if (!body) return; // sidebar element removed in new layout
   if (!cl || !cl.summary) { body.innerHTML = '<p class="ho-muted" style="font-size:12px;">Nenhum dado.</p>'; }
   else {
     var s = cl.summary;

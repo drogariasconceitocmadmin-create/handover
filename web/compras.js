@@ -18,14 +18,12 @@ export function renderCompras() {
   var f = G.comprasFilter || 'pendentes';
 
   el('queue-filters-host').innerHTML =
-    '<div class="filter-group">' +
     filterChip('cf', 'pendentes',      'Pendentes',                   cPend, f) +
     filterChip('cf', 'comprados',      'Comprados · aguard. recebimento', cComp, f) +
     filterChip('cf', 'todos',          'Todos',                       cTodos, f) +
-    filterChip('cf', 'nao_encontrado', 'Não encontrados',             cNaoE,  f) +
-    '</div>';
+    filterChip('cf', 'nao_encontrado', 'Não encontrados',             cNaoE,  f);
 
-  el('queue-filters-host').querySelectorAll('.filter-button').forEach(function(b) {
+  el('queue-filters-host').querySelectorAll('.ho-filter, .filter-button').forEach(function(b) {
     b.addEventListener('click', function() {
       G.comprasFilter = b.getAttribute('data-cf');
       renderCompras();
