@@ -889,17 +889,19 @@
     var list = (G.bundle && G.bundle.comprasReposicao) || [];
     el('queue-section-heading').textContent = 'Compras e reposição';
 
-    var cPend = list.filter(function(r) { return r.Status_Compra === 'Pendente de compra'; }).length;
+    var cPend  = list.filter(function(r) { return r.Status_Compra === 'Pendente de compra'; }).length;
+    var cComp  = list.filter(function(r) { return r.Status_Compra === 'Comprado'; }).length;
     var cTodos = list.length;
-    var cNaoE = list.filter(function(r) { return r.Status_Compra === 'Não encontrado'; }).length;
+    var cNaoE  = list.filter(function(r) { return r.Status_Compra === 'Não encontrado'; }).length;
 
     var f = G.comprasFilter || 'pendentes';
 
     el('queue-filters-host').innerHTML =
       '<div class="filter-group">' +
-      filterChip('cf', 'pendentes',      'Pendentes',       cPend,  f) +
-      filterChip('cf', 'todos',          'Todos',           cTodos, f) +
-      filterChip('cf', 'nao_encontrado', 'Não encontrados', cNaoE,  f) +
+      filterChip('cf', 'pendentes',      'Pendentes',                   cPend, f) +
+      filterChip('cf', 'comprados',      'Comprados · aguard. recebimento', cComp, f) +
+      filterChip('cf', 'todos',          'Todos',                       cTodos, f) +
+      filterChip('cf', 'nao_encontrado', 'Não encontrados',             cNaoE,  f) +
       '</div>';
 
     el('queue-filters-host').querySelectorAll('.filter-button').forEach(function(b) {
@@ -911,6 +913,7 @@
 
     var view = list.filter(function(r) {
       if (f === 'pendentes')      return r.Status_Compra === 'Pendente de compra';
+      if (f === 'comprados')      return r.Status_Compra === 'Comprado';
       if (f === 'nao_encontrado') return r.Status_Compra === 'Não encontrado';
       return true;
     });
@@ -922,8 +925,8 @@
   }
 
   function renderCardCompra(r) {
-    var c = buildCard('qk-stripe-geral');
-    var statusCls = r.Status_Compra === 'Não encontrado' ? 'status-cancelado' : 'status-pendente';
+    var statusCls = r.Status_Compra === 'Não encontrado' ? 'status-cancelado' :
+                    r.Status_Compra === 'Comprado'       ? 'status-comprado'  : 'status-pendente';
     var badgesHtml = '<span class="qk-type-tag">COMPRAS E REPOSIÇÃO</span>' +
       ' <span class="badge">' + escHtml(r.Categoria_Compra || 'Reposição') + '</span>' +
       ' <span class="badge ' + statusCls + '">' + escHtml(r.Status_Compra || 'Pendente de compra') + '</span>';
@@ -964,9 +967,16 @@
       ]);
     }; })(r) });
     var _perfil = (G.sessao || {}).perfil || '';
+    if (r.Status_Compra === 'Comprado') {
+      menuItems.push({ label: 'Marcar recebido na loja', fn: (function(rid) { return function() { receberReposicao(rid); }; })(r.ID) });
+    }
     if (['gerente','admin'].indexOf(_perfil) >= 0) {
       menuItems.push({ label: 'Cancelar', fn: (function(rid) { return function() { cancelarReposicao(rid); }; })(r.ID) });
     }
+
+    // stripe diferente para Comprado (aguardando recebimento)
+    var stripe = r.Status_Compra === 'Comprado' ? 'qk-stripe-hoje' : 'qk-stripe-geral';
+    var c = buildCard(stripe);
 
     c.main.appendChild(buildTop(badgesHtml, fmt(r.Data_Solicitacao), menuItems));
     c.main.appendChild(ce('div', 'qk-title', escHtml(r.Item || '(sem item)')));
@@ -975,15 +985,21 @@
       ['QUANTIDADE',   r.Quantidade],
       ['PRIORIDADE',   r.Prioridade],
       ['SOLICITANTE',  r.Solicitante],
+      ['COMPRADO POR', r.Comprado_Por || null],
       ['PREVISÃO',     fmtData(r.Previsao_Desejada)],
       ['FORNECEDOR',   r.Fornecedor_Sugerido],
     ]));
-    if (['gerente','admin'].indexOf(_perfil) >= 0) {
-      c.main.appendChild(buildActions([
-        { label: 'Cancelar', cls: 'btn-queue-secondary',
-          fn: (function(rid) { return function() { cancelarReposicao(rid); }; })(r.ID) }
-      ]));
+
+    var actionBtns = [];
+    if (r.Status_Compra === 'Comprado') {
+      actionBtns.push({ label: 'Marcar recebido na loja', cls: 'btn-queue-primary',
+        fn: (function(rid) { return function() { receberReposicao(rid); }; })(r.ID) });
     }
+    if (['gerente','admin'].indexOf(_perfil) >= 0) {
+      actionBtns.push({ label: 'Cancelar', cls: 'btn-queue-secondary',
+        fn: (function(rid) { return function() { cancelarReposicao(rid); }; })(r.ID) });
+    }
+    if (actionBtns.length) c.main.appendChild(buildActions(actionBtns));
     return c.card;
   }
 
@@ -1899,6 +1915,13 @@
     if (rpcError(res)) return;
     if (res.error) { toast('Erro ao cancelar.', 'erro'); return; }
     toast('Cancelado.', 'ok'); markLastAction(); carregarBundle();
+  }
+
+  async function receberReposicao(id) {
+    var res = await db.rpc('handover_compra_reposicao_receber', { p_token: G.token, p_id: id });
+    if (rpcError(res)) return;
+    if (res.error) { toast('Erro ao registrar recebimento.', 'erro'); return; }
+    toast('Recebido na loja.', 'ok'); markLastAction('Recebido'); carregarBundle();
   }
 
   async function cancelarReposicao(id) {
