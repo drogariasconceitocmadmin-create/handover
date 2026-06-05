@@ -335,6 +335,11 @@
       });
     };
 
+    const handleTurnoChange = (newTurno) => {
+      setTurno(newTurno);
+      reloadBundle(operador.token, newTurno);
+    };
+
     if (!operador) {
       return React.createElement("div", { ref: appRef, className: "ho-app", style: { position: "relative" }, "data-density": t.density, "data-urg": t.urgency },
         React.createElement(DotMatrix, { appRef }),
@@ -378,7 +383,7 @@
     else if (route === "compras")
       view = React.createElement(V.QueueView, { kind: "geral", items: data.compras, title: "Compras e reposição", lede: "Estoque, sacolas, papelaria e limpeza", filters: COMPRA_FILTERS, onToast: toast, onAction: handleQueueAction, onDetail: (i) => setModal({ type: "detail", item: i }) });
     else if (route === "checklist")
-      view = React.createElement(V.Checklist, { data: data.checklist, turno: turno, onTurno: setTurno, onToast: toast, onToggle: handleChecklistToggle });
+      view = React.createElement(V.Checklist, { data: data.checklist, turno: turno, onTurno: handleTurnoChange, onToast: toast, onToggle: handleChecklistToggle });
     else if (route === "historico")
       view = React.createElement(V.Historico, { items: data.historico });
     else if (route === "comprador")

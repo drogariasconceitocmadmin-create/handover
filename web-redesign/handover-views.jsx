@@ -168,12 +168,19 @@
   function QueueView({ kind, items, title, lede, filters, initialFilter, onToast, onDetail, onAction }) {
     const [q, setQ] = useState("");
     const [active, setActive] = useState(initialFilter || filters[0].id);
+    const qRef = useRef(null);
 
     const af = filters.find((f) => f.id === active) || filters[0];
     let list = items.filter(af.test);
     if (q.trim()) {
       const s = q.toLowerCase();
-      list = list.filter((it) => JSON.stringify(it).toLowerCase().includes(s));
+      list = list.filter((it) =>
+        (it.titulo || it.medicamento || it.item || "").toLowerCase().includes(s) ||
+        (it.cliente || "").toLowerCase().includes(s) ||
+        (it.telefone || "").toLowerCase().includes(s) ||
+        (it.autor || "").toLowerCase().includes(s) ||
+        (it.obs || "").toLowerCase().includes(s)
+      );
     }
 
     return React.createElement(React.Fragment, null,
