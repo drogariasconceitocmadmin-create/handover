@@ -1009,7 +1009,7 @@
       var catItems = catMap[cat];
       var feitos = catItems.filter(function(it) { return it.Status === 'Feito' || it.Status === 'Não aplicável'; }).length;
       var catId  = 'cl-cat-' + cat.replace(/\s+/g, '-');
-      var isOpen = G.catOpen[catId] === true; // default colapsado
+      var isOpen = G.catOpen[catId] !== false; // default aberto
 
       var catDiv = ce('div', 'checklist-category');
       var head   = ce('button', 'checklist-category-head');
@@ -1118,6 +1118,7 @@
   }
   function setChecklistFilter(f) {
     G.checklistFilter = f;
+    G.catOpen = {};   // reabrir todas as categorias ao trocar filtro
     document.querySelectorAll('[data-check-filter]').forEach(function(b) {
       b.classList.toggle('active', b.getAttribute('data-check-filter') === f);
     });
