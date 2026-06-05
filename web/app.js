@@ -18,7 +18,9 @@
     pendFilter : 'pendentes',
     medFilter     : 'todos',
     medSearch     : '',
-    comprasFilter : 'pendentes',
+    comprasFilter    : 'pendentes',
+    compradorFilter  : 'todos',
+    compradorCache   : null,   // { meds, comp } — evita RPC extra ao trocar filtro
     medCancelId: null,
     reopenId   : null,
     reopenOrigem: null,
@@ -186,6 +188,7 @@
         };
       });
     }
+    G.compradorCache = null;  // invalidar cache do comprador ao atualizar bundle
     markLastSync();
     renderSummary();
     renderQueue();
@@ -1449,24 +1452,80 @@
   ════════════════════════════════════════ */
   async function renderComprador() {
     el('queue-section-heading').textContent = 'Lista de compras';
-    el('queue-filters-host').innerHTML = '';
     el('queue-subtitle').textContent = 'Carregando…';
     var ql = el('queue-list'); ql.innerHTML = '';
     el('queue-empty').classList.add('hidden');
-    var res = await db.rpc('handover_compras_listar', { p_token: G.token });
-    if (rpcError(res)) return;
-    if (res.error) { el('queue-subtitle').textContent = 'Erro ao carregar.'; return; }
-    var d    = res.data || {};
-    var meds = d.medicamentos     || [];
-    var comp = d.comprasReposicao || [];
-    el('tab-badge-comprador').textContent = meds.length + comp.length;
-    el('queue-subtitle').textContent =
-      'A comprar: ' + meds.length + ' encomenda(s) · ' + comp.length + ' reposição(ões)';
-    if (!meds.length && !comp.length) { el('queue-empty').classList.remove('hidden'); return; }
-    if (meds.length) {
-      var h1 = ce('div', 'qk-section-heading'); h1.textContent = 'Encomendas / Faltas'; ql.appendChild(h1);
+
+    // Buscar dados apenas se não há cache
+    if (!G.compradorCache) {
+      var res = await db.rpc('handover_compras_listar', { p_token: G.token });
+      if (rpcError(res)) return;
+      if (res.error) { el('queue-subtitle').textContent = 'Erro ao carregar.'; return; }
+      var d = res.data || {};
+      G.compradorCache = { meds: d.medicamentos || [], comp: d.comprasReposicao || [] };
+    }
+
+    var meds = G.compradorCache.meds;
+    var comp = G.compradorCache.comp;
+    var f    = G.compradorFilter;
+
+    // Contagens para os chips
+    var cTodos     = meds.length + comp.length;
+    var cEncomenda = meds.filter(function(m) { return m.Tipo === 'Encomenda'; }).length;
+    var cFalta     = meds.filter(function(m) { return m.Tipo === 'Falta'; }).length;
+    var cReposicao = comp.length;
+
+    el('tab-badge-comprador').textContent = cTodos;
+
+    // Renderizar filtros
+    el('queue-filters-host').innerHTML =
+      '<div class="filter-group">' +
+      filterChip('compf', 'todos',     'Todos',      cTodos,     f) +
+      filterChip('compf', 'Encomenda', 'Encomendas', cEncomenda, f) +
+      filterChip('compf', 'Falta',     'Faltas',      cFalta,    f) +
+      filterChip('compf', 'reposicao', 'Reposição',  cReposicao, f) +
+      '</div>';
+
+    el('queue-filters-host').querySelectorAll('[data-compf]').forEach(function(b) {
+      b.addEventListener('click', function() {
+        G.compradorFilter = b.getAttribute('data-compf');
+        renderCompradorLista();
+      });
+    });
+
+    renderCompradorLista();
+  }
+
+  function renderCompradorLista() {
+    var meds = (G.compradorCache && G.compradorCache.meds) || [];
+    var comp = (G.compradorCache && G.compradorCache.comp) || [];
+    var f    = G.compradorFilter;
+
+    // Atualizar chip ativo
+    el('queue-filters-host').querySelectorAll('[data-compf]').forEach(function(b) {
+      b.classList.toggle('active', b.getAttribute('data-compf') === f);
+    });
+
+    // Aplicar filtro
+    var medsView = f === 'reposicao' ? [] :
+                   f === 'Encomenda' ? meds.filter(function(m) { return m.Tipo === 'Encomenda'; }) :
+                   f === 'Falta'     ? meds.filter(function(m) { return m.Tipo === 'Falta'; }) :
+                   meds;
+    var compView = f === 'Encomenda' || f === 'Falta' ? [] : comp;
+
+    var total = medsView.length + compView.length;
+    el('queue-subtitle').textContent = 'Comprador · ' + total + ' item(s)';
+
+    var ql = el('queue-list'); ql.innerHTML = '';
+    if (!total) { el('queue-empty').classList.remove('hidden'); return; }
+    el('queue-empty').classList.add('hidden');
+
+    if (medsView.length) {
+      var h1 = ce('div', 'qk-section-heading');
+      h1.textContent = f === 'Falta' ? 'Faltas' : f === 'Encomenda' ? 'Encomendas' : 'Encomendas / Faltas';
+      ql.appendChild(h1);
       var grupos = [], pedMap = {};
-      meds.forEach(function(m) {
+      medsView.forEach(function(m) {
         var pid = m.Pedido_ID;
         if (pid && m.Total_Itens > 1) {
           if (!pedMap[pid]) { pedMap[pid] = []; grupos.push({ tipo: 'pedido', itens: pedMap[pid] }); }
@@ -1479,9 +1538,9 @@
         ql.appendChild(g.tipo === 'single' ? renderCardCompradorMed(g.item) : renderGrupoCompradorMed(g));
       });
     }
-    if (comp.length) {
+    if (compView.length) {
       var h2 = ce('div', 'qk-section-heading'); h2.textContent = 'Compras e reposição'; ql.appendChild(h2);
-      comp.forEach(function(r) { ql.appendChild(renderCardCompradorReposicao(r)); });
+      compView.forEach(function(r) { ql.appendChild(renderCardCompradorReposicao(r)); });
     }
   }
 
@@ -1680,6 +1739,7 @@
     btn.addEventListener('click', function() {
       var tab = btn.getAttribute('data-main-tab');
       if (tab === 'historico') G.historico = null;
+      if (tab === 'comprador') G.compradorCache = null;  // dados frescos ao entrar na aba
       setMainTab(tab);
     });
   });
