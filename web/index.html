@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self';
+             script-src 'self' https://cdn.jsdelivr.net;
+             connect-src 'self' https://pxswpufbkisdniojwdtt.supabase.co;
+             style-src 'self';
+             img-src 'self' data: https://drive.google.com https://lh3.googleusercontent.com;
+             base-uri 'none'; form-action 'none'">
+  <title>Handover - Drogarias Conceito</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="handover-login-overlay" class="handover-login-overlay" role="dialog" aria-modal="true" aria-labelledby="handover-login-title">
+  <div class="handover-login-card ho-card ho-card-pad">
+    <div class="handover-login-brand">
+      <div class="handover-login-symbol-ring">
+        <img id="handover-login-logo" class="brand-logo-img hidden" alt="Drogarias Conceito">
+      </div>
+      <span id="handover-login-brand-text" class="brand-mark">Drogarias Conceito</span>
+      <span class="ho-muted" style="font-size:13px;line-height:1.35;">Handover — acesso com PIN</span>
+    </div>
+    <h1 id="handover-login-title" class="handover-login-title">Entrar</h1>
+    <p id="handover-login-status" class="handover-login-status ho-muted hidden"></p>
+    <div class="field">
+      <label for="handover-login-usuario">Usuário</label>
+      <input id="handover-login-usuario" type="text" autocomplete="username" spellcheck="false">
+    </div>
+    <div class="field">
+      <label for="handover-login-pin">PIN</label>
+      <input id="handover-login-pin" type="password" inputmode="numeric" autocomplete="current-password" spellcheck="false">
+    </div>
+    <p id="handover-login-error" class="handover-login-error" role="alert"></p>
+    <button type="button" id="handover-login-submit" class="btn-primary-header" style="width:100%;margin-top:6px;">Entrar</button>
+  </div>
+</div>
+
+<div id="app-shell" class="hidden" aria-hidden="true">
+<main class="page">
+  <header class="app-header">
+    <div class="app-header-left">
+      <img id="handover-brand-logo" class="brand-logo-img hidden" alt="Drogarias Conceito">
+      <span id="handover-brand-text" class="brand-mark">Drogarias Conceito</span>
+      <span class="brand-sep" aria-hidden="true"></span>
+      <span class="brand-product">Handover</span>
+    </div>
+    <div class="app-header-right">
+      <div class="header-pill operador-pill">
+        <span class="operador-avatar" id="operador-avatar-char" aria-hidden="true">?</span>
+        <label class="field">
+          <span class="header-pill-label">Operador atual</span>
+          <input id="operador-atual" type="text" name="operador-atual" autocomplete="name" readonly tabindex="-1" placeholder="—">
+        </label>
+      </div>
+      <button type="button" id="handover-logout-btn" class="btn-header-secondary">Sair</button>
+      <div class="header-pill">
+        <span class="header-pill-label">Última atualização</span>
+        <span id="last-sync-label" class="header-pill-value">—</span>
+      </div>
+      <div class="header-pill">
+        <span class="header-pill-label">Última ação</span>
+        <span id="last-action-label" class="header-pill-value">—</span>
+      </div>
+      <div class="header-actions">
+        <button type="button" id="refresh-dashboard-btn" class="btn-header-secondary" onclick="refreshDashboardNow_()">Atualizar agora</button>
+        <div id="novo-registro-dropdown" class="dropdown-root">
+          <button type="button" id="novo-registro-trigger" class="btn-primary-header" aria-expanded="false">Novo registro ▾</button>
+          <div id="novo-registro-menu" class="dropdown-panel hidden" role="menu">
+            <button type="button" class="dropdown-dd-item" role="menuitem" onclick="openNovoRegistroPendencia_()">
+              <span class="dropdown-dd-ico" aria-hidden="true"><svg class="ico-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></span>
+              <span><strong>Pendência da loja</strong><span class="dropdown-help">Registrar uma tarefa ou pendência</span></span>
+            </button>
+            <button type="button" class="dropdown-dd-item" role="menuitem" onclick="openNovoRegistroEncomenda_()">
+              <span class="dropdown-dd-ico" aria-hidden="true"><svg class="ico-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="9.5" width="13" height="5" rx="2.5" transform="rotate(-45 12 12)"/></svg></span>
+              <span><strong>Encomenda de medicamentos</strong><span class="dropdown-help">Registrar encomenda de medicamentos</span></span>
+            </button>
+            <button type="button" class="dropdown-dd-item" role="menuitem" onclick="openNovoRegistroCompraReposicao_()">
+              <span class="dropdown-dd-ico" aria-hidden="true"><svg class="ico-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+              <span><strong>Compra e reposição</strong><span class="dropdown-help">Solicitar compra de estoque, limpeza, sacolas, papelaria e outros</span></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="operation-summary" class="summary-strip"></section>
+
+  <nav class="main-tabs tabs-premium" aria-label="Áreas principais">
+    <button type="button" class="main-tab active" data-main-tab="pendencias">
+      <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></span>
+      <span>Pendências</span>
+      <span class="tab-badge" id="tab-badge-pendencias">0</span>
+    </button>
+    <button type="button" class="main-tab" data-main-tab="medicamentos">
+      <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="9.5" width="13" height="5" rx="2.5" transform="rotate(-45 12 12)"/></svg></span>
+      <span>Encomendas</span>
+      <span class="tab-badge" id="tab-badge-medicamentos">0</span>
+    </button>
+    <button type="button" class="main-tab" data-main-tab="compras_reposicao">
+      <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+      <span>Compras e reposição</span>
+      <span class="tab-badge" id="tab-badge-compras-reposicao">0</span>
+    </button>
+    <button type="button" class="main-tab" data-main-tab="checklist">
+      <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <span>Checklist</span>
+      <span class="tab-badge tab-badge-green" id="tab-badge-checklist">0</span>
+    </button>
+    <button type="button" class="main-tab" data-main-tab="historico">
+      <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
+      <span>Histórico</span>
+      <span class="tab-badge tab-badge-muted" id="tab-badge-historico">–</span>
+    </button>
+    <button type="button" class="main-tab hidden" data-main-tab="comprador" id="tab-comprador">
+      <span class="tab-ico" aria-hidden="true"><svg class="ico-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+      <span>Comprador</span>
+      <span class="tab-badge" id="tab-badge-comprador">0</span>
+    </button>
+  </nav>
+
+  <section id="panel-queue-wrap" class="main-tab-panel" data-main-tab-panel="queue">
+    <div class="desk-layout desk-queue-layout">
+      <div class="desk-main">
+        <section class="card queue-panel-head">
+          <h2 id="queue-section-heading">Fila de pendências</h2>
+          <p id="queue-section-lede" class="queue-lede ho-muted hidden"></p>
+          <p id="queue-subtitle" class="queue-subtitle ho-muted"></p>
+          <div id="med-search-wrap" class="med-search-row hidden">
+            <label for="med-queue-search" class="ho-muted" style="display:block;font-size:12px;font-weight:700;margin-bottom:4px;">Buscar</label>
+            <input id="med-queue-search" type="search" placeholder="Buscar por medicamento, cliente, telefone, atendente..." autocomplete="off">
+          </div>
+          <div id="queue-filters-host"></div>
+          <div id="historico-filters-panel" class="historico-filters hidden"></div>
+          <div id="queue-list" class="queue-list"></div>
+          <div id="queue-empty" class="empty-box hidden">Nenhum item para o filtro selecionado.</div>
+          <div id="queue-status" class="status" aria-live="polite"></div>
+        </section>
+      </div>
+      <aside class="desk-sidebar" id="desk-sidebar-queue" aria-label="Resumo do turno e histórico">
+        <div class="sidebar-card">
+          <h3>Checklist do turno</h3>
+          <div id="sidebar-checklist-body"></div>
+          <button type="button" class="btn-sidebar" onclick="setMainTab('checklist')">Abrir checklist</button>
+        </div>
+        <div class="sidebar-card">
+          <h3>Histórico / Resolvidos</h3>
+          <div id="sidebar-historico-body"></div>
+          <button type="button" class="btn-sidebar" onclick="setMainTab('historico')">Abrir histórico</button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section id="panel-checklist" class="main-tab-panel hidden" data-main-tab-panel="checklist">
+    <section class="card checklist-shell">
+      <div class="checklist-top">
+        <h2 class="section-title" id="checklist-turn-title">Checklist do turno</h2>
+        <div class="field checklist-turn-field">
+          <label for="checklist-turno-select">Turno</label>
+          <select id="checklist-turno-select" onchange="onChecklistTurnoChange_(this.value)">
+            <option value="Manhã">Manhã</option>
+            <option value="Noite">Noite</option>
+          </select>
+        </div>
+        <button id="checklist-toggle-btn" type="button" class="light" onclick="toggleChecklistPanel()">Abrir checklist</button>
+      </div>
+      <div id="checklist-summary" class="checklist-summary"></div>
+      <p id="checklist-generate-hint" class="checklist-hint"></p>
+      <div class="filter-group checklist-filters" style="margin-bottom:8px;flex-wrap:wrap;">
+        <button type="button" class="filter-button active" data-check-filter="todos" onclick="setChecklistFilter('todos')">Todos</button>
+        <button type="button" class="filter-button" data-check-filter="pendentes" onclick="setChecklistFilter('pendentes')">Pendentes</button>
+        <button type="button" class="filter-button" data-check-filter="feitos" onclick="setChecklistFilter('feitos')">Feitos</button>
+        <button type="button" class="filter-button" data-check-filter="na" onclick="setChecklistFilter('na')">Não aplicáveis</button>
+        <button type="button" class="filter-button" data-check-filter="feitos_hoje" onclick="setChecklistFilter('feitos_hoje')">Feitos hoje</button>
+      </div>
+      <div class="toolbar-actions" style="margin-bottom:8px;display:flex;align-items:center;gap:12px;">
+        <button id="checklist-generate-btn" type="button" class="light" onclick="refreshChecklistToday()">Sincronizar checklist</button>
+        <span id="checklist-sync-label" class="ho-muted" style="font-size:12px;" aria-live="polite"></span>
+      </div>
+      <div id="checklist-content" class="hidden">
+        <div id="checklist-categories" class="checklist-categories"></div>
+      </div>
+      <div id="checklist-status" class="status" aria-live="polite"></div>
+    </section>
+  </section>
+</main>
+
+<div id="audit-drawer-overlay" class="audit-drawer-overlay hidden" aria-hidden="true" onclick="onAuditDrawerOverlayClick_(event)">
+  <aside id="audit-drawer" class="audit-drawer" role="dialog" aria-modal="true" aria-labelledby="audit-drawer-title" onclick="event.stopPropagation()">
+    <header class="audit-drawer-head">
+      <button type="button" class="audit-drawer-back" onclick="closeAuditDrawer_()">← Voltar</button>
+      <h2 id="audit-drawer-title" class="audit-drawer-title">Trilha de Auditoria</h2>
+      <button type="button" class="modal-icon-btn" onclick="closeAuditDrawer_()" aria-label="Fechar">×</button>
+    </header>
+    <div id="audit-drawer-status" class="audit-drawer-status hidden"></div>
+    <div id="audit-drawer-inner"></div>
+    <footer class="audit-drawer-foot">
+      <button type="button" class="btn-queue-secondary" onclick="copyAuditTrailToClipboard_()">Copiar trilha</button>
+      <button type="button" class="btn-queue-primary" onclick="closeAuditDrawer_()">Fechar</button>
+    </footer>
+  </aside>
+</div>
+
+<div id="card-detail-overlay" class="modal-overlay hidden" aria-hidden="true">
+  <div class="modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="card-detail-title">
+    <div class="modal-head">
+      <h2 id="card-detail-title">Detalhes</h2>
+      <button type="button" class="modal-icon-btn" onclick="closeCardDetailOverlay_()" aria-label="Fechar">×</button>
+    </div>
+    <div id="card-detail-body" class="card-detail-body"></div>
+    <div class="form-actions">
+      <button type="button" class="light" onclick="closeCardDetailOverlay_()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div id="form-modal-overlay" class="modal-overlay hidden" aria-hidden="true">
+  <div class="modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="form-modal-title">
+    <div class="modal-head">
+      <h2 id="form-modal-title">Novo registro</h2>
+      <button type="button" id="form-modal-close" class="modal-icon-btn" aria-label="Fechar">×</button>
+    </div>
+    <form id="request-form" class="form-grid">
+      <div class="field" style="display:none;">
+        <label for="category">Categoria</label>
+        <select id="category" name="category">
+          <option value="Geral">Geral</option>
+          <option value="Medicamentos">Medicamentos</option>
+          <option value="Compras_Reposicao">Compras_Reposicao</option>
+        </select>
+      </div>
+
+      <div id="general-fields">
+        <div class="field">
+          <label for="tituloGeral">Título / Assunto</label>
+          <input id="tituloGeral" name="tituloGeral" type="text" placeholder="Resumo curto da solicitação">
+        </div>
+        <div class="field">
+          <label for="urgenciaGeral">Urgência</label>
+          <select id="urgenciaGeral" name="urgenciaGeral">
+            <option value="Normal">Normal</option>
+            <option value="Urgente">Urgente</option>
+          </select>
+        </div>
+        <div class="checkbox-row field">
+          <input id="geral-tem-vencimento" name="geralTemVencimento" type="checkbox">
+          <label for="geral-tem-vencimento" style="margin:0;">Tem vencimento / prazo</label>
+        </div>
+        <div id="geral-vencimento-fields" class="hidden">
+          <div class="field">
+            <label for="geral-data-vencimento">Data de vencimento</label>
+            <input id="geral-data-vencimento" name="geralDataVencimento" type="date">
+          </div>
+          <div class="field">
+            <label for="geral-hora-vencimento">Hora limite (opcional)</label>
+            <input id="geral-hora-vencimento" name="geralHoraVencimento" type="time">
+          </div>
+        </div>
+        <div class="field">
+          <label for="autor">Autor</label>
+          <input id="autor" name="autor" autocomplete="name" readonly title="Preenchido pelo Operador atual">
+        </div>
+        <div class="field">
+          <label for="descricao">Descrição</label>
+          <textarea id="descricao" name="descricao"></textarea>
+        </div>
+      </div>
+
+      <div id="medicine-fields" class="hidden">
+        <div class="field">
+          <label for="tipo">Tipo</label>
+          <select id="tipo" name="tipo">
+            <option value="Encomenda">Encomenda</option>
+            <option value="Falta">Falta</option>
+          </select>
+        </div>
+        <div class="field" id="med-medicamento-field">
+          <label for="medicamento">Medicamento</label>
+          <input id="medicamento" name="medicamento">
+        </div>
+        <div id="med-itens-table-wrapper" class="hidden field">
+          <label>Itens da encomenda <span style="font-weight:400;font-size:0.83em;color:var(--muted)">(mínimo 1)</span></label>
+          <table class="itens-table" id="med-itens-table">
+            <thead><tr><th>Medicamento / produto</th><th class="col-qty">Qtd</th><th>Obs. do item</th><th class="col-rm"></th></tr></thead>
+            <tbody id="itens-tbody"></tbody>
+          </table>
+          <button type="button" class="light itens-add-btn" onclick="addItemRow_()">+ Adicionar item</button>
+        </div>
+        <div class="field">
+          <label for="atendente">Atendente</label>
+          <input id="atendente" name="atendente">
+        </div>
+        <div class="field" id="med-fornecedor-compra-field">
+          <label for="fornecedorCompra">Fornecedor de compra</label>
+          <select id="fornecedorCompra" name="fornecedorCompra">
+            <option value="Não informado">Não informado</option>
+            <option value="Panpharma">Panpharma</option>
+            <option value="Santa Cruz">Santa Cruz</option>
+          </select>
+        </div>
+        <div class="field hidden" id="med-codigo-compra-field">
+          <label for="codigoCompraFornecedor">Código de compra do produto</label>
+          <input id="codigoCompraFornecedor" name="codigoCompraFornecedor" type="text" autocomplete="off" placeholder="Código no site do fornecedor">
+        </div>
+        <div class="field" id="preco-venda-field">
+          <label for="precoVenda">Preço de venda</label>
+          <input id="precoVenda" name="precoVenda" type="text" inputmode="decimal" placeholder="R$ 0,00">
+        </div>
+        <div id="med-encomenda-only">
+          <div class="checkbox-row field">
+            <input id="prePago" name="prePago" type="checkbox">
+            <label for="prePago" style="margin:0;">Pré-pago</label>
+          </div>
+          <div class="field">
+            <label for="formaRecebimento">Forma de recebimento</label>
+            <select id="formaRecebimento" name="formaRecebimento">
+              <option value="A combinar">A combinar</option>
+              <option value="Retira na loja">Retira na loja</option>
+              <option value="Entregar no endereço cadastrado">Entregar no endereço cadastrado</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="cliente">Cliente</label>
+            <input id="cliente" name="cliente">
+          </div>
+          <div class="field">
+            <label for="telefone">Telefone</label>
+            <input id="telefone" name="telefone" placeholder="(11) 91234-5678">
+          </div>
+          <div class="field" id="med-previsao-entrega-field">
+            <label for="previsaoEntrega">Previsão de entrega</label>
+            <input id="previsaoEntrega" name="previsaoEntrega" type="date">
+            <div class="date-shortcuts">
+              <button type="button" class="light" onclick="setPrevisaoOffsetDays(1)">Amanhã</button>
+              <button type="button" class="light" onclick="setPrevisaoOffsetDays(2)">Depois de amanhã</button>
+              <button type="button" class="light" onclick="setPrevisaoOffsetDays(7)">Semana que vem</button>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="observacaoSolicitacao">Observação da solicitação</label>
+          <textarea id="observacaoSolicitacao" name="observacaoSolicitacao" rows="3" style="min-height:72px;resize:vertical;" placeholder="Ex.: cliente aceita similar, urgência, laboratório específico..."></textarea>
+        </div>
+      </div>
+
+      <div id="reposicao-fields" class="hidden">
+        <div id="rep-single-fields" class="hidden">
+          <div class="field">
+            <label for="reposicao-item">Item / produto</label>
+            <input id="reposicao-item" name="reposicaoItem" type="text" placeholder="Ex.: Detergente, sacola P, papel A4">
+          </div>
+          <div class="field">
+            <label for="reposicao-quantidade">Quantidade ou descrição da necessidade</label>
+            <input id="reposicao-quantidade" name="reposicaoQuantidade" type="text" placeholder="Ex.: 10 un, 2 caixas">
+          </div>
+        </div>
+        <div id="rep-itens-table-wrapper" class="field">
+          <label>Itens da compra</label>
+          <table class="itens-table" id="rep-itens-table">
+            <thead><tr><th>Item / produto</th><th class="col-qty">Quantidade</th><th>Obs.</th><th class="col-rm"></th></tr></thead>
+            <tbody id="rep-itens-tbody"></tbody>
+          </table>
+          <button type="button" class="light itens-add-btn" onclick="addReposicaoItemRow_()">+ Adicionar item</button>
+        </div>
+        <div class="field">
+          <label for="reposicao-prioridade">Prioridade</label>
+          <select id="reposicao-prioridade" name="reposicaoPrioridade">
+            <option value="Baixa">Baixa</option>
+            <option value="Normal" selected>Normal</option>
+            <option value="Alta">Alta</option>
+            <option value="Urgente">Urgente</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="reposicao-observacao">Observação (opcional)</label>
+          <textarea id="reposicao-observacao" name="reposicaoObservacao" rows="2" style="min-height:56px;resize:vertical;"></textarea>
+        </div>
+        <div class="field">
+          <label for="reposicao-fornecedor">Fornecedor sugerido (opcional)</label>
+          <input id="reposicao-fornecedor" name="reposicaoFornecedor" type="text">
+        </div>
+        <div class="field">
+          <label for="reposicao-previsao">Previsão desejada (opcional)</label>
+          <input id="reposicao-previsao" name="reposicaoPrevisao" type="date">
+          <div class="date-shortcuts">
+            <button type="button" class="light" onclick="setReposicaoPrevisaoOffsetDays_(1)">Amanhã</button>
+            <button type="button" class="light" onclick="setReposicaoPrevisaoOffsetDays_(2)">Depois de amanhã</button>
+            <button type="button" class="light" onclick="setReposicaoPrevisaoOffsetDays_(7)">Semana que vem</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button id="save-button" type="submit">Salvar</button>
+        <button type="button" id="form-modal-cancel" class="light">Cancelar</button>
+      </div>
+      <div id="form-status" class="status" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+
+<div id="med-cancel-overlay" class="modal-overlay hidden" aria-hidden="true">
+  <div class="modal-dialog card" role="dialog" aria-modal="true" aria-labelledby="med-cancel-title">
+    <div class="modal-head">
+      <h2 id="med-cancel-title">Cancelar solicitação?</h2>
+    </div>
+    <p class="ho-muted" style="margin-top:0;">Esta ação marcará o pedido como Cancelado.</p>
+    <p id="med-cancel-summary-med" class="ho-muted" style="margin:8px 0 0;"></p>
+    <p id="med-cancel-summary-cli-wrap" class="ho-muted hidden" style="margin:4px 0 0;"><span id="med-cancel-summary-cli"></span></p>
+    <div class="field" style="margin-top:12px;">
+      <label for="med-cancel-motivo">Motivo do cancelamento</label>
+      <textarea id="med-cancel-motivo" rows="3" style="min-height:72px;resize:vertical;" placeholder="Ex.: cliente desistiu, produto indisponível..."></textarea>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="light" onclick="closeCancelMedicationModal_()">Voltar</button>
+      <button type="button" onclick="confirmCancelMedicationModal_()">Cancelar solicitação</button>
+    </div>
+  </div>
+</div>
+
+<div id="reopen-confirm-overlay" class="modal-overlay hidden" aria-hidden="true">
+  <div class="modal-dialog card" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h2 id="reopen-modal-title">Reabrir registro</h2>
+    </div>
+    <p class="ho-muted" id="reopen-modal-desc">O item será recriado como pendência e o histórico mantém a trilha de quem resolveu e quem reabriu.</p>
+    <div class="field">
+      <label for="reopen-motivo-input">Motivo (opcional)</label>
+      <input id="reopen-motivo-input" type="text" placeholder="Ex.: cliente voltou à loja">
+    </div>
+    <div class="form-actions">
+      <button type="button" class="light" onclick="cancelReopenHistoricoModal_()">Cancelar</button>
+      <button type="button" onclick="confirmReopenHistoricoModal_()">Confirmar reabertura</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app-shell -->
+
+<div id="toast-root" aria-live="polite"></div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+</body>
+</html>
