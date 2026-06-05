@@ -36,6 +36,44 @@
     </div>
     <p id="handover-login-error" class="handover-login-error" role="alert"></p>
     <button type="button" id="handover-login-submit" class="btn-primary-header" style="width:100%;margin-top:6px;">Entrar</button>
+    <div style="margin-top:12px;text-align:center;">
+      <button type="button" id="handover-primeiro-acesso-toggle" class="link-like" style="color:#666;font-size:13px;text-decoration:underline;cursor:pointer;border:none;background:none;padding:0;">Primeiro acesso?</button>
+    </div>
+  </div>
+</div>
+
+<div id="primeiro-acesso-overlay" class="handover-login-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="primeiro-acesso-title">
+  <div class="handover-login-card ho-card ho-card-pad">
+    <div class="handover-login-brand">
+      <div class="handover-login-symbol-ring">
+        <img id="primeiro-acesso-logo" class="brand-logo-img hidden" alt="Drogarias Conceito">
+      </div>
+      <span id="primeiro-acesso-brand-text" class="brand-mark">Drogarias Conceito</span>
+      <span class="ho-muted" style="font-size:13px;line-height:1.35;">Registre-se — primeiro acesso</span>
+    </div>
+    <h1 id="primeiro-acesso-title" class="handover-login-title">Criar conta</h1>
+    <p id="primeiro-acesso-status" class="handover-login-status ho-muted hidden"></p>
+    <div class="field">
+      <label for="pri-nome">Seu nome completo</label>
+      <input id="pri-nome" type="text" placeholder="Ex: João Silva" autocomplete="name" spellcheck="false">
+    </div>
+    <div class="field">
+      <label for="pri-pin">PIN (4-8 dígitos)</label>
+      <input id="pri-pin" type="password" inputmode="numeric" placeholder="Ex: 1234" autocomplete="new-password" spellcheck="false">
+    </div>
+    <div class="field">
+      <label for="pri-pin-confirm">Confirmar PIN</label>
+      <input id="pri-pin-confirm" type="password" inputmode="numeric" placeholder="Repita o PIN" autocomplete="new-password" spellcheck="false">
+    </div>
+    <div class="field">
+      <label for="pri-codigo-convite">Código de convite</label>
+      <input id="pri-codigo-convite" type="text" placeholder="Código recebido" autocomplete="off" spellcheck="false" style="text-transform:uppercase;">
+    </div>
+    <p id="primeiro-acesso-error" class="handover-login-error" role="alert"></p>
+    <button type="button" id="primeiro-acesso-submit" class="btn-primary-header" style="width:100%;margin-top:6px;">Registrar</button>
+    <div style="margin-top:12px;text-align:center;">
+      <button type="button" id="primeiro-acesso-voltar" class="link-like" style="color:#666;font-size:13px;text-decoration:underline;cursor:pointer;border:none;background:none;padding:0;">Voltar ao login</button>
+    </div>
   </div>
 </div>
 

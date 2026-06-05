@@ -4,6 +4,7 @@ import { G } from './state.js';
 import { el } from './utils.js';
 import { setOnSessionExpired } from './api.js';
 import { doLogin, doLogout } from './auth.js';
+import { setupRegistroListeners } from './registro.js';
 import { setMainTab, refreshDashboardNow_, abrirApp } from './dashboard.js';
 import {
   openFormModal, closeFormModal_, onFormSubmit, onTipoChange_,
@@ -147,6 +148,9 @@ on('audit-drawer-overlay', 'click', function(e) { if (e.target === el('audit-dra
   var btns = ov.querySelectorAll('button');
   btns.forEach(function(b) { b.addEventListener('click', closeCardDetailOverlay_); });
 })();
+
+// Primeiro acesso (registro via convite)
+setupRegistroListeners();
 
 /* ── BOOT ── */
 if (G.token && G.sessao) { abrirApp(); }
