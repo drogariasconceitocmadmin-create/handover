@@ -55,8 +55,10 @@
     return new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit', timeZone:'America/Sao_Paulo' });
   }
   function turnoDefault() {
+    // Manhã: 05:00–17:59  |  Noite: 18:00–04:59
+    // Cobre turnos que começam cedo (abertura ~7h) até o fim do turno tarde (~17h)
     var h = parseInt(new Date().toLocaleString('pt-BR', { hour:'numeric', hour12:false, timeZone:'America/Sao_Paulo' }), 10);
-    return (h >= 7 && h < 14) ? 'Manhã' : 'Noite';
+    return (h >= 5 && h < 18) ? 'Manhã' : 'Noite';
   }
   function isVencido(dateStr) {
     if (!dateStr) return false;
@@ -218,8 +220,32 @@
       kpiCard('kpi-red',    icoAlert_(),  'URGENTES',              urg,  'Prioridade na loja'),
       kpiCard('kpi-green',  icoPill_(),   'ENCOMENDAS',           medAt, 'Faltas e encomendas'),
       kpiCard('kpi-orange', icoWA_(),     'COMPRADOS SEM AVISO',  semAv, 'WhatsApp pendente'),
-      kpiCard('kpi-cl',     icoCheck_(),  'CHECKLIST PENDENTE',   clPend,'Itens do turno'),
+      kpiCardChecklist(cl),
     ].join('');
+  }
+
+  function kpiCardChecklist(cl) {
+    var s = cl && cl.summary ? cl.summary : null;
+    var turno    = (cl && cl.turno)                  || '—';
+    var total    = s ? s.totalItens          : 0;
+    var pend     = s ? s.itensPendentes      : 0;
+    var feitos   = s ? s.itensFeitos         : 0;
+    var na       = s ? s.itensNaoAplicaveis  : 0;
+    var progr    = s ? s.percentualConcluido : 0;
+    return '<div class="kpi-card kpi-cl kpi-cl-detail">' +
+      '<div class="kpi-ico">' + icoCheck_() + '</div>' +
+      '<div class="kpi-body">' +
+        '<div class="label">CHECKLIST · <strong style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;">' + escHtml(turno) + '</strong></div>' +
+        '<div class="kpi-cl-stat-grid">' +
+          '<div class="cs-item"><span class="cs-l">Total</span><span class="cs-v">' + total + '</span></div>' +
+          '<div class="cs-item"><span class="cs-l">Pendentes</span><span class="cs-v">' + pend + '</span></div>' +
+          '<div class="cs-item"><span class="cs-l">Feitos</span><span class="cs-v">' + feitos + '</span></div>' +
+          '<div class="cs-item"><span class="cs-l">N/A</span><span class="cs-v">' + na + '</span></div>' +
+        '</div>' +
+        '<div class="kpi-cl-prog"><span style="width:' + progr + '%"></span></div>' +
+        '<div class="sub" style="margin-top:4px;">' + progr + '% concluído</div>' +
+      '</div>' +
+    '</div>';
   }
 
   function kpiCard(cls, ico, label, value, sub) {
@@ -866,6 +892,7 @@
     // Checklist
     var cl = G.bundle && G.bundle.checklistTurno;
     var body = el('sidebar-checklist-body');
+    if (!body) return; // elemento removido do DOM
     if (!cl || !cl.summary) { body.innerHTML = '<p class="ho-muted" style="font-size:12px;">Nenhum dado.</p>'; }
     else {
       var s = cl.summary;
@@ -883,6 +910,7 @@
 
     // Histórico
     var hbody = el('sidebar-historico-body');
+    if (!hbody) return;
     if (!G.historico) {
       hbody.innerHTML = '<p class="ho-muted" style="font-size:12px;">Carrega sob demanda ao abrir a aba Histórico.</p>';
     } else {
