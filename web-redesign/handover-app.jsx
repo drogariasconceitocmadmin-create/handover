@@ -293,14 +293,17 @@
           });
         }
       } else if (item.raw && item.raw.Urgencia !== undefined) {
-        // pendência geral → resolver
+        // pendência geral → resolver ou cancelar
         if (verb === "primary") {
           API.pendenciaResolver(token, item.id, true).then((r) => {
             if (r && r.error) return toast("Erro ao resolver");
             toast("Pendência resolvida"); reloadBundle();
           });
         } else if (verb === "cancelar") {
-          toast("Use a aba de pendências para excluir");
+          API.pendenciaResolver(token, item.id, true).then((r) => {
+            if (r && r.error) return toast("Erro ao cancelar");
+            toast("Pendência cancelada"); reloadBundle();
+          });
         }
       } else {
         toast("Ação registrada");
