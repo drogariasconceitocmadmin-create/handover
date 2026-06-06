@@ -642,3 +642,27 @@ body {
 
 /* topbar icon — no bump, no loop */
 .ho-topbar .ci-icon { display: inline-flex; }
+
+/* Date shortcut buttons */
+.ho-date-btn {
+  flex: 1 1 auto;
+  min-width: 90px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  background: var(--line);
+  color: var(--ink-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--dur-2);
+}
+.ho-date-btn:hover {
+  background: var(--line-2);
+  color: var(--ink);
+  border-color: var(--line-3);
+}
+.ho-date-btn:active {
+  transform: scale(0.98);
+}

@@ -37,9 +37,9 @@
     return React.createElement("div", null,
       React.createElement("input", Object.assign({ ref: inputRef, className: "ho-input" }, p, { type: "date" })),
       React.createElement("div", { style: { display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" } },
-        React.createElement("button", { type: "button", style: { flex: "1 1 auto", minWidth: 90, padding: "6px 10px", fontSize: 12, background: "var(--line)", border: "1px solid var(--line-2)", borderRadius: 4, cursor: "pointer", fontFamily: "var(--font-sans)" }, onClick: () => setDate(1) }, "Amanhã"),
-        React.createElement("button", { type: "button", style: { flex: "1 1 auto", minWidth: 90, padding: "6px 10px", fontSize: 12, background: "var(--line)", border: "1px solid var(--line-2)", borderRadius: 4, cursor: "pointer", fontFamily: "var(--font-sans)" }, onClick: () => setDate(2) }, "Depois de amanhã"),
-        React.createElement("button", { type: "button", style: { flex: "1 1 auto", minWidth: 100, padding: "6px 10px", fontSize: 12, background: "var(--line)", border: "1px solid var(--line-2)", borderRadius: 4, cursor: "pointer", fontFamily: "var(--font-sans)" }, onClick: () => setDate(7) }, "Semana que vem"),
+        React.createElement("button", { type: "button", className: "ho-date-btn", onClick: () => setDate(1) }, "Amanhã"),
+        React.createElement("button", { type: "button", className: "ho-date-btn", onClick: () => setDate(2) }, "Depois de amanhã"),
+        React.createElement("button", { type: "button", className: "ho-date-btn", onClick: () => setDate(7) }, "Semana que vem"),
       ),
     );
   };
