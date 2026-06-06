@@ -139,7 +139,7 @@
             React.createElement("div", { className: "ho-field-row" },
               React.createElement(Field, { label: "Urgência" }, React.createElement(Select, { name: "urgencia" },
                 React.createElement("option", null, "Normal"), React.createElement("option", null, "Urgente"))),
-              React.createElement(Field, { label: "Prazo (opcional)" }, React.createElement(Input, { name: "prazo", type: "date" })),
+              React.createElement(Field, { label: "Prazo (opcional)" }, React.createElement(DateInput, { name: "prazo" })),
             ),
             React.createElement(Field, { label: "Descrição" }, React.createElement(Textarea, { name: "descricao", placeholder: "Detalhe a pendência…" })),
           ),
