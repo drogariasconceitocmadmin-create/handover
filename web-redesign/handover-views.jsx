@@ -308,7 +308,7 @@
   // ============================================================
   // Histórico
   // ============================================================
-  function Historico({ items }) {
+  function Historico({ items, onDetail }) {
     return React.createElement(React.Fragment, null,
       React.createElement("div", { className: "ho-sechead" },
         React.createElement("div", null,
@@ -327,6 +327,10 @@
             ),
             React.createElement("div", { className: "ho-tldesc" }, e.desc),
             React.createElement("div", { className: "ho-tlwho" }, "por " + e.who),
+            onDetail && React.createElement("button", {
+              style: { marginTop: 8, fontSize: 12, padding: "4px 8px", background: "var(--line)", border: "1px solid var(--line-2)", borderRadius: "4px", cursor: "pointer", fontFamily: "var(--font-sans)" },
+              onClick: () => onDetail(e),
+            }, "Ver trilha"),
           ),
         )),
       ),
