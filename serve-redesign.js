@@ -1,17 +1,28 @@
-// Servidor estático mínimo para o protótipo redesenhado (web-redesign/).
-// node serve-redesign.js  →  http://localhost:8788
+// Servidor estático para web-redesign (node serve-redesign.js)
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, 'web-redesign');
 const PORT = process.env.PORT || 8788;
-const TYPES = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8',
-  '.jsx':'text/babel; charset=utf-8', '.css':'text/css; charset=utf-8', '.json':'application/json',
-  '.svg':'image/svg+xml', '.png':'image/png', '.ico':'image/x-icon', '.woff2':'font/woff2' };
+const TYPES = {
+  '.html':'text/html; charset=utf-8',
+  '.js':'text/javascript; charset=utf-8',
+  '.css':'text/css; charset=utf-8',
+  '.json':'application/json',
+  '.svg':'image/svg+xml',
+  '.png':'image/png',
+  '.ico':'image/x-icon',
+  '.woff':'font/woff',
+  '.woff2':'font/woff2'
+};
 
 http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
+
   let p = decodeURIComponent(req.url.split('?')[0]);
   if (p === '/') p = '/Handover.html';
   const file = path.join(ROOT, path.normalize(p));
@@ -21,4 +32,4 @@ http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
     res.end(data);
   });
-}).listen(PORT, () => console.log('Handover redesign em http://localhost:' + PORT));
+}).listen(PORT, () => console.log('Handover v2 em http://localhost:' + PORT));
