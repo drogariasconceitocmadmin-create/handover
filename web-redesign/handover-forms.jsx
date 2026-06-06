@@ -15,6 +15,35 @@
   const Select = ({ children, ...p }) => React.createElement("select", Object.assign({ className: "ho-select" }, p), children);
   const Textarea = (p) => React.createElement("textarea", Object.assign({ className: "ho-textarea" }, p));
 
+  // Helper to format date as YYYY-MM-DD
+  const fmtDateISO = (d) => {
+    const pad = (n) => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  };
+
+  // Date shortcuts component
+  const DateInput = (p) => {
+    const inputRef = React.useRef(null);
+    const setDate = (daysOffset) => {
+      const d = new Date();
+      d.setDate(d.getDate() + daysOffset);
+      const iso = fmtDateISO(d);
+      if (inputRef.current) {
+        inputRef.current.value = iso;
+        inputRef.current.dispatchEvent(new Event('input', { bubbles: true }));
+        inputRef.current.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    };
+    return React.createElement("div", null,
+      React.createElement("input", Object.assign({ ref: inputRef, className: "ho-input" }, p, { type: "date" })),
+      React.createElement("div", { style: { display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" } },
+        React.createElement("button", { type: "button", style: { flex: "1 1 auto", minWidth: 90, padding: "6px 10px", fontSize: 12, background: "var(--line)", border: "1px solid var(--line-2)", borderRadius: 4, cursor: "pointer", fontFamily: "var(--font-sans)" }, onClick: () => setDate(1) }, "Amanhã"),
+        React.createElement("button", { type: "button", style: { flex: "1 1 auto", minWidth: 90, padding: "6px 10px", fontSize: 12, background: "var(--line)", border: "1px solid var(--line-2)", borderRadius: 4, cursor: "pointer", fontFamily: "var(--font-sans)" }, onClick: () => setDate(2) }, "Depois de amanhã"),
+        React.createElement("button", { type: "button", style: { flex: "1 1 auto", minWidth: 100, padding: "6px 10px", fontSize: 12, background: "var(--line)", border: "1px solid var(--line-2)", borderRadius: 4, cursor: "pointer", fontFamily: "var(--font-sans)" }, onClick: () => setDate(7) }, "Semana que vem"),
+      ),
+    );
+  };
+
   const TYPES = [
     { id: "pendencia", label: "Pendência da loja", icon: "clipboard-list", help: "Tarefa ou pendência do turno" },
     { id: "encomenda", label: "Encomenda / falta", icon: "package", help: "Medicamento para encomendar" },
@@ -130,7 +159,7 @@
             React.createElement("div", { className: "ho-field-row" },
               React.createElement(Field, { label: "Forma de recebimento" }, React.createElement(Select, { name: "formaRecebimento" },
                 React.createElement("option", null, "A combinar"), React.createElement("option", null, "Retira na loja"), React.createElement("option", null, "Entregar no endereço"))),
-              React.createElement(Field, { label: "Previsão de entrega" }, React.createElement(Input, { name: "previsaoEntrega", type: "date" })),
+              React.createElement(Field, { label: "Previsão de entrega" }, React.createElement(DateInput, { name: "previsaoEntrega" })),
             ),
             React.createElement("label", { className: "ho-checkrow-inline", style: { marginBottom: 14 } },
               React.createElement("input", { type: "checkbox", name: "prePago" }), React.createElement("span", null, "Cliente já deixou pago (pré-pago)")),
