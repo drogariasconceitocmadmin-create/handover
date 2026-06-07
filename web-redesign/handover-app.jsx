@@ -400,7 +400,7 @@
         React.createElement(NavRail, {
           sections: SECTIONS, active: route, onSelect: (id) => { setRoute(id); setKpiFilter(null); },
           collapsed: false,
-          brand: { name: "Handover", subtitle: "Drogarias Conceito" },
+          brand: { name: "Handover", subtitle: "Projeto" },
           user: { initials: initials, name: operador.nome || operador.usuario, role: operador.perfil || "Operador do turno", tone: "pink" },
         }),
       ),
