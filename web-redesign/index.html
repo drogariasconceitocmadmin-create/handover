@@ -6,8 +6,11 @@
 <title>Handover — Projeto</title>
 <link rel="stylesheet" href="_ds/conceito-indica-design-system-1bb735f2-e50f-499c-bb50-300f20609556/styles.css" />
 <link rel="stylesheet" href="app-shell.css" />
+<link rel="stylesheet" href="liquid-glass.css" />
 </head>
 <body>
+<!-- Animated wallpaper — sits behind everything -->
+<div class="lg-wallpaper" aria-hidden="true"></div>
 <div id="root"></div>
 
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -21,9 +24,101 @@
 <script src="config.js"></script>
 <script src="handover-data.js"></script>
 <script type="text/babel" src="tweaks-panel.jsx"></script>
+<!-- glass-icons must load before views/app so AnimIcon is already patched -->
+<script type="text/babel" src="glass-icons.jsx"></script>
 <script type="text/babel" src="handover-views.jsx"></script>
 <script type="text/babel" src="handover-forms.jsx"></script>
 <script type="text/babel" src="handover-app.jsx"></script>
+
+<script>
+  // ── Tema único (Liquid Glass): força .night uma vez após montar ─────
+  (function () {
+    var done = false;
+    var ob = new MutationObserver(function () {
+      if (done) return;
+      var app = document.querySelector(".ho-app");
+      if (app) { app.classList.add("night"); done = true; ob.disconnect(); }
+    });
+    ob.observe(document.body, { childList: true, subtree: true });
+  })();
+
+  // ── Liquid Glass specular — mousemove global + lerp RAF ─────────────
+  (function () {
+    var SPEED_FOLLOW = 0.08, SPEED_REST = 0.03, DAMP_X = 0.28, DAMP_Y = 0.04, REST_X = 50, REST_Y = -12;
+    var SELECTORS = ".ho-qcard, .ho-login-card, .ho-checkrow, .ho-checkrow2, .ho-checkrow-c, .ho-tlcard, .ho-buyrow, .painel-card, .msg-card";
+    var pool = [];
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function attach(el) {
+      if (el._lgSpec) return;
+      el._lgSpec = true;
+      el._tx = REST_X; el._ty = REST_Y; el._cx = REST_X; el._cy = REST_Y; el._hot = false;
+      el.style.setProperty("--sx", REST_X + "%"); el.style.setProperty("--sy", REST_Y + "%");
+      pool.push(el);
+    }
+    function scan() { document.querySelectorAll(SELECTORS).forEach(attach); }
+    document.addEventListener("mousemove", function (e) {
+      for (var i = 0; i < pool.length; i++) {
+        var el = pool[i], r = el.getBoundingClientRect();
+        var inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+        if (inside) { el._hot = true; el._tx = REST_X + ((e.clientX - r.left) / r.width * 100 - 50) * DAMP_X; el._ty = REST_Y + (e.clientY - r.top) / r.height * 100 * DAMP_Y; }
+        else if (el._hot) { el._hot = false; el._tx = REST_X; el._ty = REST_Y; }
+      }
+    });
+    (function tick() {
+      for (var i = 0; i < pool.length; i++) {
+        var el = pool[i], s = el._hot ? SPEED_FOLLOW : SPEED_REST;
+        el._cx = lerp(el._cx, el._tx, s); el._cy = lerp(el._cy, el._ty, s);
+        el.style.setProperty("--sx", el._cx.toFixed(2) + "%"); el.style.setProperty("--sy", el._cy.toFixed(2) + "%");
+      }
+      requestAnimationFrame(tick);
+    })();
+    new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
+    var iv = setInterval(scan, 300); setTimeout(function () { clearInterval(iv); }, 8000); scan();
+  })();
+
+  // ── Modal type selector — glass active state ────────────────────────
+  (function () {
+    function syncTypeBtns() {
+      document.querySelectorAll(".ho-modal-body button[type='button']").forEach(function (btn) {
+        var s = btn.getAttribute("style") || "";
+        btn.classList.toggle("lg-type-active", s.includes("var(--brand)"));
+      });
+    }
+    new MutationObserver(syncTypeBtns).observe(document.body, { attributes: true, subtree: true, attributeFilter: ["style"] });
+    syncTypeBtns();
+  })();
+
+  // ── Segmented control — sliding Liquid Glass chip ───────────────────
+  (function () {
+    function initSeg(seg) {
+      if (seg._lgSeg) return;
+      seg._lgSeg = true;
+      var chip = document.createElement("div");
+      chip.className = "lg-seg-chip";
+      seg.insertBefore(chip, seg.firstChild);
+      function place(animate) {
+        var active = seg.querySelector("button.on, button[aria-selected='true']");
+        if (!active) return;
+        var sr = seg.getBoundingClientRect(), br = active.getBoundingClientRect();
+        if (!animate) {
+          chip.style.transition = "none";
+          chip.style.setProperty("--x", (br.left - sr.left) + "px");
+          chip.style.setProperty("--w", br.width + "px");
+          requestAnimationFrame(function () { chip.style.transition = ""; });
+        } else {
+          chip.style.setProperty("--x", (br.left - sr.left) + "px");
+          chip.style.setProperty("--w", br.width + "px");
+        }
+      }
+      new MutationObserver(function () { place(true); }).observe(seg, { attributes: true, subtree: true, attributeFilter: ["class", "aria-selected"] });
+      place(false);
+    }
+    function scanSegs() { document.querySelectorAll(".ci-seg").forEach(initSeg); }
+    new MutationObserver(scanSegs).observe(document.body, { childList: true, subtree: true });
+    var iv2 = setInterval(scanSegs, 300); setTimeout(function () { clearInterval(iv2); }, 8000); scanSegs();
+  })();
+</script>
+
 <script type="text/babel">
   ReactDOM.createRoot(document.getElementById("root")).render(
     React.createElement(window.HandoverApp)

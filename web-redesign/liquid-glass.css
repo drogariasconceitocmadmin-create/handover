@@ -1,0 +1,1269 @@
+/* ============================================================
+   Handover — Liquid Glass Edition
+   Apple-inspired frosted glass aesthetic
+   Loaded last — overrides the visual layer only.
+   ============================================================ */
+
+/* ---- Document ---- */
+html, body {
+  background: #070513 !important;
+}
+
+/* ---- Animated wallpaper ---- */
+.lg-wallpaper {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 130% 90% at 7%  7%,  rgba(112, 40, 210, 0.82) 0%, transparent 48%),
+    radial-gradient(ellipse 85%  95% at 96% 10%,  rgba(48,  20, 162, 0.74) 0%, transparent 46%),
+    radial-gradient(ellipse 75%  82% at 83% 94%,  rgba(10,  92, 170, 0.70) 0%, transparent 46%),
+    radial-gradient(ellipse 65%  65% at 12% 90%,  rgba(20,  65, 155, 0.62) 0%, transparent 46%),
+    radial-gradient(ellipse 55%  55% at 50% 50%,  rgba(58,  20, 120, 0.40) 0%, transparent 64%),
+    #070513;
+  animation: lg-shift 32s ease-in-out infinite alternate;
+  will-change: filter;
+}
+
+.lg-wallpaper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle 360px at 28% 58%, rgba(44, 212, 160, 0.12) 0%, transparent 100%),
+    radial-gradient(circle 240px at 74% 28%, rgba(130, 72,  220, 0.10) 0%, transparent 100%);
+  animation: lg-orbs 22s ease-in-out infinite alternate;
+}
+
+@keyframes lg-shift {
+  0%   { filter: hue-rotate(0deg)   saturate(1.00) brightness(1.00); }
+  20%  { filter: hue-rotate(5deg)   saturate(1.07) brightness(1.03); }
+  50%  { filter: hue-rotate(-4deg)  saturate(0.95) brightness(0.97); }
+  80%  { filter: hue-rotate(9deg)   saturate(1.11) brightness(1.04); }
+  100% { filter: hue-rotate(-7deg)  saturate(1.03) brightness(1.01); }
+}
+
+@keyframes lg-orbs {
+  0%   { transform: translate(0px,   0px)   scale(1.00); }
+  50%  { transform: translate(22px, -14px)  scale(1.04); }
+  100% { transform: translate(-10px, 18px)  scale(0.97); }
+}
+
+/* Root sits above wallpaper */
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* Wallpaper fades in on load (entrance feel without touching .ho-app opacity) */
+@keyframes lg-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.lg-wallpaper {
+  animation: lg-shift 32s ease-in-out infinite alternate, lg-fadein 0.6s ease-out both !important;
+}
+
+/* ---- Global glass tokens (override DS) ---- */
+:root,
+.night,
+.ho-app,
+.ho-app.night {
+  --bg:          rgba(0, 0, 0, 0);
+  --panel:       rgba(255, 255, 255, 0.09);
+  --raise:       rgba(255, 255, 255, 0.14);
+  --line:        rgba(255, 255, 255, 0.16);
+  --line-2:      rgba(255, 255, 255, 0.07);
+  --ink:         rgba(255, 255, 255, 0.96);
+  --ink-2:       rgba(255, 255, 255, 0.63);
+  --ink-3:       rgba(255, 255, 255, 0.38);
+  --ci-ink:      #0f0a1e;
+
+  --brand:       #2cd4a0;
+  --brand-soft:  rgba(44, 212, 160, 0.18);
+  --on-brand:    #011a10;
+  --neg:         #ff6b6b;
+  --neg-soft:    rgba(255, 107, 107, 0.18);
+  --warn:        #ffd044;
+  --warn-soft:   rgba(255, 208, 68, 0.18);
+  --pos:         #34c759;
+  --pos-soft:    rgba(52, 199, 89, 0.18);
+
+  --shadow-xs:   0 2px 8px rgba(0,0,0,0.28);
+  --shadow-md:   0 8px 32px rgba(0,0,0,0.38), 0 2px 8px rgba(0,0,0,0.22);
+  --shadow-lg:   0 20px 60px rgba(0,0,0,0.52), 0 4px 16px rgba(0,0,0,0.30);
+  --ring:        0 0 0 2px rgba(44,212,160,0.55), 0 0 0 4px rgba(44,212,160,0.20);
+
+  --radius:      18px;
+  --radius-lg:   24px;
+  --radius-md:   12px;
+  --radius-sm:   10px;
+  --radius-xs:    7px;
+  --radius-pill: 100px;
+}
+
+/* ---- App frame — fully transparent ---- */
+.ho-app,
+.ho-app.night,
+.ho-app:not(.night) {
+  background: transparent !important;
+  --bg: transparent !important;
+}
+
+.ho-main,
+.ho-scroll,
+.ho-page {
+  background: transparent !important;
+}
+
+/* Dot matrix — ghostly sparkle on the wallpaper */
+.ho-main > canvas {
+  opacity: 0.09 !important;
+  mix-blend-mode: overlay !important;
+}
+.ho-app > canvas {
+  opacity: 0.09 !important;
+  mix-blend-mode: overlay !important;
+}
+
+/* ============================================================
+   Navigation Rail — floating icons on wallpaper
+   Collapsed: transparent (icons float). Expanded/hover: glass panel.
+   ============================================================ */
+.ci-rail {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-right: none !important;
+  box-shadow: none !important;
+  transition: background 0.28s ease-out !important;
+}
+
+.ho-rail-wrap:hover .ci-rail {
+  background: rgba(8, 5, 18, 0.72) !important;
+  backdrop-filter: blur(44px) saturate(1.5) brightness(0.96) !important;
+  -webkit-backdrop-filter: blur(44px) saturate(1.5) brightness(0.96) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.07) !important;
+  box-shadow:
+    1px 0 0 rgba(255, 255, 255, 0.04) inset,
+    6px 0 40px rgba(0, 0, 0, 0.55) !important;
+}
+
+.ci-rail__i--active {
+  background: rgba(44, 212, 160, 0.16) !important;
+}
+
+.ci-rail__i:not(.ci-rail__i--active):hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ============================================================
+   Topbar — floating glass ribbon
+   ============================================================ */
+.ho-topbar {
+  background: rgba(255, 255, 255, 0.07) !important;
+  backdrop-filter: blur(30px) saturate(1.70) brightness(1.02) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(1.70) brightness(1.02) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 6px 24px rgba(0, 0, 0, 0.22) !important;
+  padding-top: 9px !important;
+  padding-bottom: 9px !important;
+}
+
+.ho-icbtn {
+  background: rgba(255, 255, 255, 0.09) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset !important;
+}
+.ho-icbtn:hover {
+  background: rgba(255, 255, 255, 0.17) !important;
+  color: rgba(255, 255, 255, 0.96) !important;
+}
+
+.ho-syncs .k { color: rgba(255,255,255,0.38) !important; }
+.ho-syncs .v { color: rgba(255,255,255,0.62) !important; }
+
+/* ============================================================
+   KPI Strip
+   ============================================================ */
+.ho-kstrip {
+  background: rgba(255, 255, 255, 0.07) !important;
+  backdrop-filter: blur(22px) saturate(1.55) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.55) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.16) inset,
+    0 4px 18px rgba(0, 0, 0, 0.24) !important;
+}
+
+.ho-kcell { border-right-color: rgba(255,255,255,0.10) !important; }
+.ho-kcell:hover { background: rgba(255,255,255,0.08) !important; }
+.ho-kcell.on { background: rgba(44,212,160,0.14) !important; }
+.ho-kcell.on::after {
+  background: var(--brand) !important;
+  box-shadow: 0 0 10px rgba(44,212,160,0.55) !important;
+}
+.ho-kcell.alert { background: rgba(255,107,107,0.11) !important; }
+.ho-kcell.alert:hover { background: rgba(255,107,107,0.18) !important; }
+
+.ho-kpi-l { color: rgba(255,255,255,0.62) !important; }
+.ho-kpi-l svg { color: rgba(255,255,255,0.42) !important; }
+.ho-kpi-v { color: rgba(255,255,255,0.96) !important; }
+.ho-kpi-s { color: rgba(255,255,255,0.42) !important; }
+.ho-kcell.alert .ho-kpi-l,
+.ho-kcell.alert .ho-kpi-l svg { color: #ff9090 !important; }
+.ho-kcell.alert .ho-kpi-v { color: #ff6b6b !important; }
+
+/* ============================================================
+   Queue cards
+   ============================================================ */
+.ho-qcard {
+  background: rgba(255, 255, 255, 0.09) !important;
+  backdrop-filter: blur(26px) saturate(1.55) brightness(1.03) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(1.55) brightness(1.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.17) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.26) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.14) inset,
+    0 6px 24px rgba(0, 0, 0, 0.24) !important;
+}
+.ho-qcard:hover {
+  background: rgba(255, 255, 255, 0.13) !important;
+  border-color: rgba(255, 255, 255, 0.26) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.34) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.16) inset,
+    0 16px 44px rgba(0, 0, 0, 0.34) !important;
+  transform: translateY(-1px) !important;
+}
+
+.ho-qtag {
+  background: rgba(255,255,255,0.10) !important;
+  color: rgba(255,255,255,0.65) !important;
+}
+
+/* ============================================================
+   DS Card surface
+   ============================================================ */
+.ci-card {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(20px) saturate(1.45) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.20) inset,
+    0 4px 16px rgba(0,0,0,0.22) !important;
+}
+
+/* ============================================================
+   Search & filters
+   ============================================================ */
+.ho-search {
+  background: rgba(255,255,255,0.09) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset !important;
+}
+.ho-search:focus-within {
+  border-color: rgba(44,212,160,0.52) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.14) inset,
+    0 0 0 3px rgba(44,212,160,0.20) !important;
+}
+.ho-search input::placeholder { color: rgba(255,255,255,0.34) !important; }
+
+.ho-filter {
+  background: rgba(255,255,255,0.09) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  color: rgba(255,255,255,0.72) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.10) inset !important;
+}
+.ho-filter:hover {
+  background: rgba(255,255,255,0.16) !important;
+  border-color: rgba(255,255,255,0.26) !important;
+  color: rgba(255,255,255,0.96) !important;
+}
+.ho-filter.on {
+  background: rgba(44,212,160,0.24) !important;
+  border-color: rgba(44,212,160,0.46) !important;
+  color: rgba(255,255,255,0.96) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.20) inset,
+    0 0 14px rgba(44,212,160,0.20) !important;
+}
+.ho-filter .ct {
+  background: rgba(255,255,255,0.12) !important;
+  color: rgba(255,255,255,0.70) !important;
+}
+.ho-filter.on .ct {
+  background: rgba(0,0,0,0.18) !important;
+  color: rgba(255,255,255,0.90) !important;
+}
+
+/* ============================================================
+   Buttons — full Liquid Glass treatment
+   Convex gradient (bright top → dim bottom) + blur + specular
+   ============================================================ */
+
+/* All buttons: blur + pill */
+.ci-btn {
+  border-radius: var(--radius-pill) !important;
+  backdrop-filter: blur(18px) saturate(1.5) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.5) !important;
+  transition: transform 0.18s var(--ease-spring), box-shadow 0.18s, filter 0.12s !important;
+}
+
+/* Brand — green convex glass */
+.ci-btn--brand {
+  background: linear-gradient(
+    180deg,
+    rgba(110, 240, 200, 0.94) 0%,
+    rgba(44,  212, 160, 0.88) 48%,
+    rgba(28,  185, 138, 0.84) 100%
+  ) !important;
+  border: 1px solid rgba(255,255,255,0.40) !important;
+  color: #011a10 !important;
+  box-shadow:
+    0 2px 0 rgba(255,255,255,0.58) inset,
+    0 -1px 0 rgba(0,0,0,0.20) inset,
+    0 4px 18px rgba(44,212,160,0.38) !important;
+}
+.ci-btn--brand:hover {
+  filter: brightness(1.08) !important;
+  transform: translateY(-1px) scale(1.01) !important;
+  box-shadow:
+    0 2px 0 rgba(255,255,255,0.62) inset,
+    0 -1px 0 rgba(0,0,0,0.22) inset,
+    0 8px 28px rgba(44,212,160,0.50) !important;
+}
+
+/* Primary — white/neutral convex glass */
+.ci-btn--primary {
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.34) 0%,
+    rgba(255,255,255,0.16) 48%,
+    rgba(255,255,255,0.22) 100%
+  ) !important;
+  border: 1px solid rgba(255,255,255,0.32) !important;
+  color: rgba(255,255,255,0.96) !important;
+  box-shadow:
+    0 2px 0 rgba(255,255,255,0.48) inset,
+    0 -1px 0 rgba(0,0,0,0.14) inset,
+    0 4px 12px rgba(0,0,0,0.24) !important;
+}
+.ci-btn--primary:hover {
+  filter: brightness(1.10) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Secondary — thin convex glass */
+.ci-btn--secondary {
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.22) 0%,
+    rgba(255,255,255,0.09) 48%,
+    rgba(255,255,255,0.12) 100%
+  ) !important;
+  border: 1px solid rgba(255,255,255,0.24) !important;
+  color: rgba(255,255,255,0.88) !important;
+  box-shadow:
+    0 1.5px 0 rgba(255,255,255,0.32) inset,
+    0 -1px 0 rgba(0,0,0,0.10) inset !important;
+}
+.ci-btn--secondary:hover {
+  filter: brightness(1.12) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Ghost — ultra-thin glass */
+.ci-btn--ghost {
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.16) 0%,
+    rgba(255,255,255,0.05) 48%,
+    rgba(255,255,255,0.08) 100%
+  ) !important;
+  border: 1px solid rgba(255,255,255,0.20) !important;
+  color: rgba(255,255,255,0.80) !important;
+  box-shadow: 0 1.5px 0 rgba(255,255,255,0.22) inset !important;
+}
+.ci-btn--ghost:hover {
+  filter: brightness(1.14) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Destructive — red glass */
+.ci-btn--destructive {
+  background: linear-gradient(
+    180deg,
+    rgba(255,145,145,0.36) 0%,
+    rgba(255,107,107,0.22) 48%,
+    rgba(255,107,107,0.26) 100%
+  ) !important;
+  border: 1px solid rgba(255,145,145,0.42) !important;
+  color: #ffb3b3 !important;
+  box-shadow: 0 1.5px 0 rgba(255,190,190,0.32) inset !important;
+}
+.ci-btn--destructive:hover { filter: brightness(1.10) !important; }
+
+/* ============================================================
+   WhatsApp button — green glass pill
+   ============================================================ */
+.ho-wa {
+  background: linear-gradient(
+    180deg,
+    rgba(90, 235, 155, 0.30) 0%,
+    rgba(37, 211, 102, 0.18) 48%,
+    rgba(37, 211, 102, 0.22) 100%
+  ) !important;
+  backdrop-filter: blur(16px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.4) !important;
+  border: 1px solid rgba(90,235,155,0.36) !important;
+  border-radius: var(--radius-pill) !important;
+  color: #6ef0a0 !important;
+  box-shadow: 0 1.5px 0 rgba(160,255,200,0.28) inset !important;
+}
+.ho-wa:hover {
+  filter: brightness(1.12) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ============================================================
+   Filter pills — glass convex
+   ============================================================ */
+.ho-filter {
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.18) 0%,
+    rgba(255,255,255,0.08) 48%,
+    rgba(255,255,255,0.11) 100%
+  ) !important;
+  border: 1px solid rgba(255,255,255,0.20) !important;
+  color: rgba(255,255,255,0.78) !important;
+  box-shadow: 0 1.5px 0 rgba(255,255,255,0.24) inset !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+}
+.ho-filter:hover {
+  filter: brightness(1.12) !important;
+  border-color: rgba(255,255,255,0.30) !important;
+  color: rgba(255,255,255,0.96) !important;
+}
+.ho-filter.on {
+  background: linear-gradient(
+    180deg,
+    rgba(90, 230, 185, 0.38) 0%,
+    rgba(44, 212, 160, 0.24) 48%,
+    rgba(44, 212, 160, 0.28) 100%
+  ) !important;
+  border-color: rgba(44,212,160,0.50) !important;
+  color: rgba(255,255,255,0.96) !important;
+  box-shadow:
+    0 1.5px 0 rgba(180,255,220,0.32) inset,
+    0 0 14px rgba(44,212,160,0.22) !important;
+}
+
+/* ============================================================
+   Badges
+   ============================================================ */
+.ci-badge { backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; }
+
+.ci-badge--pos  { background: rgba(52,199,89,0.20)!important;   border-color: rgba(52,199,89,0.30)!important;   color: #7ee8a2!important; }
+.ci-badge--neg  { background: rgba(255,107,107,0.20)!important; border-color: rgba(255,107,107,0.32)!important; color: #ff9090!important; }
+.ci-badge--warn { background: rgba(255,208,68,0.20)!important;  border-color: rgba(255,208,68,0.30)!important;  color: #ffe07a!important; }
+.ci-badge--brand{ background: rgba(44,212,160,0.20)!important;  border-color: rgba(44,212,160,0.30)!important;  color: #6ef0d0!important; }
+.ci-badge--muted{ background: rgba(255,255,255,0.08)!important; border-color: rgba(255,255,255,0.14)!important; color: rgba(255,255,255,0.52)!important; }
+
+/* ============================================================
+   TrendPill
+   ============================================================ */
+.ci-trend--up   { background: rgba(52,199,89,0.18)!important;   color: #7ee8a2!important; border-color: rgba(52,199,89,0.28)!important;  }
+.ci-trend--down { background: rgba(255,107,107,0.18)!important; color: #ff9090!important; border-color: rgba(255,107,107,0.28)!important; }
+
+/* ============================================================
+   Segmented control
+   ============================================================ */
+.ci-seg {
+  position: relative !important;
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255,255,255,0.13) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+}
+
+/* Injected glass chip — slides with spring easing */
+.lg-seg-chip {
+  position: absolute;
+  top: 3px; bottom: 3px;
+  left: var(--x, 3px);
+  width: var(--w, 48%);
+  border-radius: 9px;
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.40) 0%,
+    rgba(255,255,255,0.22) 50%,
+    rgba(255,255,255,0.30) 100%
+  );
+  border: 1px solid rgba(255,255,255,0.34);
+  box-shadow:
+    0 2px 0 rgba(255,255,255,0.54) inset,
+    0 -1px 0 rgba(0,0,0,0.14) inset,
+    0 4px 14px rgba(0,0,0,0.26);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition:
+    left  0.40s cubic-bezier(0.34, 1.56, 0.64, 1),
+    width 0.40s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Active button: same color as inactive — no text change */
+.ci-seg button.on,
+.ci-seg button[aria-selected="true"] {
+  font-weight: 600 !important;
+  position: relative !important; z-index: 1 !important;
+}
+.ci-seg button:not(.on):not([aria-selected="true"]) {
+  position: relative !important; z-index: 1 !important;
+}
+
+/* ============================================================
+   Dropdown menus — floating Liquid Glass panels
+   ============================================================ */
+.ho-dd-menu,
+.ho-kebab-menu {
+  background: rgba(22, 14, 44, 0.68) !important;
+  backdrop-filter: blur(48px) saturate(1.80) brightness(1.06) !important;
+  -webkit-backdrop-filter: blur(48px) saturate(1.80) brightness(1.06) !important;
+  border: 1px solid rgba(255,255,255,0.20) !important;
+  box-shadow:
+    /* Top specular rim */
+    0 1px 0 rgba(255,255,255,0.28) inset,
+    0 -1px 0 rgba(0,0,0,0.20) inset,
+    /* Chromatic fringe */
+    -1px 1px 0 rgba(72,198,255,0.05),
+    /* Depth */
+    0 20px 56px rgba(0,0,0,0.55),
+    0  6px 18px rgba(0,0,0,0.30) !important;
+  /* Keep absolute positioning — only add overflow clip for ::before */
+  overflow: hidden !important;
+}
+
+/* Top caustic wash */
+.ho-dd-menu::before,
+.ho-kebab-menu::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 40%;
+  pointer-events: none; z-index: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse 100% 80% at 50% -10%,
+    rgba(255,255,255,0.16) 0%,
+    rgba(255,255,255,0.04) 55%,
+    transparent 80%
+  );
+}
+
+/* Items sit above the caustic */
+.ho-dd-item,
+.ho-kebab-menu button { position: relative; z-index: 1; }
+
+.ho-dd-item:hover {
+  background: rgba(255,255,255,0.10) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset !important;
+}
+
+/* Icon container — glass squircle */
+.ho-dd-ico {
+  background: linear-gradient(
+    180deg,
+    rgba(80,230,185,0.30) 0%,
+    rgba(44,212,160,0.18) 100%
+  ) !important;
+  border: 1px solid rgba(44,212,160,0.28) !important;
+  box-shadow: 0 1px 0 rgba(180,255,220,0.22) inset !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  color: #5ef0cc !important;
+  border-radius: 10px !important;
+}
+
+.ho-dd-tx b    { color: rgba(255,255,255,0.96) !important; }
+.ho-dd-tx span { color: rgba(255,255,255,0.48) !important; }
+
+.ho-kebab-btn { color: rgba(255,255,255,0.50) !important; }
+.ho-kebab-btn:hover { background: rgba(255,255,255,0.10) !important; color: rgba(255,255,255,0.96) !important; }
+.ho-kebab-menu button { color: rgba(255,255,255,0.88) !important; }
+.ho-kebab-menu button:hover {
+  background: rgba(255,255,255,0.09) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.10) inset !important;
+}
+.ho-kebab-menu button.danger { color: #ff9090 !important; }
+.ho-kebab-menu button svg { color: rgba(255,255,255,0.42) !important; }
+.ho-kebab-menu button.danger svg { color: #ff9090 !important; }
+.ho-kebab-sep { background: rgba(255,255,255,0.09) !important; }
+
+/* ============================================================
+   Modal — thick Liquid Glass panel (Apple spec: larger = deeper)
+   ============================================================ */
+.ho-overlay {
+  background: rgba(4, 2, 10, 0.62) !important;
+  backdrop-filter: blur(22px) saturate(1.5) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.5) !important;
+}
+.ho-modal {
+  background: rgba(18, 12, 44, 0.72) !important;
+  backdrop-filter: blur(62px) saturate(2.0) brightness(1.06) !important;
+  -webkit-backdrop-filter: blur(62px) saturate(2.0) brightness(1.06) !important;
+  border: 1px solid rgba(255,255,255,0.22) !important;
+  box-shadow:
+    /* Top specular rim */
+    0 1.5px 0 rgba(255,255,255,0.32) inset,
+    0 -1px 0 rgba(0,0,0,0.22) inset,
+    /* Chromatic fringe */
+    -1px 1px 0 rgba(72,198,255,0.055),
+    /* Deep elevation */
+    0 40px 100px rgba(0,0,0,0.68),
+    0 12px 28px rgba(0,0,0,0.38) !important;
+}
+/* Modal head: glass + top caustic */
+.ho-modal-head {
+  background: rgba(255,255,255,0.04) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.10) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+.ho-modal-head::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 65%;
+  background: radial-gradient(
+    ellipse 100% 140% at 50% -15%,
+    rgba(255,255,255,0.20) 0%,
+    rgba(255,255,255,0.05) 54%,
+    transparent 80%
+  );
+  pointer-events: none; z-index: 0;
+}
+.ho-modal-head > * { position: relative; z-index: 1; }
+.ho-modal-foot {
+  background: rgba(255,255,255,0.03) !important;
+  border-top: 1px solid rgba(255,255,255,0.09) !important;
+}
+.ho-modal-head h2 { color: rgba(255,255,255,0.96) !important; }
+.ho-modal-head .sub { color: rgba(255,255,255,0.48) !important; }
+.ho-modal-x {
+  background: rgba(255,255,255,0.10) !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  color: rgba(255,255,255,0.70) !important;
+  border-radius: var(--radius-pill) !important;
+}
+.ho-modal-x:hover { background: rgba(255,255,255,0.20) !important; color: rgba(255,255,255,0.96) !important; }
+
+/* Novo registro type selector grid buttons — glass */
+.ho-modal-body button[type="button"] {
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.14) 0%,
+    rgba(255,255,255,0.07) 50%,
+    rgba(255,255,255,0.10) 100%
+  ) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  color: rgba(255,255,255,0.80) !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset !important;
+  transition: background 0.18s ease-out, border-color 0.18s ease-out, box-shadow 0.18s ease-out !important;
+}
+
+/* Active type button — glass teal (set via JS .lg-type-active) */
+.ho-modal-body button.lg-type-active {
+  background: linear-gradient(
+    180deg,
+    rgba(72, 228, 178, 0.32) 0%,
+    rgba(44, 212, 160, 0.20) 50%,
+    rgba(28, 185, 140, 0.24) 100%
+  ) !important;
+  border: 1px solid rgba(44,212,160,0.50) !important;
+  color: rgba(255,255,255,0.98) !important;
+  box-shadow:
+    0 1.5px 0 rgba(180,255,220,0.36) inset,
+    0 0 14px rgba(44,212,160,0.20) !important;
+}
+
+/* ============================================================
+   Form inputs
+   ============================================================ */
+.ho-input,
+.ho-select,
+.ho-textarea {
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  color: rgba(255,255,255,0.96) !important;
+  color-scheme: dark;
+}
+.ho-input:focus, .ho-select:focus, .ho-textarea:focus {
+  border-color: rgba(44,212,160,0.54) !important;
+  box-shadow: 0 0 0 3px rgba(44,212,160,0.18) !important;
+}
+.ho-input::placeholder, .ho-textarea::placeholder { color: rgba(255,255,255,0.30) !important; }
+.ho-field > label { color: rgba(255,255,255,0.58) !important; }
+.ho-checkrow-inline span { color: rgba(255,255,255,0.88) !important; }
+
+/* ============================================================
+   Checklist
+   ============================================================ */
+.ho-checkrow {
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255,255,255,0.13) !important;
+}
+.ho-checkrow:hover { background: rgba(255,255,255,0.12) !important; }
+.ho-checkrow .box {
+  background: rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.26) !important;
+}
+.ho-checkrow.done .box {
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 10px rgba(44,212,160,0.45) !important;
+}
+.ho-checkrow .tx { color: rgba(255,255,255,0.90) !important; }
+.ho-checkrow.done .tx { color: rgba(255,255,255,0.38) !important; }
+.ho-checkrow .who { color: rgba(255,255,255,0.38) !important; }
+
+.ho-progress-bar { background: rgba(255,255,255,0.12) !important; }
+.ho-progress-fill { box-shadow: 0 0 12px rgba(44,212,160,0.48) !important; }
+.ho-progress-top .pct { color: rgba(255,255,255,0.96) !important; }
+.ho-progress-top .lbl { color: rgba(255,255,255,0.46) !important; }
+
+.ho-checkcat-h .ttl  { color: rgba(255,255,255,0.90) !important; }
+.ho-checkcat-h .meta { color: rgba(255,255,255,0.42) !important; }
+
+/* ============================================================
+   Timeline
+   ============================================================ */
+.ho-tl::before { background: rgba(255,255,255,0.12) !important; }
+.ho-tlcard {
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255,255,255,0.13) !important;
+}
+.ho-tltop b   { color: rgba(255,255,255,0.92) !important; }
+.ho-tldesc    { color: rgba(255,255,255,0.62) !important; }
+.ho-tlwho     { color: rgba(255,255,255,0.38) !important; }
+.ho-tltime    { color: rgba(255,255,255,0.36) !important; }
+.ho-tldot     { border-color: transparent !important; }
+
+/* ============================================================
+   Comprador rows
+   ============================================================ */
+.ho-buyrow {
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+}
+.ho-buyrow--comprado { background: rgba(44,212,160,0.12)!important; border-color: rgba(44,212,160,0.32)!important; }
+.ho-buyrow--cancelado{ background: rgba(255,107,107,0.08)!important; border-color: rgba(255,107,107,0.22)!important; }
+.ho-buyrow--naoenc   { background: rgba(255,208,68,0.08)!important;  border-color: rgba(255,208,68,0.22)!important;  }
+.ho-buyrow .nm       { color: rgba(255,255,255,0.96) !important; }
+.ho-buyrow .nm small { color: rgba(255,255,255,0.46) !important; }
+.ho-buyrow .qt       { color: rgba(255,255,255,0.90) !important; }
+.ho-buyrow .cod      { color: rgba(255,255,255,0.44) !important; }
+.ho-buygroup-h { border-bottom-color: rgba(255,255,255,0.10) !important; }
+.ho-buygroup-h .ven  { color: rgba(255,255,255,0.96) !important; }
+.ho-buygroup-h .ct   { color: rgba(255,255,255,0.46) !important; }
+
+/* ============================================================
+   Login — hero glass card
+   ============================================================ */
+.ho-login-card {
+  background: rgba(15, 10, 32, 0.82) !important;
+  border: 1px solid rgba(255,255,255,0.22) !important;
+  backdrop-filter: blur(56px) saturate(1.85) brightness(1.05) !important;
+  -webkit-backdrop-filter: blur(56px) saturate(1.85) brightness(1.05) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.32) inset,
+    0 -1px 0 rgba(0,0,0,0.22) inset,
+    0 32px 84px rgba(0,0,0,0.75),
+    0 0 0 1px rgba(255,255,255,0.05) !important;
+}
+.ho-login-brand b    { color: rgba(255,255,255,0.96) !important; }
+.ho-login-brand span { color: rgba(255,255,255,0.48) !important; }
+.ho-login h1         { color: rgba(255,255,255,0.96) !important; }
+.ho-login .lede      { color: rgba(255,255,255,0.48) !important; }
+.ho-link             { color: rgba(255,255,255,0.48) !important; }
+.ho-link:hover       { color: rgba(255,255,255,0.86) !important; }
+
+/* ---- Logo mark — Liquid Glass app icon treatment ---- */
+/* ::before = logo image (unchanged), ::after = glass squircle behind it */
+.ci-rail__mark {
+  position: relative !important;
+}
+.ci-rail__mark::before {
+  z-index: 1 !important; /* logo stays above glass */
+}
+.ci-rail__mark::after {
+  content: "";
+  position: absolute; inset: -5px;
+  border-radius: 13px;
+  background: linear-gradient(
+    150deg,
+    rgba(255,255,255,0.20) 0%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.14) 100%
+  );
+  border: 1px solid rgba(255,255,255,0.24);
+  box-shadow:
+    0 2px 0 rgba(255,255,255,0.34) inset,
+    0 -1px 0 rgba(0,0,0,0.20) inset,
+    0 4px 18px rgba(0,0,0,0.30);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Login mark — glass overlay on top of logo background-image */
+.ho-login-mark {
+  background: rgba(255,255,255,0.11) !important;
+  background-image: url(logo-dc.png) !important;
+  background-size: 78% !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  border: 1px solid rgba(255,255,255,0.24) !important;
+  box-shadow:
+    0 2px 0 rgba(255,255,255,0.34) inset,
+    0 -1px 0 rgba(0,0,0,0.16) inset,
+    0 4px 18px rgba(0,0,0,0.28) !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  position: relative !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+}
+/* Caustic specular on login mark */
+.ho-login-mark::before {
+  content: "" !important;
+  position: absolute !important; inset: 0 !important;
+  background: linear-gradient(
+    150deg,
+    rgba(255,255,255,0.22) 0%,
+    rgba(255,255,255,0.05) 55%,
+    transparent 100%
+  ) !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+  border-radius: inherit !important;
+}
+.ho-login-mark > svg { display: none !important; }
+
+/* ============================================================
+   Toast
+   ============================================================ */
+.ho-toast {
+  background: rgba(16, 11, 32, 0.94) !important;
+  border: 1px solid rgba(255,255,255,0.20) !important;
+  backdrop-filter: blur(30px) !important;
+  -webkit-backdrop-filter: blur(30px) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.16) inset,
+    0 8px 32px rgba(0,0,0,0.58) !important;
+  color: rgba(255,255,255,0.96) !important;
+}
+
+/* ============================================================
+   Empty state
+   ============================================================ */
+.ho-empty {
+  background: rgba(255,255,255,0.05) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+}
+.ho-empty b    { color: rgba(255,255,255,0.72) !important; }
+.ho-empty span { color: rgba(255,255,255,0.44) !important; }
+.ho-empty svg  { color: rgba(255,255,255,0.28) !important; }
+
+
+
+/* ============================================================
+   Scrollbar
+   ============================================================ */
+/* Apple-style: invisible, shows as thin glass strip on hover */
+.ho-scroll::-webkit-scrollbar         { width: 3px !important; }
+.ho-scroll::-webkit-scrollbar-track   { background: transparent !important; }
+.ho-scroll::-webkit-scrollbar-thumb   { background: transparent !important; border-radius: 2px !important; border: none !important; }
+.ho-scroll:hover::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18) !important; }
+.ho-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.30) !important; }
+.ho-scroll { scrollbar-width: thin !important; scrollbar-color: transparent transparent !important; }
+.ho-scroll:hover { scrollbar-color: rgba(255,255,255,0.18) transparent !important; }
+
+/* ============================================================
+   General text colors
+   ============================================================ */
+.ho-eyebrow     { color: rgba(255,255,255,0.40) !important; }
+.ho-sechead h2  { color: rgba(255,255,255,0.96) !important; }
+.ho-sechead p   { color: rgba(255,255,255,0.48) !important; }
+.ho-qdesc       { color: rgba(255,255,255,0.62) !important; }
+.ho-qtime       { color: rgba(255,255,255,0.40) !important; }
+.ho-qtitle      { color: rgba(255,255,255,0.96) !important; }
+.ho-qm dt       { color: rgba(255,255,255,0.38) !important; }
+.ho-qm dd       { color: rgba(255,255,255,0.88) !important; }
+.ho-qm dd.muted { color: rgba(255,255,255,0.38) !important; }
+
+/* ============================================================
+   Reduced motion
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .ho-app      { animation: none !important; }
+  .lg-wallpaper,
+  .lg-wallpaper::after { animation: none !important; }
+}
+
+/* ============================================================
+   CAUSTIC SPECULAR — curved light reflection (Apple LG spec)
+   --sx / --sy are set by mouse-tracking JS on hover.
+   Default position: above the card's top edge, centered.
+   ============================================================ */
+
+/* Queue cards */
+.ho-qcard::before {
+  content: "";
+  position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  border-radius: inherit;
+  /* No CSS transition — lerp in JS provides smoothness */
+  background:
+    /* Thin top-rim highlight — horizontal shimmer, barely moves vertically */
+    radial-gradient(
+      ellipse 80% 22% at var(--sx, 50%) var(--sy, -12%),
+      rgba(255,255,255,0.32) 0%,
+      rgba(255,255,255,0.09) 50%,
+      transparent 78%
+    ),
+    /* Static: left edge rim catch */
+    radial-gradient(ellipse 15% 78% at 0%   42%, rgba(255,255,255,0.07) 0%, transparent 100%),
+    /* Static: right edge rim catch */
+    radial-gradient(ellipse 15% 78% at 100% 42%, rgba(255,255,255,0.05) 0%, transparent 100%);
+}
+
+/* Checklist / timeline / buy rows */
+.ho-checkrow::before,
+.ho-tlcard::before,
+.ho-buyrow::before {
+  content: "";
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(
+      ellipse 94% 24% at var(--sx, 50%) var(--sy, -14%),
+      rgba(255,255,255,0.18) 0%,
+      rgba(255,255,255,0.05) 50%,
+      transparent 74%
+    ),
+    radial-gradient(ellipse 14% 72% at 0%   42%, rgba(255,255,255,0.05) 0%, transparent 100%),
+    radial-gradient(ellipse 14% 72% at 100% 42%, rgba(255,255,255,0.04) 0%, transparent 100%);
+}
+.ho-checkrow,
+.ho-tlcard,
+.ho-buyrow { position: relative; overflow: hidden; }
+
+/* Login card — large glass hero */
+.ho-login-card { overflow: hidden; }
+.ho-login-card::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 52%;
+  z-index: 1; pointer-events: none;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background:
+    radial-gradient(
+      ellipse 90% 52% at var(--sx, 50%) var(--sy, -8%),
+      rgba(255,255,255,0.28) 0%,
+      rgba(255,255,255,0.09) 44%,
+      transparent 70%
+    ),
+    radial-gradient(ellipse 18% 90% at 2%  60%, rgba(255,255,255,0.11) 0%, transparent 100%),
+    radial-gradient(ellipse 18% 90% at 98% 60%, rgba(255,255,255,0.09) 0%, transparent 100%);
+}
+
+/* KPI strip — subtle top wash */
+.ho-kstrip { position: relative; }
+.ho-kstrip::before {
+  content: "";
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, transparent 52%);
+}
+
+/* Topbar — lower rim light */
+.ho-topbar::after {
+  content: "";
+  position: absolute; left: 5%; right: 5%; bottom: -1px; height: 1px;
+  pointer-events: none; z-index: 1;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.20) 25%,
+    rgba(255,255,255,0.28) 50%,
+    rgba(255,255,255,0.20) 75%,
+    transparent 100%
+  );
+}
+
+/* ============================================================
+   CHROMATIC DISPERSION — subtle R/G/B fringe on card edges
+   Inspired by real glass prismatic light splitting
+   ============================================================ */
+.ho-qcard {
+  box-shadow:
+    /* Specular inset rim */
+    0  1px 0 rgba(255,255,255,0.28) inset,
+    0 -1px 0 rgba(0,0,0,0.15) inset,
+    /* Chromatic: cyan fringe bottom-left */
+    -1px  1px 0 rgba(72, 198, 255, 0.06),
+    /* Chromatic: violet fringe top-right */
+     1px -1px 0 rgba(186,  92, 255, 0.05),
+    /* Depth shadows */
+    0 6px 24px rgba(0,0,0,0.24),
+    0 1px 4px  rgba(0,0,0,0.14) !important;
+}
+.ho-qcard:hover {
+  box-shadow:
+    0  1px 0 rgba(255,255,255,0.36) inset,
+    0 -1px 0 rgba(0,0,0,0.16) inset,
+    -1px  1px 0 rgba(72, 198, 255, 0.08),
+     1px -1px 0 rgba(186,  92, 255, 0.07),
+    0 16px 44px rgba(0,0,0,0.34),
+    0  2px  8px rgba(0,0,0,0.18) !important;
+}
+
+/* ============================================================
+   GLASS ICONS — SF Symbol aesthetic
+   Thin stroke, bright tint, glass squircle containers
+   ============================================================ */
+
+/* Base: thin stroke everywhere */
+.lg-icon svg,
+.lg-icon i svg {
+  stroke-width: 1.6 !important;
+}
+
+/* ============================================================
+   NAV RAIL ICONS — Apple Liquid Glass spec
+   Layered material: squircle container = glass background,
+   icon = foreground layer with specular. Like iOS app icons.
+   ============================================================ */
+
+.ci-rail .lg-icon {
+  position: relative;
+}
+
+/* Base icon */
+.ci-rail .lg-icon svg {
+  stroke: rgba(255,255,255,0.55) !important;
+  stroke-width: 1.7 !important;
+  transition: stroke 0.20s ease-out, filter 0.20s ease-out !important;
+}
+
+/* Glass squircle container — always present, inactive = ghost */
+.ci-rail .lg-icon::before {
+  content: "";
+  position: absolute; inset: -7px;
+  border-radius: 11px;
+  /* Inactive: barely visible glass layer */
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.08) inset;
+  transition:
+    background   0.22s ease-out,
+    border-color 0.22s ease-out,
+    box-shadow   0.22s ease-out !important;
+  pointer-events: none; z-index: -1;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Hover: glass container brightens, icon brightens */
+.ci-rail__i:hover .lg-icon::before {
+  opacity: 1;
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.22);
+  box-shadow: 0 1.5px 0 rgba(255,255,255,0.26) inset, 0 2px 8px rgba(0,0,0,0.22);
+}
+.ci-rail__i:hover .lg-icon svg {
+  stroke: rgba(255,255,255,0.92) !important;
+}
+
+/* Active: iOS app icon treatment
+   Gradient container (foreground/midground/background layers)
+   + specular top-edge + ambient glow */
+.ci-rail__i--active .lg-icon::before {
+  background: linear-gradient(
+    150deg,
+    rgba(72, 228, 178, 0.32) 0%,
+    rgba(44, 212, 160, 0.20) 45%,
+    rgba(28, 185, 140, 0.26) 100%
+  );
+  border-color: rgba(44,212,160,0.38);
+  box-shadow:
+    /* Top specular — simulates glass surface catching light */
+    0 1.5px 0 rgba(200,255,230,0.38) inset,
+    /* Bottom inner shadow — depth illusion */
+    0 -1px 0 rgba(0,0,0,0.18) inset,
+    /* Outer ambient glow */
+    0 0 14px rgba(44,212,160,0.22),
+    0 2px  8px rgba(0,0,0,0.22);
+}
+.ci-rail__i--active .lg-icon svg {
+  /* Foreground layer: bright white over glass bg */
+  stroke: rgba(255,255,255,0.98) !important;
+  filter:
+    drop-shadow(0 1px 3px rgba(0,0,0,0.35))
+    drop-shadow(0 0 5px rgba(44,212,160,0.28)) !important;
+}
+.ci-rail__i--active:hover .lg-icon::before {
+  box-shadow:
+    0 1.5px 0 rgba(200,255,230,0.44) inset,
+    0 -1px 0 rgba(0,0,0,0.18) inset,
+    0 0 20px rgba(44,212,160,0.30),
+    0 2px 8px rgba(0,0,0,0.22);
+}
+
+/* Topbar icon — subtle glass squircle, not oversized */
+.ho-topbar-icon.lg-icon {
+  background: rgba(255,255,255,0.10) !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  border-radius: 10px !important;
+  padding: 5px !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.20) inset !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+/* Other topbar icons — no squircle container */
+.ho-topbar .lg-icon:not(.ho-topbar-icon) {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+.ho-topbar .lg-icon svg {
+  stroke: rgba(255,255,255,0.90) !important;
+}
+
+/* KPI cell icons — tiny glass badge */
+.ho-kpi-l .lg-icon {
+  background: rgba(255,255,255,0.09) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  border-radius: 6px !important;
+  padding: 3px !important;
+}
+.ho-kpi-l .lg-icon svg {
+  stroke: rgba(255,255,255,0.62) !important;
+}
+.ho-kcell.alert .ho-kpi-l .lg-icon svg {
+  stroke: #ff9090 !important;
+  filter: drop-shadow(0 0 4px rgba(255,107,107,0.55)) !important;
+}
+
+/* Buy group supplier icon */
+.ho-buygroup-h .lg-icon svg {
+  stroke: rgba(255,255,255,0.60) !important;
+}
+
+/* Tiny icons in card badges area */
+.ho-qbadges .lg-icon,
+.ho-qfoot .lg-icon {
+  display: inline-flex !important;
+}
+
+/* ============================================================
+   MODAL — thick glass (per Apple spec: larger glass = deeper effects)
+   ============================================================ */
+.ho-modal {
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.26) inset,
+    0 -1px 0 rgba(0,0,0,0.18) inset,
+    /* Chromatic */
+    -1px 1px 0 rgba(72,198,255,0.05),
+    /* Deep elevation shadow */
+    0 32px 80px rgba(0,0,0,0.65),
+    0  8px 24px rgba(0,0,0,0.35) !important;
+}
+
+
+
+/* ThemeToggle: hidden in Liquid Glass — always dark */
+.ho-topbar .ci-theme-tog { display: none !important; }
+
+/* ============================================================
+   SUPLEMENTO — componentes adicionados depois do snapshot
+   (painel de tarefas, mensagens, checklist redesenhado, compacto)
+   Herdam cor dos tokens de vidro; aqui adicionamos blur/specular
+   e vidro nos inputs próprios.
+   ============================================================ */
+
+/* Cards de vidro com profundidade */
+.ho-checkrow2, .ho-checkrow-c, .painel-card, .msg-card, .msg-compose {
+  backdrop-filter: blur(20px) saturate(1.45) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.45) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.16) inset,
+    0 4px 16px rgba(0,0,0,0.22) !important;
+}
+.ho-checkrow2:hover, .ho-checkrow-c:hover, .painel-card:hover {
+  background: rgba(255,255,255,0.12) !important;
+}
+.painel-card.aviso { border-color: rgba(44,212,160,0.32) !important; }
+
+/* Checkboxes de vidro (painel + checklist compacto) */
+.painel-card .pc-box, .ho-checkrow-c .crc-box {
+  background: rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.26) !important;
+}
+.painel-card.done .pc-box, .ho-checkrow-c.done .crc-box {
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 10px rgba(44,212,160,0.45) !important;
+}
+
+/* Inputs próprios → vidro (search já é .ho-search) */
+.painel-input, .painel-date, .msg-reply-input {
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  color: rgba(255,255,255,0.96) !important;
+  color-scheme: dark;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+.painel-input::placeholder, .msg-reply-input::placeholder { color: rgba(255,255,255,0.34) !important; }
+.painel-input:focus, .painel-date:focus, .msg-reply-input:focus {
+  border-color: rgba(44,212,160,0.54) !important;
+  box-shadow: 0 0 0 3px rgba(44,212,160,0.18) !important;
+  outline: none !important;
+}
+.painel-date::-webkit-calendar-picker-indicator { filter: invert(0.85) !important; }
+
+/* Botão "Adicionar ao painel" e mini, abas/threads de mensagem */
+.msg-addpainel {
+  background: linear-gradient(180deg, rgba(72,228,178,0.30) 0%, rgba(44,212,160,0.18) 100%) !important;
+  border: 1px solid rgba(44,212,160,0.40) !important;
+  color: #6ef0d0 !important;
+}
+.msg-thread { border-left-color: rgba(255,255,255,0.14) !important; }
+.msg-reply.mine { color: rgba(255,255,255,0.92) !important; }
+
+/* Barra flutuante de orçamento */
+.ho-orcbar {
+  background: rgba(18,12,44,0.80) !important;
+  backdrop-filter: blur(40px) saturate(1.7) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(1.7) !important;
+  border: 1px solid rgba(255,255,255,0.20) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.22) inset, 0 20px 56px rgba(0,0,0,0.55) !important;
+}
+
