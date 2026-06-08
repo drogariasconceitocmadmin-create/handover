@@ -221,16 +221,56 @@
   // ============================================================
   // Checklist
   // ============================================================
-  function Checklist({ data, turno, onTurno, onToggle, onToast }) {
+  // Linha do checklist: badge de status + botões explícitos Feito/N-A/Pendente,
+  // última marcação/responsável e observação editável.
+  function CheckRow({ it, onStatus, onObs }) {
+    const [obsOpen, setObsOpen] = useState(false);
+    const [obs, setObs] = useState(it.observacao || "");
+    const cur = it.na ? "Não aplicável" : (it.feito ? "Feito" : "Pendente");
+    const tone = { "Feito": "done", "Não aplicável": "na", "Pendente": "pend" }[cur];
+    const BTNS = [
+      { label: "Feito", status: "Feito", cls: "feito" },
+      { label: "N/A", status: "Não aplicável", cls: "na" },
+      { label: "Pendente", status: "Pendente", cls: "pend" },
+    ];
+    const saveObs = () => { if (onObs) onObs(it, obs.trim()); setObsOpen(false); };
+    return React.createElement("div", { className: "ho-checkrow2 " + tone },
+      React.createElement("div", { className: "cr-head" },
+        React.createElement("span", { className: "cr-name" }, it.texto),
+        React.createElement("span", { className: "cr-badge cr-badge--" + tone }, cur),
+      ),
+      it.descricao ? React.createElement("p", { className: "cr-desc" }, String(it.descricao).replace(/\\n/g, "\n")) : null,
+      React.createElement("div", { className: "cr-meta" },
+        it.responsavel
+          ? ("Última marcação: " + (it.quando || "—") + " · Responsável: " + it.responsavel)
+          : "Sem marcação"),
+      React.createElement("div", { className: "cr-actions" },
+        BTNS.map((b) => React.createElement("button", {
+          key: b.status, type: "button",
+          className: "cr-btn cr-btn--" + b.cls + (cur === b.status ? " on" : ""),
+          onClick: () => { if (cur !== b.status && onStatus) onStatus(it, b.status); },
+        }, cur === b.status ? Ic("check") : null, b.label)),
+      ),
+      (it.observacao && !obsOpen) ? React.createElement("p", { className: "cr-obs" },
+        React.createElement("span", { className: "cr-obs-lbl" }, "Obs: "), it.observacao) : null,
+      obsOpen
+        ? React.createElement("div", { className: "cr-obs-edit" },
+            React.createElement("textarea", { className: "cr-obs-input", value: obs, rows: 2,
+              onChange: (e) => setObs(e.target.value), placeholder: "Escreva uma observação..." }),
+            React.createElement("div", { className: "cr-obs-row" },
+              React.createElement("button", { type: "button", className: "cr-obs-save", onClick: saveObs }, "Salvar"),
+              React.createElement("button", { type: "button", className: "cr-obs-cancel",
+                onClick: () => { setObs(it.observacao || ""); setObsOpen(false); } }, "Cancelar"),
+            ),
+          )
+        : React.createElement("button", { type: "button", className: "cr-obs-add", onClick: () => setObsOpen(true) },
+            it.observacao ? "Editar observação" : "Adicionar observação"),
+    );
+  }
+
+  function Checklist({ data, turno, onTurno, onToggle, onObs, onToast }) {
     const [filter, setFilter] = useState("todos");
     const cats = data.categories || [];
-
-    const toggle = (ci, ii) => {
-      const it = cats[ci].items[ii];
-      if (it.na) return;
-      const next = it.feito ? "Pendente" : "Feito";
-      if (onToggle) onToggle(it, next);
-    };
 
     const all = cats.flatMap((c) => c.items);
     const total = all.filter((x) => !x.na).length;
@@ -279,25 +319,9 @@
             React.createElement("span", { className: "meta" }, cdone + "/" + c.items.length),
           ),
           React.createElement("div", { className: "ho-checkrows" },
-            visible.map(({ it, ii }) => React.createElement("div", {
-              key: it.id, className: "ho-checkrow" + (it.feito ? " done" : "") + (it.na ? " na" : ""),
-              onClick: () => toggle(ci, ii),
-            },
-              React.createElement("span", { className: "box" }, Ic("check")),
-              React.createElement("div", { className: "tx" },
-                React.createElement("div", { className: "tx-title" },
-                  React.createElement("span", { className: "tx-name" }, it.texto),
-                ),
-                it.descricao && React.createElement("p", { className: "tx-desc" }, String(it.descricao).replace(/\\n/g, "\n")),
-                React.createElement("div", { className: "tx-foot" },
-                  React.createElement("button", {
-                    className: "ho-na-btn" + (it.na ? " on" : ""),
-                    onClick: (e) => { e.stopPropagation(); if (onToggle) onToggle(it, it.na ? "Pendente" : "Não aplicável"); },
-                  }, it.na ? "Marcar aplicável" : "N/A"),
-                ),
-              ),
-              it.who && !it.na && React.createElement("span", { className: "who" }, it.who),
-            )),
+            visible.map(({ it }) => React.createElement(CheckRow, {
+              key: it.id, it: it, onStatus: onToggle, onObs: onObs,
+            })),
           ),
         );
       }),
@@ -353,7 +377,7 @@
       React.createElement("dd", null, value));
   }
 
-  function BuyRow({ it, rowKey, status, onStatus, onToast, onAction }) {
+  function BuyRow({ it, rowKey, status, onStatus, onToast, onAction, customActions }) {
     const rowClass = "ho-buyrow" + (status ? " ho-buyrow--" + STATUS_CONF[status].tone : "");
     const isMed = it.kind !== "compra";
     const metas = isMed
@@ -376,16 +400,20 @@
           BuyMeta("Fornecedor sugerido", it.fornecedorSugerido, "store"),
           BuyMeta("Previsão", it.previsao, "calendar"),
         ];
-    return React.createElement("div", { className: rowClass },
-      React.createElement("div", { className: "buy-actions" },
-        ACTIONS.map((a) => React.createElement(Button, {
+    const actionsEl = customActions
+      ? customActions.map((a) => React.createElement(Button, {
+          key: a.label, size: "sm", variant: a.variant, icon: Ic(a.icon),
+          onClick: () => a.onClick(it),
+        }, a.label))
+      : ACTIONS.map((a) => React.createElement(Button, {
           key: a, size: "sm",
           variant: status === a ? STATUS_CONF[a].variant : "secondary",
           icon: Ic(STATUS_CONF[a].icon),
           onClick: () => { const sel = status === a ? null : a; onStatus(rowKey, sel); if (sel && onAction) onAction(it, sel); else onToast(a === "Comprado" ? "Item marcado como comprado" : a === "Cancelado" ? "Item cancelado" : "Item marcado como não encontrado"); },
           style: status && status !== a ? { opacity: .45 } : {},
-        }, a)),
-      ),
+        }, a));
+    return React.createElement("div", { className: rowClass },
+      React.createElement("div", { className: "buy-actions" }, actionsEl),
       React.createElement("div", { className: "buy-body" },
         React.createElement("div", { className: "buy-head" },
           React.createElement("span", { className: "buy-tipo" }, it.tipo),
@@ -399,31 +427,72 @@
     );
   }
 
-  function Comprador({ groups, onToast, onAction }) {
+  function Comprador({ groups, token, onToast, onAction, onReverter, onComprado }) {
     const [statuses, setStatuses] = useState({});
+    const [view, setView] = useState("ativos");   // 'ativos' | 'Cancelado' | 'Não encontrado'
+    const [extra, setExtra] = useState(null);
+    const [loading, setLoading] = useState(false);
     const setStatus = (key, val) => setStatuses((s) => Object.assign({}, s, { [key]: val }));
-    const totalItems = groups.reduce((a, g) => a + g.items.length, 0);
-    const done = Object.values(statuses).filter(Boolean).length;
+
+    const openView = (v) => {
+      if (v === "ativos") { setView("ativos"); setExtra(null); return; }
+      setView(v); setLoading(true);
+      window.HO_API.loadCompradorStatus(token, v)
+        .then((g) => { setExtra(g); setLoading(false); })
+        .catch(() => { setExtra([]); setLoading(false); });
+    };
+    const reloadExtra = () => { if (view !== "ativos") openView(view); };
+    const doReverter = (it) => { onToast("Pedido revertido para a lista"); return Promise.resolve(onReverter(it)).then(reloadExtra); };
+    const doComprado = (it) => { onToast("Item marcado como comprado"); return Promise.resolve(onComprado(it)).then(reloadExtra); };
+    const fixActions = [
+      { label: "Reverter", icon: "rotate-ccw", variant: "secondary", onClick: doReverter },
+      { label: "Comprado", icon: "check", variant: "brand", onClick: doComprado },
+    ];
+
+    const showing = view === "ativos" ? groups : (extra || []);
+    const totalItems = showing.reduce((a, g) => a + g.items.length, 0);
+    const done = view === "ativos" ? Object.values(statuses).filter(Boolean).length : 0;
+    const lede = view === "ativos"
+      ? (done + " de " + totalItems + " itens resolvidos · agrupados por fornecedor.")
+      : (view === "Cancelado" ? "Pedidos cancelados — reverta ou marque como comprado em caso de erro."
+                              : "Pedidos não encontrados — reverta ou marque como comprado em caso de erro.");
+
+    const viewBtns = [["ativos", "Lista ativa"], ["Cancelado", "Pedidos cancelados"], ["Não encontrado", "Pedidos não encontrados"]];
+
     return React.createElement(React.Fragment, null,
       React.createElement("div", { className: "ho-sechead" },
         React.createElement("div", null,
           React.createElement("div", { className: "ho-eyebrow", style: { marginBottom: 4 } }, "Compras"),
           React.createElement("h2", null, "Lista do comprador"),
-          React.createElement("p", null, done + " de " + totalItems + " itens resolvidos · agrupados por fornecedor."),
+          React.createElement("p", null, lede),
         ),
-        React.createElement(Button, { variant: "brand", size: "sm", icon: Ic("download"), onClick: () => onToast("Lista exportada") }, "Exportar lista"),
+        view === "ativos" ? React.createElement(Button, { variant: "brand", size: "sm", icon: Ic("download"), onClick: () => onToast("Lista exportada") }, "Exportar lista") : null,
       ),
-      groups.map((g, i) => React.createElement("div", { className: "ho-buygroup", key: i },
-        React.createElement("div", { className: "ho-buygroup-h" },
-          React.createElement(AnimIcon, { name: "estoque", size: 18 }),
-          React.createElement("span", { className: "ven" }, g.fornecedor),
-          React.createElement("span", { className: "ct" }, g.items.length + " itens"),
-        ),
-        g.items.map((it, j) => {
-          const k = i + "-" + j;
-          return React.createElement(BuyRow, { key: k, rowKey: k, it: it, status: statuses[k] || null, onStatus: setStatus, onToast: onToast, onAction: onAction });
-        }),
-      )),
+      React.createElement("div", { className: "ho-filters", style: { marginBottom: 16 } },
+        viewBtns.map(([id, lb]) => React.createElement("button", {
+          key: id, className: "ho-filter" + (view === id ? " on" : ""), onClick: () => openView(id),
+        }, lb)),
+      ),
+      loading
+        ? React.createElement("p", { style: { color: "var(--ink-3)", fontSize: 13.5 } }, "Carregando…")
+        : showing.length === 0
+          ? React.createElement("p", { style: { color: "var(--ink-3)", fontSize: 13.5 } },
+              view === "ativos" ? "Nenhum item pendente de compra." : "Nenhum pedido nesta categoria.")
+          : showing.map((g, i) => React.createElement("div", { className: "ho-buygroup", key: i },
+              React.createElement("div", { className: "ho-buygroup-h" },
+                React.createElement(AnimIcon, { name: "estoque", size: 18 }),
+                React.createElement("span", { className: "ven" }, g.fornecedor),
+                React.createElement("span", { className: "ct" }, g.items.length + " itens"),
+              ),
+              g.items.map((it, j) => {
+                const k = view + "-" + i + "-" + j;
+                return React.createElement(BuyRow, {
+                  key: k, rowKey: k, it: it, status: statuses[k] || null,
+                  onStatus: setStatus, onToast: onToast, onAction: onAction,
+                  customActions: view === "ativos" ? null : fixActions,
+                });
+              }),
+            )),
     );
   }
 

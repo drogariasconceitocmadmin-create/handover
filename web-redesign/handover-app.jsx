@@ -356,6 +356,13 @@
         reloadBundle();
       });
     };
+    const handleChecklistObs = (item, obs) => {
+      API.checklistObservacao(operador.token, item.id, obs).then((r) => {
+        if (r && r.error) return toast("Erro ao salvar observação");
+        toast(obs ? "Observação salva" : "Observação removida");
+        reloadBundle();
+      });
+    };
 
     const handleCompradorAction = (item, status) => {
       API.compradorAction(operador.token, item, status).then((r) => {
@@ -364,6 +371,11 @@
         reloadComprador(); reloadBundle();
       });
     };
+    // Reverter (volta o item p/ pendente) e Comprado, usados nas abas Cancelados/Não encontrados.
+    const handleCompradorReverter = (item) =>
+      API.compradorMarcar(operador.token, item, "Pendente de compra").then(() => { reloadComprador(); reloadBundle(); });
+    const handleCompradorComprado = (item) =>
+      API.compradorMarcar(operador.token, item, "Comprado").then(() => { reloadComprador(); reloadBundle(); });
 
     const handleCreate = (type, payload) => {
       const token = operador.token;
@@ -426,11 +438,11 @@
     else if (route === "compras")
       view = React.createElement(V.QueueView, { kind: "geral", items: data.compras, title: "Compras e reposição", lede: "Estoque, sacolas, papelaria e limpeza", filters: COMPRA_FILTERS, onToast: toast, onAction: handleQueueAction, onDetail: (i) => setModal({ type: "detail", item: i }) });
     else if (route === "checklist")
-      view = React.createElement(V.Checklist, { data: data.checklist, turno: turno, onTurno: handleTurnoChange, onToast: toast, onToggle: handleChecklistToggle });
+      view = React.createElement(V.Checklist, { data: data.checklist, turno: turno, onTurno: handleTurnoChange, onToast: toast, onToggle: handleChecklistToggle, onObs: handleChecklistObs });
     else if (route === "historico")
       view = React.createElement(V.Historico, { items: data.historico, onDetail: (item) => setModal({ type: "historico-detail", item }) });
     else if (route === "comprador")
-      view = React.createElement(V.Comprador, { groups: data.comprador, onToast: toast, onAction: handleCompradorAction });
+      view = React.createElement(V.Comprador, { groups: data.comprador, token: operador.token, onToast: toast, onAction: handleCompradorAction, onReverter: handleCompradorReverter, onComprado: handleCompradorComprado });
 
     const showKpis = ["pendencias", "encomendas", "compras"].includes(route);
     const initials = (operador.nome || operador.usuario || "?").slice(0, 2).toUpperCase();

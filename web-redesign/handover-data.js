@@ -188,6 +188,9 @@ window.HO_API = (function () {
         feito: it.Status === "Feito",
         na: it.Status === "Não aplicável",
         who: it.Responsavel ? (it.Responsavel + (it.Data_Hora_Check ? " · " + fmt(it.Data_Hora_Check) : "")) : undefined,
+        responsavel: it.Responsavel || null,
+        quando: it.Data_Hora_Check ? fmt(it.Data_Hora_Check) : null,
+        observacao: it.Observacao || "",
         status: it.Status,
       });
     });
@@ -216,10 +219,8 @@ window.HO_API = (function () {
     });
   }
 
-  function loadComprador(token) {
-    return rpc("handover_compras_listar", { p_token: token }).then(function (res) {
-      if (res.error) throw res.error;
-      var d = res.data || {};
+  // Converte o payload {medicamentos, comprasReposicao} em grupos por fornecedor.
+  function _compradorGroups(d) {
       var meds = d.medicamentos || [];
       var comp = d.comprasReposicao || [];
       var groups = [], gMap = {};
@@ -270,7 +271,27 @@ window.HO_API = (function () {
         groups.push(rg);
       }
       return groups;
+  }
+
+  function loadComprador(token) {
+    return rpc("handover_compras_listar", { p_token: token }).then(function (res) {
+      if (res.error) throw res.error;
+      return _compradorGroups(res.data || {});
     });
+  }
+
+  // Lista itens do comprador por status: 'Cancelado' ou 'Não encontrado'.
+  function loadCompradorStatus(token, status) {
+    return rpc("handover_compras_listar_status", { p_token: token, p_status: status }).then(function (res) {
+      if (res.error) throw res.error;
+      return _compradorGroups(res.data || {});
+    });
+  }
+
+  // Marca um item do comprador via handover_compra_marcar (Comprado / Pendente de compra = reverter).
+  function compradorMarcar(token, item, rpcStatus) {
+    var origem = item.origem === "Medicamentos" ? "Medicamentos" : "ComprasReposicao";
+    return rpc("handover_compra_marcar", { p_token: token, p_origem: origem, p_id: item.id, p_status: rpcStatus, p_obs: "" });
   }
 
   // ---------- actions ----------
@@ -295,6 +316,9 @@ window.HO_API = (function () {
   }
   function checklistStatus(token, id, status) {
     return rpc("handover_checklist_status", { p_token: token, p_id: id, p_status: status });
+  }
+  function checklistObservacao(token, id, obs) {
+    return rpc("handover_checklist_observacao", { p_token: token, p_id: id, p_observacao: obs });
   }
   function compradorAction(token, item, status) {
     if (item.origem === "Medicamentos") {
@@ -325,7 +349,9 @@ window.HO_API = (function () {
     login: login, logout: logout,
     usuariosComPin: usuariosComPin, usuariosSemPin: usuariosSemPin, primeiroAcesso: primeiroAcesso,
     loadBundle: loadBundle, loadHistorico: loadHistorico, loadComprador: loadComprador,
-    medAction: medAction, pendenciaResolver: pendenciaResolver, checklistStatus: checklistStatus,
+    loadCompradorStatus: loadCompradorStatus, compradorMarcar: compradorMarcar,
+    medAction: medAction, pendenciaResolver: pendenciaResolver,
+    checklistStatus: checklistStatus, checklistObservacao: checklistObservacao,
     compradorAction: compradorAction,
     criarPendencia: criarPendencia, criarMedicamento: criarMedicamento, criarCompra: criarCompra,
     fmt: fmt, fmtData: fmtData,
