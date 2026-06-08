@@ -875,3 +875,7 @@ body {
 .ho-date-btn:active {
   transform: scale(0.98);
 }
+.ho-date-quick { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.ho-date-btn.on {
+  background: var(--brand); border-color: var(--brand); color: var(--on-brand); font-weight: 700;
+}

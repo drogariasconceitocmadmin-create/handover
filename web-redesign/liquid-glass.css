@@ -1232,6 +1232,16 @@ html, body {
   box-shadow: 0 6px 18px -4px rgba(245, 165, 36, 0.7), 0 0 0 1px rgba(245, 165, 36, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
 }
 
+/* Atalhos de data (Amanhã / Depois de amanhã / Semana que vem): estado selecionado vívido.
+   Especificidade alta para vencer .ho-modal-body button[type="button"] (regra de vidro genérica). */
+.ho-modal-body button.ho-date-btn.on,
+.ho-date-btn.on {
+  background: linear-gradient(180deg, #3ee0a0, #16b981) !important;
+  border-color: rgba(255, 255, 255, 0.55) !important; color: #04231a !important; font-weight: 800 !important;
+  box-shadow: 0 6px 18px -4px rgba(22, 185, 129, 0.7), 0 0 0 1px rgba(22, 185, 129, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+}
+.ho-modal-body button.ho-date-btn.on svg { color: #04231a !important; }
+
 /* ============================================================
    SUPLEMENTO — componentes adicionados depois do snapshot
    (painel de tarefas, mensagens, checklist redesenhado, compacto)

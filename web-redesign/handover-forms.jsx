@@ -24,22 +24,30 @@
   // Date shortcuts component
   const DateInput = (p) => {
     const inputRef = React.useRef(null);
-    const setDate = (daysOffset) => {
+    const [val, setVal] = React.useState("");
+    const isoFor = (daysOffset) => {
       const d = new Date();
       d.setDate(d.getDate() + daysOffset);
-      const iso = fmtDateISO(d);
+      return fmtDateISO(d);
+    };
+    const setDate = (daysOffset) => {
+      const iso = isoFor(daysOffset);
       if (inputRef.current) {
         inputRef.current.value = iso;
         inputRef.current.dispatchEvent(new Event('input', { bubbles: true }));
         inputRef.current.dispatchEvent(new Event('change', { bubbles: true }));
       }
+      setVal(iso);
     };
+    const QUICK = [[1, "Amanhã"], [2, "Depois de amanhã"], [7, "Semana que vem"]];
     return React.createElement("div", null,
-      React.createElement("input", Object.assign({ ref: inputRef, className: "ho-input" }, p, { type: "date" })),
-      React.createElement("div", { style: { display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" } },
-        React.createElement("button", { type: "button", className: "ho-date-btn", onClick: () => setDate(1) }, "Amanhã"),
-        React.createElement("button", { type: "button", className: "ho-date-btn", onClick: () => setDate(2) }, "Depois de amanhã"),
-        React.createElement("button", { type: "button", className: "ho-date-btn", onClick: () => setDate(7) }, "Semana que vem"),
+      React.createElement("input", Object.assign({ ref: inputRef, className: "ho-input" }, p, { type: "date", onChange: (e) => { setVal(e.target.value); if (p.onChange) p.onChange(e); } })),
+      React.createElement("div", { className: "ho-date-quick" },
+        QUICK.map(([off, lb]) => React.createElement("button", {
+          key: off, type: "button",
+          className: "ho-date-btn" + (val && val === isoFor(off) ? " on" : ""),
+          onClick: () => setDate(off),
+        }, lb)),
       ),
     );
   };
