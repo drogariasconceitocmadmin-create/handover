@@ -229,9 +229,9 @@
     const cur = it.na ? "Não aplicável" : (it.feito ? "Feito" : "Pendente");
     const tone = { "Feito": "done", "Não aplicável": "na", "Pendente": "pend" }[cur];
     const BTNS = [
-      { label: "Feito", status: "Feito", cls: "feito" },
-      { label: "N/A", status: "Não aplicável", cls: "na" },
-      { label: "Pendente", status: "Pendente", cls: "pend" },
+      { label: "Feito", status: "Feito", cls: "feito", icon: "check" },
+      { label: "N/A", status: "Não aplicável", cls: "na", icon: "minus" },
+      { label: "Pendente", status: "Pendente", cls: "pend", icon: "clock" },
     ];
     const saveObs = () => { if (onObs) onObs(it, obs.trim()); setObsOpen(false); };
     return React.createElement("div", { className: "ho-checkrow2 " + tone },
@@ -249,7 +249,7 @@
           key: b.status, type: "button",
           className: "cr-btn cr-btn--" + b.cls + (cur === b.status ? " on" : ""),
           onClick: () => { if (cur !== b.status && onStatus) onStatus(it, b.status); },
-        }, cur === b.status ? Ic("check") : null, b.label)),
+        }, Ic(b.icon), b.label)),
       ),
       (it.observacao && !obsOpen) ? React.createElement("p", { className: "cr-obs" },
         React.createElement("span", { className: "cr-obs-lbl" }, "Obs: "), it.observacao) : null,

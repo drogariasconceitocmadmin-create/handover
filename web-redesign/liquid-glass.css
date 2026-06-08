@@ -1205,6 +1205,33 @@ html, body {
 .ho-modal::-webkit-scrollbar { width: 0 !important; height: 0 !important; background: transparent !important; }
 .ho-modal { scrollbar-width: none !important; -ms-overflow-style: none !important; }
 
+/* Checklist: botões de status muito mais visíveis quando selecionados */
+.cr-btn {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: var(--ink-3) !important; font-weight: 600 !important; opacity: .85;
+  transition: background .18s, border-color .18s, color .18s, box-shadow .18s, transform .18s !important;
+}
+.cr-btn svg { opacity: .55; }
+.cr-btn:hover { background: rgba(255, 255, 255, 0.10) !important; color: var(--ink) !important; opacity: 1; }
+.cr-btn.on { opacity: 1; font-weight: 800 !important; transform: translateY(-1px); }
+.cr-btn.on svg { opacity: 1; }
+.cr-btn--feito.on {
+  background: linear-gradient(180deg, #3ee0a0, #16b981) !important;
+  border-color: rgba(255, 255, 255, 0.55) !important; color: #04231a !important;
+  box-shadow: 0 6px 18px -4px rgba(22, 185, 129, 0.7), 0 0 0 1px rgba(22, 185, 129, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+}
+.cr-btn--na.on {
+  background: linear-gradient(180deg, #9aa4b8, #5f6b80) !important;
+  border-color: rgba(255, 255, 255, 0.55) !important; color: #fff !important;
+  box-shadow: 0 6px 18px -4px rgba(120, 135, 165, 0.7), 0 0 0 1px rgba(150, 165, 190, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+}
+.cr-btn--pend.on {
+  background: linear-gradient(180deg, #ffcf5c, #f5a524) !important;
+  border-color: rgba(255, 255, 255, 0.55) !important; color: #3a2400 !important;
+  box-shadow: 0 6px 18px -4px rgba(245, 165, 36, 0.7), 0 0 0 1px rgba(245, 165, 36, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+}
+
 /* ============================================================
    SUPLEMENTO — componentes adicionados depois do snapshot
    (painel de tarefas, mensagens, checklist redesenhado, compacto)
