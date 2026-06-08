@@ -346,6 +346,13 @@
   // Histórico
   // ============================================================
   function Historico({ items, onDetail }) {
+    const [q, setQ] = useState("");
+    const [dia, setDia] = useState("");
+    const qq = q.trim().toLowerCase();
+    const filtrando = qq || dia;
+    const vis = (items || []).filter((e) =>
+      (!qq || [e.titulo, e.desc, e.who].some((s) => (s || "").toLowerCase().includes(qq)))
+      && (!dia || (e.dateRaw || "") === dia));
     return React.createElement(React.Fragment, null,
       React.createElement("div", { className: "ho-sechead" },
         React.createElement("div", null,
@@ -354,8 +361,20 @@
           React.createElement("p", null, "Tudo que mudou no turno, com autor e horário."),
         ),
       ),
-      React.createElement("div", { className: "ho-tl" },
-        items.map((e) => React.createElement("div", { className: "ho-tlitem", key: e.id },
+      React.createElement("div", { className: "painel-filtros" },
+        React.createElement("div", { className: "ho-search painel-search" },
+          Ic("search"),
+          React.createElement("input", { value: q, placeholder: "Buscar por item, descrição ou pessoa…", onChange: (e) => setQ(e.target.value) }),
+          q ? React.createElement("button", { className: "ho-search-x", title: "Limpar", onClick: () => setQ("") }, Ic("x")) : null,
+        ),
+        React.createElement("input", { type: "date", className: "painel-date", value: dia, onChange: (e) => setDia(e.target.value), title: "Filtrar por data" }),
+        filtrando ? React.createElement(Button, { variant: "secondary", size: "sm", icon: Ic("x"), onClick: () => { setQ(""); setDia(""); } }, "Limpar filtro") : null,
+      ),
+      !vis.length
+        ? React.createElement("p", { style: { color: "var(--ink-3)", fontSize: 13.5, marginTop: 14 } },
+            filtrando ? "Nenhum registro encontrado para esse filtro." : "Nenhum registro no histórico.")
+        : React.createElement("div", { className: "ho-tl" },
+        vis.map((e) => React.createElement("div", { className: "ho-tlitem", key: e.id },
           React.createElement("span", { className: "ho-tldot ho-tldot--" + e.tone }),
           React.createElement("div", { className: "ho-tlcard" },
             React.createElement("div", { className: "ho-tltop" },
@@ -728,6 +747,8 @@
     const [reply, setReply] = useState({});
     const [busy, setBusy] = useState(false);
     const [log, setLog] = useState(null);
+    const [q, setQ] = useState("");
+    const [dia, setDia] = useState("");
 
     const openLog = () => {
       setTab("log");
@@ -782,7 +803,12 @@
       ),
     );
 
-    const lista = tab === "recebidas" ? data.recebidas : (tab === "enviadas" ? data.enviadas : (log || []));
+    const listaBase = tab === "recebidas" ? data.recebidas : (tab === "enviadas" ? data.enviadas : (log || []));
+    const qq = q.trim().toLowerCase();
+    const filtrando = qq || dia;
+    const lista = listaBase.filter((t) =>
+      (!qq || [t.mensagem, t.de, t.para].concat((t.respostas || []).map((r) => r.texto)).some((s) => (s || "").toLowerCase().includes(qq)))
+      && (!dia || (t.criadoRaw || "") === dia));
     const pendRecebidas = data.recebidas.filter((t) => t.status !== "Concluído").length;
 
     return React.createElement("div", { className: "ho-overlay", onClick: onClose },
@@ -812,12 +838,22 @@
             React.createElement("button", { className: "ho-filter" + (tab === "enviadas" ? " on" : ""), onClick: () => setTab("enviadas") }, "Enviadas"),
             isAdmin ? React.createElement("button", { className: "ho-filter" + (tab === "log" ? " on" : ""), onClick: openLog }, Ic("shield"), "Log (admin)") : null,
           ),
+          React.createElement("div", { className: "painel-filtros", style: { marginBottom: 14 } },
+            React.createElement("div", { className: "ho-search painel-search" },
+              Ic("search"),
+              React.createElement("input", { value: q, placeholder: "Buscar por palavra ou pessoa…", onChange: (e) => setQ(e.target.value) }),
+              q ? React.createElement("button", { className: "ho-search-x", title: "Limpar", onClick: () => setQ("") }, Ic("x")) : null,
+            ),
+            React.createElement("input", { type: "date", className: "painel-date", value: dia, onChange: (e) => setDia(e.target.value), title: "Filtrar por data" }),
+            filtrando ? React.createElement(Button, { variant: "secondary", size: "sm", icon: Ic("x"), onClick: () => { setQ(""); setDia(""); } }, "Limpar") : null,
+          ),
           (tab === "log" && log === null)
             ? React.createElement("p", { style: { color: "var(--ink-3)", fontSize: 13.5 } }, "Carregando log…")
             : lista.length
               ? React.createElement("div", { className: "msg-list" }, lista.map((t) => card(t, tab === "recebidas" ? "recebida" : (tab === "enviadas" ? "enviada" : "log"))))
               : React.createElement("p", { style: { color: "var(--ink-3)", fontSize: 13.5 } },
-                  tab === "recebidas" ? "Nenhuma mensagem recebida." : (tab === "enviadas" ? "Você ainda não enviou mensagens." : "Nenhuma mensagem no log.")),
+                  filtrando ? "Nenhuma mensagem encontrada para esse filtro."
+                    : (tab === "recebidas" ? "Nenhuma mensagem recebida." : (tab === "enviadas" ? "Você ainda não enviou mensagens." : "Nenhuma mensagem no log."))),
         ),
         React.createElement("div", { className: "ho-modal-foot" },
           React.createElement(Button, { variant: "secondary", onClick: onClose }, "Fechar"),

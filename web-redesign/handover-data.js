@@ -207,13 +207,15 @@ window.HO_API = (function () {
           : estado === "Entregue" ? "pos"
           : estado === "Não encontrado" ? "warn"
           : "brand";
+        var rawDt = h.Data_Resolucao || h.Data_Cancelamento || h.Ultima_Acao_Em || h.Timestamp;
         return {
           id: h.ID || (h.Origem + "-" + (h.Titulo || h.Medicamento || h.Item)),
           tone: tone,
           titulo: h.Titulo || h.Medicamento || h.Item || "(registro)",
           desc: (h.Origem || "") + (h.Descricao ? " · " + h.Descricao : (h.Cliente ? " · " + h.Cliente : "")),
           who: h.Resolvido_Por || h.Cancelado_Por || h.Ultima_Acao_Por || "Sistema",
-          time: fmt(h.Data_Resolucao || h.Data_Cancelamento || h.Ultima_Acao_Em || h.Timestamp),
+          time: fmt(rawDt),
+          dateRaw: (rawDt || "").slice(0, 10),
         };
       });
     });
@@ -350,6 +352,7 @@ window.HO_API = (function () {
       para: t.Destinatario_Nome || t.Destinatario, paraUser: t.Destinatario,
       mensagem: t.Mensagem || "", status: t.Status || "Pendente", lido: !!t.Lido,
       criado: fmt(t.Criado_Em), concluido: t.Concluido_Em ? fmt(t.Concluido_Em) : null,
+      criadoRaw: (t.Criado_Em || "").slice(0, 10),
       concluidoPor: t.Concluido_Por || null,
       respostas: (t.Respostas || []).map(function (r) {
         return { autor: r.Autor_Nome || r.Autor, autorUser: r.Autor, texto: r.Texto, quando: fmt(r.Criado_Em) };
