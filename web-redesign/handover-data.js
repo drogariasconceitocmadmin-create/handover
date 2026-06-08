@@ -202,10 +202,24 @@ window.HO_API = (function () {
         if (!gMap[key]) { gMap[key] = { fornecedor: key, items: [] }; groups.push(gMap[key]); }
         gMap[key].items.push({
           id: m.ID, origem: "Medicamentos", status: null,
+          kind: "med",
           nm: m.Medicamento || "(sem nome)",
           sub: [m.Tipo, m.Cliente].filter(Boolean).join(" · "),
           qtd: m.Quantidade_Item || "1 cx",
           cod: m.Codigo_Compra_Fornecedor ? ("cód. " + m.Codigo_Compra_Fornecedor) : "—",
+          tipo: m.Tipo || "Encomenda",
+          status: m.Status || "Pendente",
+          dosagem: m.Dosagem || "",
+          cliente: m.Cliente || "—",
+          telefone: m.Telefone || "—",
+          recebimento: m.Forma_Recebimento || "—",
+          atendente: m.Atendente || "—",
+          previsao: fmtData(m.Previsao_Entrega),
+          prePago: !!m.Pre_Pago,
+          preco: m.Preco_Venda ? ("R$ " + m.Preco_Venda) : "—",
+          fornecedor: key,
+          codigo: m.Codigo_Compra_Fornecedor || "—",
+          obs: m.Observacao_Solicitacao || "",
         });
       });
       if (comp.length) {
@@ -213,10 +227,18 @@ window.HO_API = (function () {
         comp.forEach(function (r) {
           rg.items.push({
             id: r.ID, origem: "Reposicao", status: null,
+            kind: "compra",
             nm: r.Item || "(sem item)",
             sub: [r.Categoria_Compra, r.Solicitante].filter(Boolean).join(" · "),
             qtd: r.Quantidade || "—",
             cod: r.Fornecedor_Sugerido || "—",
+            tipo: r.Categoria_Compra || "Reposição",
+            categoria: r.Categoria_Compra || "—",
+            solicitante: r.Solicitante || "—",
+            prioridade: r.Prioridade || "Normal",
+            fornecedorSugerido: r.Fornecedor_Sugerido || "—",
+            previsao: fmtData(r.Previsao_Desejada),
+            obs: r.Observacao || "",
           });
         });
         groups.push(rg);

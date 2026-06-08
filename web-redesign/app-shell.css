@@ -405,20 +405,34 @@ body {
 .ho-buygroup-h .ven { font-size: 14px; font-weight: 700; color: var(--ink); letter-spacing: var(--ls-snug); }
 .ho-buygroup-h .ct { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .ho-buyrow {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 14px; background: var(--panel);
-  border: 1px solid var(--line); border-radius: var(--radius-sm); margin-bottom: 6px;
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 12px 16px; background: var(--panel);
+  border: 1px solid var(--line); border-radius: var(--radius-sm); margin-bottom: 8px;
   transition: border-color var(--dur-2), background var(--dur-2);
 }
 .ho-buyrow--comprado { border-color: var(--brand); background: var(--brand-soft); }
 .ho-buyrow--cancelado { border-color: var(--neg-soft); opacity: .65; }
 .ho-buyrow--naoenc { border-color: var(--warn-soft); }
 .ho-buyrow .buy-actions { display: flex; flex-direction: column; gap: 5px; flex: 0 0 auto; }
-.ho-buyrow .nm { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; color: var(--ink); }
-.ho-buyrow .nm small { display: block; font-size: 11.5px; font-weight: 400; color: var(--ink-3); margin-top: 1px; }
-.ho-buyrow .buy-info { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex: 0 0 auto; }
-.ho-buyrow .qt { font-size: 13px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ho-buyrow .cod { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ho-buyrow .buy-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.ho-buyrow .buy-head { display: flex; align-items: center; gap: 8px; }
+.ho-buyrow .buy-tipo { font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ho-buyrow .buy-status { font-size: 10.5px; font-weight: 600; color: var(--brand); background: var(--brand-soft); border-radius: var(--radius-xs); padding: 1px 7px; }
+.ho-buyrow .nm { font-size: 14px; font-weight: 600; color: var(--ink); line-height: 1.25; }
+.ho-buyrow .nm .dose { font-size: 12px; font-weight: 400; color: var(--ink-3); }
+.ho-buyrow .buy-meta {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px 18px; margin: 2px 0 0;
+}
+.ho-buyrow .buy-meta-cell dt {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: 1px;
+}
+.ho-buyrow .buy-meta-cell dt .ho-ic svg { width: 11px; height: 11px; opacity: .7; }
+.ho-buyrow .buy-meta-cell dd { margin: 0; font-size: 13px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ho-buyrow .buy-obs { margin: 4px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--ink-2); }
+.ho-buyrow .buy-obs .buy-obs-lbl { font-weight: 700; color: var(--ink-3); }
 
 /* ---------- Modal ---------- */
 .ho-overlay {

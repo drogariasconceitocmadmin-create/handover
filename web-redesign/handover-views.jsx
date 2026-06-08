@@ -346,8 +346,36 @@
   };
   const ACTIONS = ["Comprado", "Cancelado", "Não encontrado"];
 
+  function BuyMeta(label, value, icon) {
+    if (value === undefined || value === null || value === "" || value === "—") return null;
+    return React.createElement("div", { className: "buy-meta-cell", key: label },
+      React.createElement("dt", null, icon ? MetaIc(icon) : null, label),
+      React.createElement("dd", null, value));
+  }
+
   function BuyRow({ it, rowKey, status, onStatus, onToast, onAction }) {
     const rowClass = "ho-buyrow" + (status ? " ho-buyrow--" + STATUS_CONF[status].tone : "");
+    const isMed = it.kind !== "compra";
+    const metas = isMed
+      ? [
+          BuyMeta("Cliente", it.cliente, "user"),
+          BuyMeta("Telefone", it.telefone, "phone"),
+          BuyMeta("Atendente", it.atendente, "user-check"),
+          BuyMeta("Recebimento", it.recebimento, "truck"),
+          BuyMeta("Previsão", it.previsao, "calendar"),
+          BuyMeta("Quantidade", it.qtd, "package"),
+          BuyMeta("Cód. fornecedor", it.codigo, "hash"),
+          BuyMeta("Preço de venda", it.preco, "tag"),
+          it.prePago ? BuyMeta("Pré-pago", "Sim", "check-circle") : null,
+        ]
+      : [
+          BuyMeta("Categoria", it.categoria, "layers"),
+          BuyMeta("Solicitante", it.solicitante, "user"),
+          BuyMeta("Prioridade", it.prioridade, "alert-circle"),
+          BuyMeta("Quantidade", it.qtd, "package"),
+          BuyMeta("Fornecedor sugerido", it.fornecedorSugerido, "store"),
+          BuyMeta("Previsão", it.previsao, "calendar"),
+        ];
     return React.createElement("div", { className: rowClass },
       React.createElement("div", { className: "buy-actions" },
         ACTIONS.map((a) => React.createElement(Button, {
@@ -358,10 +386,15 @@
           style: status && status !== a ? { opacity: .45 } : {},
         }, a)),
       ),
-      React.createElement("div", { className: "nm" }, it.nm, React.createElement("small", null, it.sub)),
-      React.createElement("div", { className: "buy-info" },
-        React.createElement("span", { className: "qt" }, it.qtd),
-        React.createElement("span", { className: "cod" }, it.cod),
+      React.createElement("div", { className: "buy-body" },
+        React.createElement("div", { className: "buy-head" },
+          React.createElement("span", { className: "buy-tipo" }, it.tipo),
+          it.status && isMed ? React.createElement("span", { className: "buy-status" }, it.status) : null,
+        ),
+        React.createElement("div", { className: "nm" }, it.nm, it.dosagem ? React.createElement("small", { className: "dose" }, " " + it.dosagem) : null),
+        React.createElement("dl", { className: "buy-meta" }, metas.filter(Boolean)),
+        it.obs ? React.createElement("p", { className: "buy-obs" },
+          React.createElement("span", { className: "buy-obs-lbl" }, "Obs: "), it.obs) : null,
       ),
     );
   }
