@@ -194,7 +194,6 @@
     { u: "isaque", label: "Isaque" }, { u: "ainale", label: "Ainale" },
     { u: "priscila", label: "Priscila" }, { u: "jelcinei", label: "Jelcinei" },
     { u: "carlos", label: "Carlos" }, { u: "marco", label: "Marco" },
-    { u: "marcelo", label: "Marcelo" },
   ];
 
   function Login({ onEnter }) {
