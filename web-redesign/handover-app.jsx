@@ -221,6 +221,18 @@
       reloadHistorico(op.token);
     };
 
+    // Logout: encerra a sessão no servidor, limpa o localStorage e volta ao login.
+    const onLogout = () => {
+      const tok = operador && operador.token;
+      try { if (tok) API.logout(tok); } catch (e) {}
+      clearSession();
+      setOperador(null);
+      setRoute("encomendas");
+      setKpiFilter(null);
+      setModal(null);
+      setData({ medicamentos: [], pendencias: [], compras: [], checklist: { turno: "—", categories: [], summary: null }, historico: [], comprador: [] });
+    };
+
     // Restaura a sessão no F5 — valida o token; se expirado, volta ao login.
     useEffect(() => {
       if (operador) return;
@@ -451,6 +463,10 @@
           ),
           React.createElement("button", { className: "ho-icbtn" + (spin ? " ho-icbtn--spin" : ""), onClick: () => { setSpin(true); reloadBundle().then(() => toast("Painel atualizado")); reloadComprador(); reloadHistorico(); setTimeout(() => setSpin(false), 700); }, "aria-label": "Atualizar agora" }, Ic("refresh-cw")),
           React.createElement(ThemeToggle, { target: ".ho-app" }),
+          React.createElement("button", {
+            className: "ho-icbtn", onClick: onLogout,
+            "aria-label": "Sair", title: "Sair (" + (operador.nome || operador.usuario) + ")",
+          }, Ic("log-out")),
 
           React.createElement("div", { className: "ho-dd", ref: ddRef },
             React.createElement(Button, { variant: "primary", icon: Ic("plus"), iconRight: Ic("chevron-down"), onClick: () => setDdOpen(!ddOpen) }, "Novo registro"),
