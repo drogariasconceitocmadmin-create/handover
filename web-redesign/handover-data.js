@@ -131,6 +131,24 @@ window.HO_API = (function () {
   }
   function logout(token) { return rpc("handover_logout", { p_token: token }).catch(function () {}); }
 
+  // Primeiro acesso: lista de funcionários que ainda não definiram PIN
+  function usuariosSemPin() {
+    return rpc("handover_usuarios_sem_pin", {}).then(function (res) {
+      if (res.error) return [];
+      return (res.data || []).map(function (u) { return { u: u.Usuario, label: u.Nome }; });
+    }).catch(function () { return []; });
+  }
+
+  // Primeiro acesso: define o PIN (4 dígitos) e já entra
+  function primeiroAcesso(usuario, pin) {
+    return rpc("handover_primeiro_acesso", { p_usuario: usuario, p_pin: pin }).then(function (res) {
+      if (res.error) return { ok: false, erro: "Erro de conexão." };
+      var d = res.data || {};
+      if (!d.ok) return { ok: false, erro: d.erro || "Não foi possível concluir o primeiro acesso." };
+      return { ok: true, token: d.token, usuario: d.usuario, nome: d.nome, perfil: d.perfil };
+    });
+  }
+
   function loadBundle(token, turno) {
     return rpc("handover_dashboard_bundle", { p_token: token, p_turno: turno }).then(function (res) {
       if (res.error) throw res.error;
@@ -297,6 +315,7 @@ window.HO_API = (function () {
   return {
     client: client,
     login: login, logout: logout,
+    usuariosSemPin: usuariosSemPin, primeiroAcesso: primeiroAcesso,
     loadBundle: loadBundle, loadHistorico: loadHistorico, loadComprador: loadComprador,
     medAction: medAction, pendenciaResolver: pendenciaResolver, checklistStatus: checklistStatus,
     compradorAction: compradorAction,

@@ -199,10 +199,25 @@
 
   function Login({ onEnter }) {
     const API = window.HO_API;
+    const [mode, setMode] = useState("login");          // "login" | "registro"
     const [user, setUser] = useState("");
     const [pin, setPin] = useState("");
+    const [pin2, setPin2] = useState("");
     const [err, setErr] = useState("");
     const [busy, setBusy] = useState(false);
+    const [novos, setNovos] = useState(null);           // funcionários sem PIN
+
+    const onlyDigits = (s) => s.replace(/\D/g, "").slice(0, 4);
+
+    // Ao abrir "Primeiro acesso", busca a lista de quem ainda não tem PIN
+    const abrirRegistro = () => {
+      setErr(""); setUser(""); setPin(""); setPin2("");
+      setMode("registro");
+      if (novos === null) {
+        API.usuariosSemPin().then((list) => setNovos(list || []));
+      }
+    };
+    const voltarLogin = () => { setErr(""); setUser(""); setPin(""); setPin2(""); setMode("login"); };
 
     const entrar = () => {
       setErr("");
@@ -215,13 +230,53 @@
       });
     };
 
-    return React.createElement("div", { className: "ho-login" },
-      React.createElement("div", { className: "ho-login-card" },
-        React.createElement("div", { className: "ho-login-brand" },
-          React.createElement("div", { className: "ho-login-mark" }, MARK),
-          React.createElement("b", null, "Projeto Handover"),
-          React.createElement("span", null, "Acesso com PIN"),
+    const registrar = () => {
+      setErr("");
+      if (!user) { setErr("Selecione seu nome."); return; }
+      if (pin.length !== 4) { setErr("O PIN deve ter 4 dígitos."); return; }
+      if (pin !== pin2) { setErr("Os PINs não conferem."); return; }
+      setBusy(true);
+      API.primeiroAcesso(user, pin).then((r) => {
+        setBusy(false);
+        if (!r.ok) { setErr(r.erro || "Não foi possível concluir."); return; }
+        onEnter({ token: r.token, nome: r.nome, usuario: r.usuario, perfil: r.perfil });
+      });
+    };
+
+    const head = React.createElement("div", { className: "ho-login-brand" },
+      React.createElement("div", { className: "ho-login-mark" }, MARK),
+      React.createElement("b", null, "Projeto Handover"),
+      React.createElement("span", null, "Acesso com PIN"),
+    );
+
+    if (mode === "registro") {
+      const semPin = novos || [];
+      return React.createElement("div", { className: "ho-login" },
+        React.createElement("div", { className: "ho-login-card" }, head,
+          React.createElement("h1", null, "Primeiro acesso"),
+          React.createElement("p", { className: "lede" }, "Defina seu PIN para começar a usar."),
+          React.createElement(Field, { label: "Seu nome" },
+            React.createElement(Select, { value: user, onChange: (e) => { setUser(e.target.value); setErr(""); } },
+              React.createElement("option", { value: "" }, novos === null ? "Carregando…" : (semPin.length ? "— Escolha —" : "Nenhum nome disponível")),
+              semPin.map((n) => React.createElement("option", { key: n.u, value: n.u }, n.label)))),
+          React.createElement(Field, { label: "Novo PIN (4 dígitos)" },
+            React.createElement(Input, { type: "password", inputMode: "numeric", maxLength: 4, value: pin,
+              onChange: (e) => setPin(onlyDigits(e.target.value)), placeholder: "••••" })),
+          React.createElement(Field, { label: "Confirmar PIN" },
+            React.createElement(Input, { type: "password", inputMode: "numeric", maxLength: 4, value: pin2,
+              onChange: (e) => setPin2(onlyDigits(e.target.value)),
+              onKeyDown: (e) => { if (e.key === "Enter") registrar(); }, placeholder: "••••" })),
+          err && React.createElement("p", { style: { margin: "0 0 12px", fontSize: 12.5, color: "var(--neg)" } }, err),
+          React.createElement(Button, { variant: "brand", block: true, onClick: registrar, disabled: busy || !semPin.length },
+            busy ? "Salvando…" : "Definir PIN e entrar"),
+          React.createElement("div", { className: "ho-login-row" },
+            React.createElement("button", { type: "button", className: "ho-link", onClick: voltarLogin }, "Voltar ao login")),
         ),
+      );
+    }
+
+    return React.createElement("div", { className: "ho-login" },
+      React.createElement("div", { className: "ho-login-card" }, head,
         React.createElement("h1", null, "Entrar"),
         React.createElement("p", { className: "lede" }, "Identifique-se para abrir o turno."),
         React.createElement(Field, { label: "Usuário" },
@@ -234,6 +289,8 @@
             onKeyDown: (e) => { if (e.key === "Enter") entrar(); }, placeholder: "••••" })),
         err && React.createElement("p", { style: { margin: "0 0 12px", fontSize: 12.5, color: "var(--neg)" } }, err),
         React.createElement(Button, { variant: "primary", block: true, onClick: entrar, disabled: busy }, busy ? "Entrando…" : "Entrar"),
+        React.createElement("div", { className: "ho-login-row" },
+          React.createElement("button", { type: "button", className: "ho-link", onClick: abrirRegistro }, "Primeiro acesso?")),
       ),
     );
   }
