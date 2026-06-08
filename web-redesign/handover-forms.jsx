@@ -3,7 +3,7 @@
 (function () {
   const NS = window.ConceitoIndicaDesignSystem_1bb735 || {};
   const { Button } = NS;
-  const { useState } = React;
+  const { useState, useEffect } = React;
   const Ic = (window.HandoverViews && window.HandoverViews.Ic)
     || ((n, p) => React.createElement("span", p));
 
