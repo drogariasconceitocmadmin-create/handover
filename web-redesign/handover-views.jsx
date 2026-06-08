@@ -432,7 +432,18 @@
     const [view, setView] = useState("ativos");   // 'ativos' | 'Cancelado' | 'Não encontrado'
     const [extra, setExtra] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [q, setQ] = useState("");
     const setStatus = (key, val) => setStatuses((s) => Object.assign({}, s, { [key]: val }));
+
+    const matchItem = (it, s) =>
+      (it.nm || "").toLowerCase().includes(s) ||
+      (it.cliente || "").toLowerCase().includes(s) ||
+      (it.telefone || "").toLowerCase().includes(s) ||
+      (it.atendente || "").toLowerCase().includes(s) ||
+      (it.solicitante || "").toLowerCase().includes(s) ||
+      (it.fornecedor || it.fornecedorSugerido || "").toLowerCase().includes(s) ||
+      (it.obs || "").toLowerCase().includes(s) ||
+      (it.sub || "").toLowerCase().includes(s);
 
     const openView = (v) => {
       if (v === "ativos") { setView("ativos"); setExtra(null); return; }
@@ -449,7 +460,11 @@
       { label: "Comprado", icon: "check", variant: "brand", onClick: doComprado },
     ];
 
-    const showing = view === "ativos" ? groups : (extra || []);
+    const base = view === "ativos" ? groups : (extra || []);
+    const s = q.trim().toLowerCase();
+    const showing = s
+      ? base.map((g) => Object.assign({}, g, { items: g.items.filter((it) => matchItem(it, s)) })).filter((g) => g.items.length)
+      : base;
     const totalItems = showing.reduce((a, g) => a + g.items.length, 0);
     const done = view === "ativos" ? Object.values(statuses).filter(Boolean).length : 0;
     const lede = view === "ativos"
@@ -468,16 +483,23 @@
         ),
         view === "ativos" ? React.createElement(Button, { variant: "brand", size: "sm", icon: Ic("download"), onClick: () => onToast("Lista exportada") }, "Exportar lista") : null,
       ),
-      React.createElement("div", { className: "ho-filters", style: { marginBottom: 16 } },
-        viewBtns.map(([id, lb]) => React.createElement("button", {
-          key: id, className: "ho-filter" + (view === id ? " on" : ""), onClick: () => openView(id),
-        }, lb)),
+      React.createElement("div", { className: "ho-toolbar" },
+        React.createElement("div", { className: "ho-search" },
+          Ic("search"),
+          React.createElement("input", { type: "search", value: q, onChange: (e) => setQ(e.target.value), placeholder: "Buscar por item, cliente, telefone, fornecedor…" }),
+        ),
+        React.createElement("div", { className: "ho-filters" },
+          viewBtns.map(([id, lb]) => React.createElement("button", {
+            key: id, className: "ho-filter" + (view === id ? " on" : ""), onClick: () => openView(id),
+          }, lb)),
+        ),
       ),
       loading
         ? React.createElement("p", { style: { color: "var(--ink-3)", fontSize: 13.5 } }, "Carregando…")
         : showing.length === 0
           ? React.createElement("p", { style: { color: "var(--ink-3)", fontSize: 13.5 } },
-              view === "ativos" ? "Nenhum item pendente de compra." : "Nenhum pedido nesta categoria.")
+              s ? "Nenhum item encontrado para a busca."
+                : (view === "ativos" ? "Nenhum item pendente de compra." : "Nenhum pedido nesta categoria."))
           : showing.map((g, i) => React.createElement("div", { className: "ho-buygroup", key: i },
               React.createElement("div", { className: "ho-buygroup-h" },
                 React.createElement(AnimIcon, { name: "estoque", size: 18 }),
