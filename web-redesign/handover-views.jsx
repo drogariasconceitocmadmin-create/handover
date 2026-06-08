@@ -831,13 +831,21 @@
   // ============================================================
   function PainelTarefas({ data, onCriar, onConcluir, onReabrir, onRemover, onToast }) {
     const [novo, setNovo] = useState("");
+    const [q, setQ] = useState("");
+    const [dia, setDia] = useState("");
     const add = () => {
       if (!novo.trim()) return onToast("Escreva a tarefa");
       Promise.resolve(onCriar(novo.trim())).then((r) => { if (r && r.ok) setNovo(""); });
     };
-    const tarefas = data.tarefas || [];
-    const avisos = data.avisos || [];
-    const pend = tarefas.filter((t) => t.status !== "Concluído");
+    const allTarefas = data.tarefas || [];
+    const allAvisos = data.avisos || [];
+    const qq = q.trim().toLowerCase();
+    const matchTxt = (t) => !qq || [t.texto, t.solicitante, t.dono].some((s) => (s || "").toLowerCase().includes(qq));
+    const matchDia = (t, campo) => !dia || (t[campo] || "").slice(0, 10) === dia;
+    const tarefas = allTarefas.filter((t) => matchTxt(t) && matchDia(t, "criadoRaw"));
+    const avisos = allAvisos.filter((t) => matchTxt(t) && matchDia(t, "concluidoRaw"));
+    const filtrando = qq || dia;
+    const pend = allTarefas.filter((t) => t.status !== "Concluído");
 
     const card = (t) => React.createElement("div", { className: "painel-card" + (t.status === "Concluído" ? " done" : ""), key: t.id },
       React.createElement("button", {
@@ -867,9 +875,19 @@
           onChange: (e) => setNovo(e.target.value), onKeyDown: (e) => { if (e.key === "Enter") add(); } }),
         React.createElement(Button, { variant: "brand", icon: Ic("plus"), onClick: add }, "Adicionar"),
       ),
+      React.createElement("div", { className: "painel-filtros" },
+        React.createElement("div", { className: "ho-search painel-search" },
+          Ic("search"),
+          React.createElement("input", { value: q, placeholder: "Buscar por palavra ou pessoa…", onChange: (e) => setQ(e.target.value) }),
+          q ? React.createElement("button", { className: "ho-search-x", title: "Limpar", onClick: () => setQ("") }, Ic("x")) : null,
+        ),
+        React.createElement("input", { type: "date", className: "painel-date", value: dia, onChange: (e) => setDia(e.target.value), title: "Filtrar por data" }),
+        filtrando ? React.createElement(Button, { variant: "secondary", size: "sm", icon: Ic("x"), onClick: () => { setQ(""); setDia(""); } }, "Limpar filtro") : null,
+      ),
       tarefas.length
         ? React.createElement("div", { className: "painel-list" }, tarefas.map(card))
-        : React.createElement("p", { style: { color: "var(--ink-3)", fontSize: 13.5, marginTop: 14 } }, "Nenhuma tarefa no painel ainda. Adicione uma acima, ou promova uma mensagem recebida em Mensagens."),
+        : React.createElement("p", { style: { color: "var(--ink-3)", fontSize: 13.5, marginTop: 14 } },
+            filtrando ? "Nenhuma tarefa encontrada para esse filtro." : "Nenhuma tarefa no painel ainda. Adicione uma acima, ou promova uma mensagem recebida em Mensagens."),
       avisos.length ? React.createElement("div", { style: { marginTop: 22 } },
         React.createElement("div", { className: "ho-eyebrow", style: { marginBottom: 8 } }, "Concluídas que você pediu"),
         React.createElement("div", { className: "painel-list" },

@@ -194,6 +194,16 @@ body {
 .ho-search svg { width: 16px; height: 16px; color: var(--ink-3); flex: 0 0 auto; }
 .ho-search input { flex: 1; border: 0; background: transparent; font-family: var(--font-sans); font-size: 13.5px; color: var(--ink); outline: none; }
 .ho-search input::placeholder { color: var(--ink-3); }
+.ho-search-x { flex: 0 0 auto; display: grid; place-items: center; border: 0; background: none; color: var(--ink-3); cursor: pointer; padding: 0; }
+.ho-search-x:hover { color: var(--ink); }
+.ho-search-x svg { width: 14px; height: 14px; }
+
+/* ---------- Painel: filtros (busca + data) ---------- */
+.painel-filtros { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+.painel-search { flex: 1; min-width: 220px; }
+.painel-date { font-family: var(--font-sans); font-size: 13.5px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 9px 13px; }
+.painel-date:focus { outline: none; border-color: var(--brand); box-shadow: var(--ring); }
+.painel-date::-webkit-calendar-picker-indicator { filter: invert(.7); cursor: pointer; }
 
 .ho-filters { display: flex; flex-wrap: wrap; gap: 7px; }
 .ho-filter {

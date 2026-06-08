@@ -400,6 +400,7 @@ window.HO_API = (function () {
       solicitante: p.Solicitante_Nome || null, solicitanteUser: p.Solicitante || null,
       status: p.Status || "Pendente",
       criado: fmt(p.Criado_Em), concluido: p.Concluido_Em ? fmt(p.Concluido_Em) : null,
+      criadoRaw: (p.Criado_Em || "").slice(0, 10), concluidoRaw: (p.Concluido_Em || "").slice(0, 10),
     };
   }
   function painelListar(token) {
