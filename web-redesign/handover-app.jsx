@@ -194,26 +194,54 @@
       API.loadHistorico(token).then((h) => setData((d) => Object.assign({}, d, { historico: h }))).catch(() => {});
     }, [operador]);
 
-    // after login: initial load
+    // ---- session persistence (sobrevive a F5) ----
+    const persistSession = (op) => {
+      try {
+        localStorage.setItem('ho_token', op.token);
+        localStorage.setItem('ho_user', op.usuario || "");
+        localStorage.setItem('ho_nome', op.nome || "");
+        localStorage.setItem('ho_perfil', op.perfil || "");
+      } catch (e) {}
+    };
+    const clearSession = () => {
+      try {
+        localStorage.removeItem('ho_token');
+        localStorage.removeItem('ho_user');
+        localStorage.removeItem('ho_nome');
+        localStorage.removeItem('ho_perfil');
+      } catch (e) {}
+    };
+
+    // after login: persist + initial load
     const onLogin = (op) => {
       setOperador(op);
+      persistSession(op);
       reloadBundle(op.token, turno);
       reloadComprador(op.token);
       reloadHistorico(op.token);
     };
 
-    // Auto-login from localStorage for testing
+    // Restaura a sessão no F5 — valida o token; se expirado, volta ao login.
     useEffect(() => {
       if (operador) return;
-      const token = localStorage.getItem('ho_token');
-      const usuario = localStorage.getItem('ho_user');
-      const nome = localStorage.getItem('ho_nome');
-      if (token && usuario && nome) {
-        onLogin({ token, usuario, nome, perfil: 'operador' });
-        localStorage.removeItem('ho_token');
-        localStorage.removeItem('ho_user');
-        localStorage.removeItem('ho_nome');
-      }
+      let token, usuario, nome, perfil;
+      try {
+        token = localStorage.getItem('ho_token');
+        usuario = localStorage.getItem('ho_user');
+        nome = localStorage.getItem('ho_nome');
+        perfil = localStorage.getItem('ho_perfil') || 'operador';
+      } catch (e) { return; }
+      if (!token || !usuario) return;
+      // valida o token tentando carregar o bundle
+      API.loadBundle(token, turno).then((b) => {
+        setOperador({ token, usuario, nome: nome || usuario, perfil });
+        setData((d) => Object.assign({}, d, b));
+        setLastSync(new Date().toTimeString().slice(0, 5));
+        reloadComprador(token);
+        reloadHistorico(token);
+      }).catch(() => {
+        clearSession();   // token inválido/expirado → login limpo
+      });
     }, []);
 
     useEffect(() => {
