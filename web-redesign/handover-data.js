@@ -280,6 +280,27 @@ window.HO_API = (function () {
     });
   }
 
+  // Trilha completa de auditoria de um item (todos os eventos, cronológico).
+  function loadTrilha(token, idItem) {
+    return rpc("handover_auditoria_item", { p_token: token, p_id_item: idItem }).then(function (res) {
+      if (res.error) return [];
+      var list = (res.data && res.data.trilha) || [];
+      return list.map(function (a) {
+        return {
+          id: a.ID_Auditoria,
+          acao: a.Acao || "—",
+          quem: a.Nome || a.Usuario || "Sistema",
+          perfil: a.Perfil || "",
+          quando: fmt(a.Data_Hora),
+          campo: a.Campo || "",
+          de: a.Valor_Anterior || "",
+          para: a.Valor_Novo || "",
+          resumo: a.Resumo || "",
+        };
+      });
+    }).catch(function () { return []; });
+  }
+
   // Lista itens do comprador por status: 'Cancelado' ou 'Não encontrado'.
   function loadCompradorStatus(token, status) {
     return rpc("handover_compras_listar_status", { p_token: token, p_status: status }).then(function (res) {
@@ -349,6 +370,7 @@ window.HO_API = (function () {
     login: login, logout: logout,
     usuariosComPin: usuariosComPin, usuariosSemPin: usuariosSemPin, primeiroAcesso: primeiroAcesso,
     loadBundle: loadBundle, loadHistorico: loadHistorico, loadComprador: loadComprador,
+    loadTrilha: loadTrilha,
     loadCompradorStatus: loadCompradorStatus, compradorMarcar: compradorMarcar,
     medAction: medAction, pendenciaResolver: pendenciaResolver,
     checklistStatus: checklistStatus, checklistObservacao: checklistObservacao,

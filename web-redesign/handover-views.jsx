@@ -631,5 +631,51 @@
     );
   }
 
-  window.HandoverViews = { QueueView, Checklist, Historico, Comprador, CardDetail, OrcamentoModal, Ic };
+  // ============================================================
+  // Trilha — histórico completo (auditoria) de um item
+  // ============================================================
+  function TrilhaModal({ item, token, onClose }) {
+    const [trilha, setTrilha] = useState(null);
+    useEffect(() => {
+      const id = item && item.id;
+      if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) { setTrilha([]); return; }
+      window.HO_API.loadTrilha(token, id).then(setTrilha).catch(() => setTrilha([]));
+    }, []);
+    const toneFor = (a) => /cancel/i.test(a) ? "neg" : /entreg|comprad|feito|resolv/i.test(a) ? "pos" : /encontrad|revert|reabert/i.test(a) ? "warn" : "brand";
+    return React.createElement("div", { className: "ho-overlay", onClick: onClose },
+      React.createElement("div", { className: "ho-modal", onClick: (e) => e.stopPropagation() },
+        React.createElement("div", { className: "ho-modal-head" },
+          React.createElement("div", null,
+            React.createElement("h2", null, item.titulo || "Item"),
+            React.createElement("div", { className: "sub" }, trilha && trilha.length ? ("Histórico completo · " + trilha.length + " evento(s)") : "Histórico completo do item"),
+          ),
+          React.createElement("button", { className: "ho-modal-x", onClick: onClose }, Ic("x")),
+        ),
+        React.createElement("div", { className: "ho-modal-body" },
+          trilha === null
+            ? React.createElement("p", { style: { color: "var(--ink-3)", fontSize: 13.5 } }, "Carregando…")
+            : trilha.length === 0
+              ? React.createElement("p", { style: { color: "var(--ink-3)", fontSize: 13.5 } }, "Nenhum evento de auditoria registrado para este item.")
+              : React.createElement("div", { className: "ho-tl" },
+                  trilha.map((ev) => React.createElement("div", { className: "ho-tlitem", key: ev.id },
+                    React.createElement("span", { className: "ho-tldot ho-tldot--" + toneFor(ev.acao) }),
+                    React.createElement("div", { className: "ho-tlcard" },
+                      React.createElement("div", { className: "ho-tltop" },
+                        React.createElement("b", null, ev.acao + (ev.campo ? " · " + ev.campo : "")),
+                        React.createElement("span", { className: "ho-tltime" }, ev.quando),
+                      ),
+                      React.createElement("div", { className: "ho-tldesc" }, ev.resumo || ((ev.de || "—") + " → " + (ev.para || "—"))),
+                      React.createElement("div", { className: "ho-tlwho" }, "por " + ev.quem + (ev.perfil ? " · " + ev.perfil : "")),
+                    ),
+                  )),
+                ),
+        ),
+        React.createElement("div", { className: "ho-modal-foot" },
+          React.createElement(Button, { variant: "secondary", onClick: onClose }, "Fechar"),
+        ),
+      ),
+    );
+  }
+
+  window.HandoverViews = { QueueView, Checklist, Historico, Comprador, CardDetail, OrcamentoModal, TrilhaModal, Ic };
 })();

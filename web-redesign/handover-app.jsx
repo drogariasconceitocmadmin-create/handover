@@ -440,7 +440,7 @@
     else if (route === "checklist")
       view = React.createElement(V.Checklist, { data: data.checklist, turno: turno, onTurno: handleTurnoChange, onToast: toast, onToggle: handleChecklistToggle, onObs: handleChecklistObs });
     else if (route === "historico")
-      view = React.createElement(V.Historico, { items: data.historico, onDetail: (item) => setModal({ type: "historico-detail", item }) });
+      view = React.createElement(V.Historico, { items: data.historico, onDetail: (item) => setModal({ type: "trilha", item }) });
     else if (route === "comprador")
       view = React.createElement(V.Comprador, { groups: data.comprador, token: operador.token, onToast: toast, onAction: handleCompradorAction, onReverter: handleCompradorReverter, onComprado: handleCompradorComprado });
 
@@ -516,29 +516,7 @@
       // modals
       modal && modal.type === "novo" && React.createElement(F.NovoRegistro, { initial: modal.initial, operador: operador.nome || operador.usuario, onClose: () => setModal(null), onToast: toast, onCreate: handleCreate }),
       modal && modal.type === "detail" && React.createElement(V.CardDetail, { item: modal.item, onClose: () => setModal(null) }),
-      modal && modal.type === "historico-detail" && React.createElement("div", { className: "ho-overlay", onClick: () => setModal(null) },
-        React.createElement("div", { className: "ho-modal", onClick: (e) => e.stopPropagation() },
-          React.createElement("div", { className: "ho-modal-head" },
-            React.createElement("div", null,
-              React.createElement("h2", null, modal.item.titulo),
-              React.createElement("div", { className: "sub" }, "Trilha de auditoria"),
-            ),
-            React.createElement("button", { className: "ho-modal-x", onClick: () => setModal(null) }, Ic("x")),
-          ),
-          React.createElement("div", { className: "ho-modal-body" },
-            React.createElement("dl", null,
-              [["Título", modal.item.titulo], ["Status", modal.item.tone || "—"], ["Descrição", modal.item.desc], ["Quem", modal.item.who], ["Quando", modal.item.time]].map(([k, v], i) =>
-                React.createElement("div", { key: i, style: { marginBottom: 12 } },
-                  React.createElement("dt", { style: { fontSize: 11, fontWeight: 600, color: "var(--ink-2)", marginBottom: 4 } }, k),
-                  React.createElement("dd", { style: { margin: 0, fontSize: 13, color: "var(--ink)" } }, v || "—")),
-              ),
-            ),
-          ),
-          React.createElement("div", { className: "ho-modal-foot" },
-            React.createElement(Button, { variant: "secondary", onClick: () => setModal(null) }, "Fechar"),
-          ),
-        ),
-      ),
+      modal && modal.type === "trilha" && React.createElement(V.TrilhaModal, { item: modal.item, token: operador.token, onClose: () => setModal(null) }),
       // tweaks
       React.createElement(window.TweaksPanel, null,
         React.createElement(window.TweakSection, { label: "Densidade dos cards" }),
