@@ -129,7 +129,7 @@ window.HO_API = (function () {
       return { ok: true, token: d.token, usuario: d.usuario, nome: d.nome, perfil: d.perfil };
     });
   }
-  function logout(token) { return rpc("handover_logout", { p_token: token }).catch(function () {}); }
+  function logout(token) { return Promise.resolve(rpc("handover_logout", { p_token: token })).catch(function () {}); }
 
   // Login: lista de funcionários que JÁ têm PIN
   function usuariosComPin() {
@@ -382,7 +382,7 @@ window.HO_API = (function () {
     return rpc("handover_tarefa_reabrir", { p_token: token, p_tarefa_id: tarefaId }).then(function (res) { return (res && res.data) || { ok: false }; });
   }
   function tarefasMarcarLidas(token) {
-    return rpc("handover_tarefas_marcar_lidas", { p_token: token }).catch(function () {});
+    return Promise.resolve(rpc("handover_tarefas_marcar_lidas", { p_token: token })).catch(function () {});
   }
   function tarefasLog(token) {
     return rpc("handover_tarefas_log", { p_token: token, p_limit: 300 }).then(function (res) {
@@ -390,6 +390,37 @@ window.HO_API = (function () {
       return ((res.data && res.data.log) || []).map(_tarefaMap);
     }).catch(function () { return []; });
   }
+
+  // ---------- Painel de tarefas pessoal ----------
+  function _painelMap(p) {
+    return {
+      id: p.ID, texto: p.Texto || "",
+      origemTipo: p.Origem_Tipo || "manual", origemTarefaId: p.Origem_Tarefa_ID || null,
+      dono: p.Usuario_Nome || p.Usuario, donoUser: p.Usuario,
+      solicitante: p.Solicitante_Nome || null, solicitanteUser: p.Solicitante || null,
+      status: p.Status || "Pendente",
+      criado: fmt(p.Criado_Em), concluido: p.Concluido_Em ? fmt(p.Concluido_Em) : null,
+    };
+  }
+  function painelListar(token) {
+    return rpc("handover_painel_listar", { p_token: token }).then(function (res) {
+      if (res.error) return { tarefas: [], avisos: [], naoAck: 0 };
+      var d = res.data || {};
+      return {
+        tarefas: (d.tarefas || []).map(_painelMap),
+        avisos: (d.avisos || []).map(_painelMap),
+        naoAck: d.naoAck || 0,
+      };
+    }).catch(function () { return { tarefas: [], avisos: [], naoAck: 0 }; });
+  }
+  function painelCriar(token, texto, origemTarefaId, origemTipo) {
+    return rpc("handover_painel_criar", { p_token: token, p_texto: texto, p_origem_tarefa_id: origemTarefaId || null, p_origem_tipo: origemTipo || "manual" })
+      .then(function (res) { return (res && res.data) || { ok: false, erro: "Erro de conexão." }; });
+  }
+  function painelConcluir(token, id) { return rpc("handover_painel_concluir", { p_token: token, p_id: id }).then(function (r) { return (r && r.data) || { ok: false }; }); }
+  function painelReabrir(token, id) { return rpc("handover_painel_reabrir", { p_token: token, p_id: id }).then(function (r) { return (r && r.data) || { ok: false }; }); }
+  function painelRemover(token, id) { return rpc("handover_painel_remover", { p_token: token, p_id: id }).then(function (r) { return (r && r.data) || { ok: false }; }); }
+  function painelAvisosAck(token) { return Promise.resolve(rpc("handover_painel_avisos_ack", { p_token: token })).catch(function () {}); }
   function compradorAction(token, item, status) {
     if (item.origem === "Medicamentos") {
       if (status === "Comprado" || status === "Não encontrado")
@@ -427,6 +458,8 @@ window.HO_API = (function () {
     tarefasListar: tarefasListar, tarefaCriar: tarefaCriar, tarefaResponder: tarefaResponder,
     tarefaConcluir: tarefaConcluir, tarefaReabrir: tarefaReabrir, tarefasMarcarLidas: tarefasMarcarLidas,
     tarefasLog: tarefasLog,
+    painelListar: painelListar, painelCriar: painelCriar, painelConcluir: painelConcluir,
+    painelReabrir: painelReabrir, painelRemover: painelRemover, painelAvisosAck: painelAvisosAck,
     criarPendencia: criarPendencia, criarMedicamento: criarMedicamento, criarCompra: criarCompra,
     fmt: fmt, fmtData: fmtData,
   };

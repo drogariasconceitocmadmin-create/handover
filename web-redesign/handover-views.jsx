@@ -720,7 +720,7 @@
   // ============================================================
   // Mensagens-tarefa diretas (checklist à parte)
   // ============================================================
-  function MensagensModal({ data, usuarios, meUser, token, isAdmin, onClose, onCriar, onResponder, onConcluir, onReabrir, onToast }) {
+  function MensagensModal({ data, usuarios, meUser, token, isAdmin, onClose, onCriar, onResponder, onConcluir, onReabrir, onAddPainel, onToast }) {
     const [tab, setTab] = useState("recebidas");
     const [dest, setDest] = useState({});
     const [todos, setTodos] = useState(false);
@@ -764,6 +764,8 @@
         t.respostas.map((r, i) => React.createElement("div", { className: "msg-reply" + (r.autorUser === meUser ? " mine" : ""), key: i },
           React.createElement("b", null, r.autor), " ", React.createElement("span", null, r.texto),
           React.createElement("span", { className: "msg-reply-time" }, r.quando),
+          (mode === "recebida" && onAddPainel) ? React.createElement("button", { className: "msg-addpainel-mini", title: "Adicionar este item ao meu painel",
+            onClick: () => onAddPainel(r.texto, t.id, "resposta") }, Ic("list-plus")) : null,
         ))) : null,
       t.status === "Concluído" && t.concluido
         ? React.createElement("div", { className: "msg-concl" }, "Concluído por " + (t.concluidoPor || t.para) + " · " + t.concluido) : null,
@@ -772,6 +774,8 @@
           onChange: (e) => setReply((s) => Object.assign({}, s, { [t.id]: e.target.value })),
           onKeyDown: (e) => { if (e.key === "Enter") responder(t.id); } }),
         React.createElement("button", { className: "msg-send", title: "Enviar resposta", onClick: () => responder(t.id) }, Ic("send")),
+        (mode === "recebida" && onAddPainel)
+          ? React.createElement("button", { className: "msg-addpainel", title: "Adicionar ao meu painel de tarefas", onClick: () => onAddPainel(t.mensagem, t.id, "mensagem") }, Ic("list-plus"), "Painel") : null,
         (mode === "recebida" && t.status !== "Concluído")
           ? React.createElement("button", { className: "msg-done", onClick: () => onConcluir(t.id) }, Ic("check"), "Concluir")
           : (t.status === "Concluído" ? React.createElement("button", { className: "msg-reopen", onClick: () => onReabrir(t.id) }, "Reabrir") : null),
@@ -822,5 +826,64 @@
     );
   }
 
-  window.HandoverViews = { QueueView, Checklist, Historico, Comprador, CardDetail, OrcamentoModal, TrilhaModal, MensagensModal, Ic };
+  // ============================================================
+  // Painel de tarefas pessoal
+  // ============================================================
+  function PainelTarefas({ data, onCriar, onConcluir, onReabrir, onRemover, onToast }) {
+    const [novo, setNovo] = useState("");
+    const add = () => {
+      if (!novo.trim()) return onToast("Escreva a tarefa");
+      Promise.resolve(onCriar(novo.trim())).then((r) => { if (r && r.ok) setNovo(""); });
+    };
+    const tarefas = data.tarefas || [];
+    const avisos = data.avisos || [];
+    const pend = tarefas.filter((t) => t.status !== "Concluído");
+
+    const card = (t) => React.createElement("div", { className: "painel-card" + (t.status === "Concluído" ? " done" : ""), key: t.id },
+      React.createElement("button", {
+        className: "pc-box", title: t.status === "Concluído" ? "Reabrir" : "Concluir",
+        onClick: () => (t.status === "Concluído" ? onReabrir(t.id) : onConcluir(t.id)),
+      }, Ic("check")),
+      React.createElement("div", { className: "pc-body" },
+        React.createElement("div", { className: "pc-text" }, t.texto),
+        React.createElement("div", { className: "pc-meta" },
+          t.solicitante ? ("Pedido por " + t.solicitante + " · " + t.criado) : ("Nota pessoal · " + t.criado),
+          t.status === "Concluído" && t.concluido ? React.createElement("span", { className: "pc-doneflag" }, " · concluído " + t.concluido) : null,
+        ),
+      ),
+      React.createElement("button", { className: "pc-del", title: "Remover", onClick: () => onRemover(t.id) }, Ic("trash-2")),
+    );
+
+    return React.createElement(React.Fragment, null,
+      React.createElement("div", { className: "ho-sechead" },
+        React.createElement("div", null,
+          React.createElement("div", { className: "ho-eyebrow", style: { marginBottom: 4 } }, "Minhas tarefas"),
+          React.createElement("h2", null, "Painel de tarefas"),
+          React.createElement("p", null, pend.length + " pendente(s) · suas tarefas pessoais e as que pediram a você."),
+        ),
+      ),
+      React.createElement("div", { className: "painel-new" },
+        React.createElement("input", { className: "painel-input", value: novo, placeholder: "Escreva uma tarefa pessoal…",
+          onChange: (e) => setNovo(e.target.value), onKeyDown: (e) => { if (e.key === "Enter") add(); } }),
+        React.createElement(Button, { variant: "brand", icon: Ic("plus"), onClick: add }, "Adicionar"),
+      ),
+      tarefas.length
+        ? React.createElement("div", { className: "painel-list" }, tarefas.map(card))
+        : React.createElement("p", { style: { color: "var(--ink-3)", fontSize: 13.5, marginTop: 14 } }, "Nenhuma tarefa no painel ainda. Adicione uma acima, ou promova uma mensagem recebida em Mensagens."),
+      avisos.length ? React.createElement("div", { style: { marginTop: 22 } },
+        React.createElement("div", { className: "ho-eyebrow", style: { marginBottom: 8 } }, "Concluídas que você pediu"),
+        React.createElement("div", { className: "painel-list" },
+          avisos.map((a) => React.createElement("div", { className: "painel-card aviso", key: a.id },
+            React.createElement("span", { className: "pc-aviso-ic" }, Ic("check-circle")),
+            React.createElement("div", { className: "pc-body" },
+              React.createElement("div", { className: "pc-text" }, a.dono + " concluiu: " + a.texto),
+              React.createElement("div", { className: "pc-meta" }, a.concluido || ""),
+            ),
+          )),
+        ),
+      ) : null,
+    );
+  }
+
+  window.HandoverViews = { QueueView, Checklist, Historico, Comprador, CardDetail, OrcamentoModal, TrilhaModal, MensagensModal, PainelTarefas, Ic };
 })();

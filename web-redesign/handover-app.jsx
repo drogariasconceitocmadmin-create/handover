@@ -22,6 +22,7 @@
     ]},
     { label: "TURNO", items: [
       { id: "checklist", label: "Checklist", icon: "margem" },
+      { id: "tarefas", label: "Tarefas", icon: "orcamentos" },
       { id: "historico", label: "Histórico", icon: "historico" },
       { id: "comprador", label: "Compras", icon: "recebiveis" },
     ]},
@@ -168,6 +169,7 @@
     const [data, setData] = useState({ medicamentos: [], pendencias: [], compras: [], checklist: { turno: "—", categories: [], summary: null }, historico: [], comprador: [] });
     const [lastSync, setLastSync] = useState("—");
     const [tarefas, setTarefas] = useState({ recebidas: [], enviadas: [], naoLidas: 0 });
+    const [painel, setPainel] = useState({ tarefas: [], avisos: [], naoAck: 0 });
     const [msgOpen, setMsgOpen] = useState(false);
     const [usuarios, setUsuarios] = useState([]);
 
@@ -175,6 +177,7 @@
     const ddRef = useRef(null);
     const appRef = useRef(null);
     const tarefasSeen = useRef(null);
+    const painelSeen = useRef(null);
 
     // ---- data loading ----
     const reloadBundle = useCallback((tok, tn) => {
@@ -223,6 +226,21 @@
       }).catch(() => {});
     };
 
+    const reloadPainel = useCallback((tok) => {
+      const token = tok || (operador && operador.token);
+      if (!token) return Promise.resolve();
+      return API.painelListar(token).then((p) => {
+        const ids = new Set(p.avisos.map((a) => a.id));
+        if (painelSeen.current) {
+          const novos = p.avisos.filter((a) => !painelSeen.current.has(a.id));
+          if (novos.length === 1) toast(novos[0].dono + " concluiu: " + novos[0].texto);
+          else if (novos.length > 1) toast(novos.length + " tarefas que você pediu foram concluídas");
+        }
+        painelSeen.current = ids;
+        setPainel(p);
+      }).catch(() => {});
+    }, [operador]);
+
     // ---- session persistence (sobrevive a F5) ----
     const persistSession = (op) => {
       try {
@@ -249,7 +267,9 @@
       reloadComprador(op.token);
       reloadHistorico(op.token);
       tarefasSeen.current = null;
+      painelSeen.current = null;
       reloadTarefas(op.token);
+      reloadPainel(op.token);
       loadUsuarios(op.usuario);
     };
 
@@ -284,19 +304,21 @@
         reloadComprador(token);
         reloadHistorico(token);
         tarefasSeen.current = null;
+        painelSeen.current = null;
         reloadTarefas(token);
+        reloadPainel(token);
         loadUsuarios(usuario);
       }).catch(() => {
         clearSession();   // token inválido/expirado → login limpo
       });
     }, []);
 
-    // Polling curto das mensagens-tarefa (toast automático ~8s).
+    // Polling curto das mensagens-tarefa + painel (toast automático ~8s).
     useEffect(() => {
       if (!operador) return;
-      const iv = setInterval(() => reloadTarefas(), 8000);
+      const iv = setInterval(() => { reloadTarefas(); reloadPainel(); }, 8000);
       return () => clearInterval(iv);
-    }, [operador, reloadTarefas]);
+    }, [operador, reloadTarefas, reloadPainel]);
 
     const openMensagens = () => {
       setMsgOpen(true);
@@ -312,6 +334,16 @@
     const handleTarefaConcluir = (id) => API.tarefaConcluir(operador.token, id).then(() => { toast("Tarefa concluída"); reloadTarefas(); });
     const handleTarefaReabrir = (id) => API.tarefaReabrir(operador.token, id).then(() => { toast("Tarefa reaberta"); reloadTarefas(); });
 
+    // ---- painel de tarefas ----
+    const handlePainelCriar = (texto, origemId, origemTipo) =>
+      API.painelCriar(operador.token, texto, origemId, origemTipo).then((r) => {
+        if (r && r.ok) { toast("Adicionado ao painel"); reloadPainel(); } else toast((r && r.erro) || "Erro");
+        return r;
+      });
+    const handlePainelConcluir = (id) => API.painelConcluir(operador.token, id).then(() => { toast("Tarefa concluída"); reloadPainel(); });
+    const handlePainelReabrir = (id) => API.painelReabrir(operador.token, id).then(() => reloadPainel());
+    const handlePainelRemover = (id) => API.painelRemover(operador.token, id).then(() => reloadPainel());
+
     useEffect(() => {
       if (!operador) return;
       const iv = setInterval(() => reloadBundle(), 300000);
@@ -323,6 +355,7 @@
       if (!operador) return;
       if (route === "comprador") reloadComprador();
       if (route === "historico") reloadHistorico();
+      if (route === "tarefas") { reloadPainel(); if (painel.naoAck) API.painelAvisosAck(operador.token).then(() => reloadPainel()); }
     }, [route, operador]);
 
     // reload bundle when turno changes (checklist depends on it)
@@ -482,6 +515,7 @@
       encomendas: ["Encomendas", "entregas"],
       compras: ["Compras e reposição", "estoque"],
       checklist: ["Checklist do turno", "margem"],
+      tarefas: ["Painel de tarefas", "orcamentos"],
       historico: ["Histórico", "historico"],
       comprador: ["Comprador", "recebiveis"],
     }[route];
@@ -499,14 +533,20 @@
       view = React.createElement(V.Historico, { items: data.historico, onDetail: (item) => setModal({ type: "trilha", item }) });
     else if (route === "comprador")
       view = React.createElement(V.Comprador, { groups: data.comprador, token: operador.token, onToast: toast, onAction: handleCompradorAction, onReverter: handleCompradorReverter, onComprado: handleCompradorComprado });
+    else if (route === "tarefas")
+      view = React.createElement(V.PainelTarefas, { data: painel, onToast: toast, onCriar: (txt) => handlePainelCriar(txt, null, "manual"), onConcluir: handlePainelConcluir, onReabrir: handlePainelReabrir, onRemover: handlePainelRemover });
 
     const showKpis = ["pendencias", "encomendas", "compras"].includes(route);
     const initials = (operador.nome || operador.usuario || "?").slice(0, 2).toUpperCase();
 
+    const navSections = SECTIONS.map((sec) => Object.assign({}, sec, {
+      items: sec.items.map((it) => (it.id === "tarefas" ? Object.assign({}, it, { dot: painel.naoAck > 0 }) : it)),
+    }));
+
     return React.createElement("div", { ref: appRef, className: "ho-app", "data-density": t.density, "data-urg": t.urgency },
       React.createElement("div", { className: "ho-rail-wrap" },
         React.createElement(NavRail, {
-          sections: SECTIONS, active: route, onSelect: (id) => { setRoute(id); setKpiFilter(null); },
+          sections: navSections, active: route, onSelect: (id) => { setRoute(id); setKpiFilter(null); },
           collapsed: false,
           brand: { name: "Handover", subtitle: "Projeto" },
           user: { initials: initials, name: operador.nome || operador.usuario, role: operador.perfil || "Operador do turno", tone: "pink" },
@@ -583,7 +623,9 @@
         token: operador.token, isAdmin: operador.perfil === "admin",
         onClose: () => setMsgOpen(false),
         onCriar: handleTarefaCriar, onResponder: handleTarefaResponder,
-        onConcluir: handleTarefaConcluir, onReabrir: handleTarefaReabrir, onToast: toast,
+        onConcluir: handleTarefaConcluir, onReabrir: handleTarefaReabrir,
+        onAddPainel: (txt, oid, tipo) => handlePainelCriar(txt, oid, tipo),
+        onToast: toast,
       }),
       // tweaks
       React.createElement(window.TweaksPanel, null,
