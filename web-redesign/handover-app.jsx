@@ -421,6 +421,21 @@
             toast("Solicitação cancelada"); reloadBundle();
           });
         }
+      } else if (item.raw && item.raw.Status_Compra !== undefined) {
+        // compra e reposição → resolver = marcar comprado/reposto; cancelar
+        if (verb === "primary") {
+          API.compraReposicaoResolver(token, item.id).then((r) => {
+            if (r && r.error) return toast("Erro ao resolver");
+            toast("Item resolvido (comprado/reposto)"); reloadBundle();
+          });
+        } else if (verb === "cancelar") {
+          const motivo = window.prompt("Motivo do cancelamento:");
+          if (motivo === null) return;
+          API.compraReposicaoCancelar(token, item.id, motivo || "Cancelado").then((r) => {
+            if (r && r.error) return toast("Erro ao cancelar");
+            toast("Item cancelado"); reloadBundle();
+          });
+        }
       } else if (item.raw && item.raw.Urgencia !== undefined) {
         // pendência geral → resolver ou cancelar
         if (verb === "primary") {

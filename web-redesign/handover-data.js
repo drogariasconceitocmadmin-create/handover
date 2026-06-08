@@ -425,6 +425,8 @@ window.HO_API = (function () {
   function painelReabrir(token, id) { return rpc("handover_painel_reabrir", { p_token: token, p_id: id }).then(function (r) { return (r && r.data) || { ok: false }; }); }
   function painelRemover(token, id) { return rpc("handover_painel_remover", { p_token: token, p_id: id }).then(function (r) { return (r && r.data) || { ok: false }; }); }
   function painelAvisosAck(token) { return Promise.resolve(rpc("handover_painel_avisos_ack", { p_token: token })).catch(function () {}); }
+  function compraReposicaoResolver(token, id) { return rpc("handover_compra_reposicao_comprar", { p_token: token, p_id: id }); }
+  function compraReposicaoCancelar(token, id, motivo) { return rpc("handover_compra_reposicao_cancelar", { p_token: token, p_id: id, p_motivo: motivo || "Cancelado" }); }
   function compradorAction(token, item, status) {
     if (item.origem === "Medicamentos") {
       if (status === "Comprado" || status === "Não encontrado")
@@ -459,6 +461,7 @@ window.HO_API = (function () {
     medAction: medAction, pendenciaResolver: pendenciaResolver,
     checklistStatus: checklistStatus, checklistObservacao: checklistObservacao,
     compradorAction: compradorAction,
+    compraReposicaoResolver: compraReposicaoResolver, compraReposicaoCancelar: compraReposicaoCancelar,
     tarefasListar: tarefasListar, tarefaCriar: tarefaCriar, tarefaResponder: tarefaResponder,
     tarefaConcluir: tarefaConcluir, tarefaReabrir: tarefaReabrir, tarefasMarcarLidas: tarefasMarcarLidas,
     tarefasLog: tarefasLog,

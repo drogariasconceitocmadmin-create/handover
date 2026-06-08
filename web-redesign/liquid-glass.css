@@ -1201,6 +1201,10 @@ html, body {
 /* ThemeToggle: hidden in Liquid Glass — always dark */
 .ho-topbar .ci-theme-tog { display: none !important; }
 
+/* Modal: sem scrollbar lateral visível (rolagem continua por scroll/touch) */
+.ho-modal::-webkit-scrollbar { width: 0 !important; height: 0 !important; background: transparent !important; }
+.ho-modal { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+
 /* ============================================================
    SUPLEMENTO — componentes adicionados depois do snapshot
    (painel de tarefas, mensagens, checklist redesenhado, compacto)
