@@ -59,8 +59,24 @@ begin
     'usuario', u.usuario, 'nome', u.nome, 'perfil', u.perfil);
 end $$;
 
+-- 3) Lista de usuários COM PIN (para o login normal).
+--    Retorna só usuario + nome. Anon pode chamar.
+create or replace function public.handover_usuarios_com_pin()
+returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(
+    jsonb_agg(jsonb_build_object('Usuario', usuario, 'Nome', nome) order by nome),
+    '[]'::jsonb)
+  from public.usuarios
+  where ativo = true
+    and pin_hash is not null
+    and pin_hash <> '';
+$$;
+
 -- ---- Grants: revoga default e concede execução ao anon ----
 revoke all on function public.handover_usuarios_sem_pin()                 from public;
+revoke all on function public.handover_usuarios_com_pin()                 from public;
 revoke all on function public.handover_primeiro_acesso(text, text)        from public;
 grant execute on function public.handover_usuarios_sem_pin()              to anon;
+grant execute on function public.handover_usuarios_com_pin()              to anon;
 grant execute on function public.handover_primeiro_acesso(text, text)     to anon;

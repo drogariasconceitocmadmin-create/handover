@@ -190,12 +190,6 @@
   const MARK = React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2.2, strokeLinecap: "round", strokeLinejoin: "round" },
     React.createElement("path", { d: "M22 12h-4l-3 9L9 3l-3 9H2" }));
 
-  const USERS = [
-    { u: "isaque", label: "Isaque" }, { u: "ainale", label: "Ainale" },
-    { u: "priscila", label: "Priscila" }, { u: "jelcinei", label: "Jelcinei" },
-    { u: "carlos", label: "Carlos" }, { u: "marco", label: "Marco" },
-  ];
-
   function Login({ onEnter }) {
     const API = window.HO_API;
     const [mode, setMode] = useState("login");          // "login" | "registro"
@@ -204,7 +198,15 @@
     const [pin2, setPin2] = useState("");
     const [err, setErr] = useState("");
     const [busy, setBusy] = useState(false);
-    const [novos, setNovos] = useState(null);           // funcionários sem PIN
+    const [usuarios, setUsuarios] = useState(null);     // usuários COM PIN (para login)
+    const [novos, setNovos] = useState(null);           // usuários SEM PIN (para primeiro acesso)
+
+    // Carrega lista de usuários com PIN ao montar
+    useEffect(() => {
+      if (usuarios === null) {
+        API.usuariosComPin().then((list) => setUsuarios(list || []));
+      }
+    }, []);
 
     const onlyDigits = (s) => s.replace(/\D/g, "").slice(0, 4);
 
@@ -280,8 +282,8 @@
         React.createElement("p", { className: "lede" }, "Identifique-se para abrir o turno."),
         React.createElement(Field, { label: "Usuário" },
           React.createElement(Select, { value: user, onChange: (e) => setUser(e.target.value) },
-            React.createElement("option", { value: "" }, "— Escolha —"),
-            USERS.map((n) => React.createElement("option", { key: n.u, value: n.u }, n.label)))),
+            React.createElement("option", { value: "" }, usuarios === null ? "Carregando…" : (usuarios && usuarios.length ? "— Escolha —" : "Nenhum usuário disponível")),
+            usuarios && usuarios.map((n) => React.createElement("option", { key: n.u, value: n.u }, n.label)))),
         React.createElement(Field, { label: "PIN" },
           React.createElement(Input, { type: "password", inputMode: "numeric", value: pin,
             onChange: (e) => setPin(e.target.value),

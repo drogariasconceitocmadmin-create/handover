@@ -131,6 +131,14 @@ window.HO_API = (function () {
   }
   function logout(token) { return rpc("handover_logout", { p_token: token }).catch(function () {}); }
 
+  // Login: lista de funcionários que JÁ têm PIN
+  function usuariosComPin() {
+    return rpc("handover_usuarios_com_pin", {}).then(function (res) {
+      if (res.error) return [];
+      return (res.data || []).map(function (u) { return { u: u.Usuario, label: u.Nome }; });
+    }).catch(function () { return []; });
+  }
+
   // Primeiro acesso: lista de funcionários que ainda não definiram PIN
   function usuariosSemPin() {
     return rpc("handover_usuarios_sem_pin", {}).then(function (res) {
@@ -315,7 +323,7 @@ window.HO_API = (function () {
   return {
     client: client,
     login: login, logout: logout,
-    usuariosSemPin: usuariosSemPin, primeiroAcesso: primeiroAcesso,
+    usuariosComPin: usuariosComPin, usuariosSemPin: usuariosSemPin, primeiroAcesso: primeiroAcesso,
     loadBundle: loadBundle, loadHistorico: loadHistorico, loadComprador: loadComprador,
     medAction: medAction, pendenciaResolver: pendenciaResolver, checklistStatus: checklistStatus,
     compradorAction: compradorAction,
