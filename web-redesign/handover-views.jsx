@@ -377,8 +377,8 @@
       React.createElement("dd", null, value));
   }
 
-  function BuyRow({ it, rowKey, status, onStatus, onToast, onAction, customActions }) {
-    const rowClass = "ho-buyrow" + (status ? " ho-buyrow--" + STATUS_CONF[status].tone : "");
+  function BuyRow({ it, rowKey, status, onStatus, onToast, onAction, customActions, selectable, selected, onSelect }) {
+    const rowClass = "ho-buyrow" + (status ? " ho-buyrow--" + STATUS_CONF[status].tone : "") + (selected ? " sel" : "");
     const isMed = it.kind !== "compra";
     const metas = isMed
       ? [
@@ -413,6 +413,9 @@
           style: status && status !== a ? { opacity: .45 } : {},
         }, a));
     return React.createElement("div", { className: rowClass },
+      selectable ? React.createElement("label", { className: "buy-check" },
+        React.createElement("input", { type: "checkbox", checked: !!selected, onChange: () => onSelect && onSelect(it) }),
+      ) : null,
       React.createElement("div", { className: "buy-actions" }, actionsEl),
       React.createElement("div", { className: "buy-body" },
         React.createElement("div", { className: "buy-head" },
@@ -433,7 +436,11 @@
     const [extra, setExtra] = useState(null);
     const [loading, setLoading] = useState(false);
     const [q, setQ] = useState("");
+    const [sel, setSel] = useState({});          // { itemId: item } — seleção p/ orçamento
+    const [orcOpen, setOrcOpen] = useState(false);
     const setStatus = (key, val) => setStatuses((s) => Object.assign({}, s, { [key]: val }));
+    const toggleSel = (it) => setSel((s) => { const n = Object.assign({}, s); if (n[it.id]) delete n[it.id]; else n[it.id] = it; return n; });
+    const selItems = Object.values(sel);
 
     const matchItem = (it, s) =>
       (it.nm || "").toLowerCase().includes(s) ||
@@ -446,6 +453,7 @@
       (it.sub || "").toLowerCase().includes(s);
 
     const openView = (v) => {
+      setSel({});  // limpa seleção ao trocar de aba
       if (v === "ativos") { setView("ativos"); setExtra(null); return; }
       setView(v); setLoading(true);
       window.HO_API.loadCompradorStatus(token, v)
@@ -512,9 +520,16 @@
                   key: k, rowKey: k, it: it, status: statuses[k] || null,
                   onStatus: setStatus, onToast: onToast, onAction: onAction,
                   customActions: view === "ativos" ? null : fixActions,
+                  selectable: view === "ativos", selected: !!sel[it.id], onSelect: toggleSel,
                 });
               }),
             )),
+      selItems.length > 0 ? React.createElement("div", { className: "ho-orcbar" },
+        React.createElement("span", { className: "orc-count" }, selItems.length + " selecionado(s)"),
+        React.createElement("button", { className: "orc-clear", onClick: () => setSel({}) }, "Limpar"),
+        React.createElement(Button, { variant: "brand", icon: Ic("file-text"), onClick: () => setOrcOpen(true) }, "Solicitar orçamento"),
+      ) : null,
+      orcOpen ? React.createElement(OrcamentoModal, { items: selItems, onToast: onToast, onClose: () => setOrcOpen(false) }) : null,
     );
   }
 
@@ -554,5 +569,67 @@
     );
   }
 
-  window.HandoverViews = { QueueView, Checklist, Historico, Comprador, CardDetail, Ic };
+  // ============================================================
+  // Orçamento — selecionar itens, montar mensagem e enviar ao fornecedor
+  // ============================================================
+  function OrcamentoModal({ items, onClose, onToast }) {
+    const buildMsg = () => {
+      const linhas = items.map((it) => "• " + it.nm + (it.qtd && it.qtd !== "—" ? " — " + it.qtd : "")).join("\n");
+      return "Olá! Gostaria de solicitar um orçamento dos itens abaixo:\n\n" + linhas +
+        "\n\nPoderia me enviar os valores e o prazo de entrega? Obrigado!\nDrogarias Conceito";
+    };
+    const [fornecedor, setFornecedor] = useState("");
+    const [fone, setFone] = useState("");
+    const [email, setEmail] = useState("");
+    const [msg, setMsg] = useState(buildMsg());
+
+    const sendWA = () => {
+      const d = (fone || "").replace(/\D/g, "");
+      if (!d) return onToast("Informe o telefone (WhatsApp) do fornecedor");
+      const num = d.length <= 11 ? "55" + d : d;
+      window.open("https://wa.me/" + num + "?text=" + encodeURIComponent(msg), "_blank", "noopener");
+      onToast("Abrindo WhatsApp…");
+    };
+    const sendEmail = () => {
+      if (!email.trim()) return onToast("Informe o email do fornecedor");
+      const subj = "Solicitação de orçamento" + (fornecedor.trim() ? " — " + fornecedor.trim() : "") + " · Drogarias Conceito";
+      window.location.href = "mailto:" + encodeURIComponent(email.trim()) +
+        "?subject=" + encodeURIComponent(subj) + "&body=" + encodeURIComponent(msg);
+      onToast("Abrindo email…");
+    };
+
+    const field = (label, node) => React.createElement("div", { className: "orc-field" },
+      React.createElement("label", { className: "orc-label" }, label), node);
+
+    return React.createElement("div", { className: "ho-overlay", onClick: onClose },
+      React.createElement("div", { className: "ho-modal ho-modal--wide", onClick: (e) => e.stopPropagation() },
+        React.createElement("div", { className: "ho-modal-head" },
+          React.createElement("div", null,
+            React.createElement("h2", null, "Solicitar orçamento"),
+            React.createElement("div", { className: "sub" }, items.length + " item(ns) selecionado(s)"),
+          ),
+          React.createElement("button", { className: "ho-modal-x", onClick: onClose }, Ic("x")),
+        ),
+        React.createElement("div", { className: "ho-modal-body" },
+          React.createElement("div", { className: "orc-items" },
+            items.map((it, i) => React.createElement("span", { key: i, className: "orc-chip" },
+              it.nm + (it.qtd && it.qtd !== "—" ? " · " + it.qtd : ""))),
+          ),
+          React.createElement("div", { className: "orc-grid" },
+            field("Fornecedor (opcional)", React.createElement("input", { className: "orc-input", value: fornecedor, onChange: (e) => setFornecedor(e.target.value), placeholder: "Nome do fornecedor" })),
+            field("Telefone / WhatsApp", React.createElement("input", { className: "orc-input", inputMode: "tel", value: fone, onChange: (e) => setFone(e.target.value), placeholder: "(21) 99999-9999" })),
+            field("Email", React.createElement("input", { className: "orc-input", type: "email", value: email, onChange: (e) => setEmail(e.target.value), placeholder: "fornecedor@email.com" })),
+          ),
+          field("Mensagem (editável)", React.createElement("textarea", { className: "orc-textarea", rows: 9, value: msg, onChange: (e) => setMsg(e.target.value) })),
+        ),
+        React.createElement("div", { className: "ho-modal-foot" },
+          React.createElement(Button, { variant: "secondary", onClick: onClose }, "Cancelar"),
+          React.createElement(Button, { variant: "secondary", icon: Ic("mail"), onClick: sendEmail }, "Enviar por email"),
+          React.createElement(Button, { variant: "brand", icon: Ic("message-circle"), onClick: sendWA }, "Enviar por WhatsApp"),
+        ),
+      ),
+    );
+  }
+
+  window.HandoverViews = { QueueView, Checklist, Historico, Comprador, CardDetail, OrcamentoModal, Ic };
 })();
