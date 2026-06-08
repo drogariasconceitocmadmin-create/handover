@@ -270,6 +270,7 @@
 
   function Checklist({ data, turno, onTurno, onToggle, onObs, onToast }) {
     const [filter, setFilter] = useState("todos");
+    const [compact, setCompact] = useState(false);
     const cats = data.categories || [];
 
     const all = cats.flatMap((c) => c.items);
@@ -291,7 +292,10 @@
           React.createElement("h2", null, "Checklist do turno"),
           React.createElement("p", null, "Tarefas obrigatórias de abertura, limpeza e operação."),
         ),
-        React.createElement(SegmentedControl, { options: ["Manhã", "Noite"], value: turno, onChange: onTurno, size: "sm" }),
+        React.createElement("div", { style: { display: "flex", gap: 9, alignItems: "center", flexWrap: "wrap" } },
+          React.createElement(Button, { variant: compact ? "primary" : "secondary", size: "sm", icon: Ic(compact ? "list" : "layout-list"), onClick: () => setCompact((v) => !v) }, "Compacto"),
+          React.createElement(SegmentedControl, { options: ["Manhã", "Noite"], value: turno, onChange: onTurno, size: "sm" }),
+        ),
       ),
       React.createElement("div", { className: "ci-card", style: { marginBottom: 16 } },
         React.createElement("div", { className: "ho-check-head", style: { marginBottom: 0 } },
@@ -319,9 +323,19 @@
             React.createElement("span", { className: "meta" }, cdone + "/" + c.items.length),
           ),
           React.createElement("div", { className: "ho-checkrows" },
-            visible.map(({ it }) => React.createElement(CheckRow, {
-              key: it.id, it: it, onStatus: onToggle, onObs: onObs,
-            })),
+            compact
+              ? visible.map(({ it }) => React.createElement("div", {
+                  key: it.id, className: "ho-checkrow-c" + (it.feito ? " done" : "") + (it.na ? " na" : ""),
+                  onClick: () => { if (it.na) onToggle(it, "Pendente"); else onToggle(it, it.feito ? "Pendente" : "Feito"); },
+                  title: it.na ? "N/A — clique para reativar" : (it.feito ? "Feito — clique para desmarcar" : "Pendente — clique para concluir"),
+                },
+                  React.createElement("span", { className: "crc-box" }, Ic("check")),
+                  React.createElement("span", { className: "crc-name" }, it.texto),
+                  it.observacao ? React.createElement("span", { className: "crc-obs", title: it.observacao }, Ic("message-square")) : null,
+                ))
+              : visible.map(({ it }) => React.createElement(CheckRow, {
+                  key: it.id, it: it, onStatus: onToggle, onObs: onObs,
+                })),
           ),
         );
       }),

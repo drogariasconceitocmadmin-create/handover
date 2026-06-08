@@ -427,6 +427,30 @@ body {
 .cr-obs-save { font-family: var(--font-sans); font-size: 12px; font-weight: 600; color: var(--on-brand); background: var(--brand); border: 0; border-radius: var(--radius-sm); padding: 5px 14px; cursor: pointer; }
 .cr-obs-cancel { font-family: var(--font-sans); font-size: 12px; font-weight: 600; color: var(--ink-2); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 5px 14px; cursor: pointer; }
 
+/* ---------- Checklist compacto (1 linha por task) ---------- */
+.ho-checkrow-c {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; background: var(--panel);
+  border: 1px solid var(--line); border-radius: var(--radius-sm); cursor: pointer;
+  transition: background var(--dur-2), border-color var(--dur-2);
+}
+.ho-checkrow-c:hover { background: var(--line-2); }
+.ho-checkrow-c .crc-box {
+  width: 20px; height: 20px; flex: 0 0 20px; border-radius: 6px; border: 1.8px solid var(--line);
+  display: grid; place-items: center; transition: background var(--dur-2) var(--ease-spring), border-color var(--dur-2);
+}
+.ho-checkrow-c .crc-box svg { width: 12px; height: 12px; color: #fff; opacity: 0; transform: scale(.4); transition: opacity var(--dur-2), transform var(--dur-3) var(--ease-spring); }
+.ho-checkrow-c.done { border-color: color-mix(in srgb, var(--brand) 35%, var(--line)); }
+.ho-checkrow-c.done .crc-box { background: var(--brand); border-color: var(--brand); }
+.ho-checkrow-c.done .crc-box svg { opacity: 1; transform: scale(1); }
+.ho-checkrow-c .crc-name { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.ho-checkrow-c.done .crc-name { color: var(--ink-3); text-decoration: line-through; }
+.ho-checkrow-c.na { opacity: .6; }
+.ho-checkrow-c.na .crc-name { font-style: italic; }
+.ho-checkrow-c.na .crc-box { border-style: dashed; }
+.ho-checkrow-c .crc-obs { color: var(--ink-3); display: inline-flex; }
+.ho-checkrow-c .crc-obs svg { width: 13px; height: 13px; }
+
 /* ---------- Histórico timeline ---------- */
 .ho-tl { position: relative; padding-left: 24px; }
 .ho-tl::before { content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px; width: 2px; background: var(--line); }
