@@ -287,7 +287,6 @@
               React.createElement("div", { className: "tx" },
                 React.createElement("div", { className: "tx-title" },
                   React.createElement("span", { className: "tx-name" }, it.texto),
-                  it.horario && React.createElement("span", { className: "tx-time" }, it.horario),
                 ),
                 it.descricao && React.createElement("p", { className: "tx-desc" }, String(it.descricao).replace(/\\n/g, "\n")),
                 React.createElement("div", { className: "tx-foot" },
