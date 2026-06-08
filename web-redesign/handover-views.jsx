@@ -377,7 +377,7 @@
       React.createElement("dd", null, value));
   }
 
-  function BuyRow({ it, rowKey, status, onStatus, onToast, onAction, customActions, selectable, selected, onSelect }) {
+  function BuyRow({ it, rowKey, status, onStatus, onToast, onAction, customActions, selectable, selected, onSelect, compact }) {
     const rowClass = "ho-buyrow" + (status ? " ho-buyrow--" + STATUS_CONF[status].tone : "") + (selected ? " sel" : "");
     const isMed = it.kind !== "compra";
     const metas = isMed
@@ -412,6 +412,27 @@
           onClick: () => { const sel = status === a ? null : a; onStatus(rowKey, sel); if (sel && onAction) onAction(it, sel); else onToast(a === "Comprado" ? "Item marcado como comprado" : a === "Cancelado" ? "Item cancelado" : "Item marcado como não encontrado"); },
           style: status && status !== a ? { opacity: .45 } : {},
         }, a));
+
+    // ----- Modo compacto: 2 linhas (nome·qtd·fornecedor·preço / ações) -----
+    if (compact) {
+      const sup = (it.fornecedor && it.fornecedor !== "—") ? it.fornecedor
+        : ((it.fornecedorSugerido && it.fornecedorSugerido !== "—") ? it.fornecedorSugerido : null);
+      return React.createElement("div", { className: rowClass + " ho-buyrow--compact" },
+        selectable ? React.createElement("label", { className: "buy-check" },
+          React.createElement("input", { type: "checkbox", checked: !!selected, onChange: () => onSelect && onSelect(it) }),
+        ) : null,
+        React.createElement("div", { className: "bc-body" },
+          React.createElement("div", { className: "bc-line" },
+            React.createElement("span", { className: "bc-nm" }, it.nm),
+            (it.qtd && it.qtd !== "—") ? React.createElement("span", { className: "bc-tag" }, it.qtd) : null,
+            sup ? React.createElement("span", { className: "bc-sup" }, MetaIc("store"), sup) : null,
+            (it.preco && it.preco !== "—") ? React.createElement("span", { className: "bc-price" }, it.preco) : null,
+          ),
+          React.createElement("div", { className: "bc-actions" }, actionsEl),
+        ),
+      );
+    }
+
     return React.createElement("div", { className: rowClass },
       selectable ? React.createElement("label", { className: "buy-check" },
         React.createElement("input", { type: "checkbox", checked: !!selected, onChange: () => onSelect && onSelect(it) }),
@@ -438,6 +459,7 @@
     const [q, setQ] = useState("");
     const [sel, setSel] = useState({});          // { itemId: item } — seleção p/ orçamento
     const [orcOpen, setOrcOpen] = useState(false);
+    const [compact, setCompact] = useState(false);
     const setStatus = (key, val) => setStatuses((s) => Object.assign({}, s, { [key]: val }));
     const toggleSel = (it) => setSel((s) => { const n = Object.assign({}, s); if (n[it.id]) delete n[it.id]; else n[it.id] = it; return n; });
     const selItems = Object.values(sel);
@@ -489,7 +511,10 @@
           React.createElement("h2", null, "Lista do comprador"),
           React.createElement("p", null, lede),
         ),
-        view === "ativos" ? React.createElement(Button, { variant: "brand", size: "sm", icon: Ic("download"), onClick: () => onToast("Lista exportada") }, "Exportar lista") : null,
+        React.createElement("div", { style: { display: "flex", gap: 9, flex: "0 0 auto" } },
+          React.createElement(Button, { variant: compact ? "primary" : "secondary", size: "sm", icon: Ic(compact ? "list" : "layout-list"), onClick: () => setCompact((v) => !v) }, "Compacto"),
+          view === "ativos" ? React.createElement(Button, { variant: "brand", size: "sm", icon: Ic("download"), onClick: () => onToast("Lista exportada") }, "Exportar lista") : null,
+        ),
       ),
       React.createElement("div", { className: "ho-toolbar" },
         React.createElement("div", { className: "ho-search" },
@@ -521,6 +546,7 @@
                   onStatus: setStatus, onToast: onToast, onAction: onAction,
                   customActions: view === "ativos" ? null : fixActions,
                   selectable: view === "ativos", selected: !!sel[it.id], onSelect: toggleSel,
+                  compact: compact,
                 });
               }),
             )),
