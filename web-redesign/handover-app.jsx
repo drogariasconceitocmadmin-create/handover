@@ -291,10 +291,10 @@
       });
     }, []);
 
-    // Polling curto das mensagens-tarefa (toast automático ~15s).
+    // Polling curto das mensagens-tarefa (toast automático ~8s).
     useEffect(() => {
       if (!operador) return;
-      const iv = setInterval(() => reloadTarefas(), 15000);
+      const iv = setInterval(() => reloadTarefas(), 8000);
       return () => clearInterval(iv);
     }, [operador, reloadTarefas]);
 
@@ -580,6 +580,7 @@
       modal && modal.type === "trilha" && React.createElement(V.TrilhaModal, { item: modal.item, token: operador.token, onClose: () => setModal(null) }),
       msgOpen && React.createElement(V.MensagensModal, {
         data: tarefas, usuarios: usuarios, meUser: operador.usuario,
+        token: operador.token, isAdmin: operador.perfil === "admin",
         onClose: () => setMsgOpen(false),
         onCriar: handleTarefaCriar, onResponder: handleTarefaResponder,
         onConcluir: handleTarefaConcluir, onReabrir: handleTarefaReabrir, onToast: toast,

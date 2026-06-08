@@ -384,6 +384,12 @@ window.HO_API = (function () {
   function tarefasMarcarLidas(token) {
     return rpc("handover_tarefas_marcar_lidas", { p_token: token }).catch(function () {});
   }
+  function tarefasLog(token) {
+    return rpc("handover_tarefas_log", { p_token: token, p_limit: 300 }).then(function (res) {
+      if (res.error) return [];
+      return ((res.data && res.data.log) || []).map(_tarefaMap);
+    }).catch(function () { return []; });
+  }
   function compradorAction(token, item, status) {
     if (item.origem === "Medicamentos") {
       if (status === "Comprado" || status === "Não encontrado")
@@ -420,6 +426,7 @@ window.HO_API = (function () {
     compradorAction: compradorAction,
     tarefasListar: tarefasListar, tarefaCriar: tarefaCriar, tarefaResponder: tarefaResponder,
     tarefaConcluir: tarefaConcluir, tarefaReabrir: tarefaReabrir, tarefasMarcarLidas: tarefasMarcarLidas,
+    tarefasLog: tarefasLog,
     criarPendencia: criarPendencia, criarMedicamento: criarMedicamento, criarCompra: criarCompra,
     fmt: fmt, fmtData: fmtData,
   };

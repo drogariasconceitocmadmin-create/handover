@@ -573,6 +573,8 @@ body {
 .msg-badge--pend { background: var(--warn-soft); color: var(--warn); }
 .msg-badge--done { background: var(--brand-soft); color: var(--brand); }
 .msg-text { margin: 0 0 8px; font-size: 13.5px; line-height: 1.5; color: var(--ink); white-space: pre-line; }
+.msg-concl { font-size: 11.5px; color: var(--brand); font-weight: 600; margin-bottom: 8px; }
+.ho-filter svg { width: 13px; height: 13px; margin-right: 4px; vertical-align: -2px; }
 .msg-thread { display: flex; flex-direction: column; gap: 5px; margin: 0 0 9px; padding-left: 10px; border-left: 2px solid var(--line); }
 .msg-reply { font-size: 12.5px; color: var(--ink-2); line-height: 1.4; }
 .msg-reply b { color: var(--ink); }

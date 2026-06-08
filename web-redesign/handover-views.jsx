@@ -720,13 +720,19 @@
   // ============================================================
   // Mensagens-tarefa diretas (checklist à parte)
   // ============================================================
-  function MensagensModal({ data, usuarios, meUser, onClose, onCriar, onResponder, onConcluir, onReabrir, onToast }) {
+  function MensagensModal({ data, usuarios, meUser, token, isAdmin, onClose, onCriar, onResponder, onConcluir, onReabrir, onToast }) {
     const [tab, setTab] = useState("recebidas");
     const [dest, setDest] = useState({});
     const [todos, setTodos] = useState(false);
     const [msg, setMsg] = useState("");
     const [reply, setReply] = useState({});
     const [busy, setBusy] = useState(false);
+    const [log, setLog] = useState(null);
+
+    const openLog = () => {
+      setTab("log");
+      if (log === null && isAdmin) window.HO_API.tarefasLog(token).then((l) => setLog(l || [])).catch(() => setLog([]));
+    };
 
     const toggleDest = (u) => { setTodos(false); setDest((s) => { const n = Object.assign({}, s); if (n[u]) delete n[u]; else n[u] = true; return n; }); };
     const destList = Object.keys(dest);
@@ -746,9 +752,10 @@
       Promise.resolve(onResponder(id, txt)).then(() => setReply((s) => Object.assign({}, s, { [id]: "" })));
     };
 
-    const card = (t, isRecebida) => React.createElement("div", { className: "msg-card" + (t.status === "Concluído" ? " done" : ""), key: t.id },
+    const card = (t, mode) => React.createElement("div", { className: "msg-card" + (t.status === "Concluído" ? " done" : ""), key: t.id },
       React.createElement("div", { className: "msg-card-h" },
-        React.createElement("span", { className: "msg-who" }, isRecebida ? ("De: " + t.de) : ("Para: " + t.para)),
+        React.createElement("span", { className: "msg-who" },
+          mode === "log" ? ("De: " + t.de + "  →  Para: " + t.para) : (mode === "recebida" ? ("De: " + t.de) : ("Para: " + t.para))),
         React.createElement("span", { className: "msg-badge msg-badge--" + (t.status === "Concluído" ? "done" : "pend") }, t.status),
         React.createElement("span", { className: "msg-time" }, t.criado),
       ),
@@ -758,18 +765,20 @@
           React.createElement("b", null, r.autor), " ", React.createElement("span", null, r.texto),
           React.createElement("span", { className: "msg-reply-time" }, r.quando),
         ))) : null,
-      React.createElement("div", { className: "msg-actions" },
+      t.status === "Concluído" && t.concluido
+        ? React.createElement("div", { className: "msg-concl" }, "Concluído por " + (t.concluidoPor || t.para) + " · " + t.concluido) : null,
+      mode === "log" ? null : React.createElement("div", { className: "msg-actions" },
         React.createElement("input", { className: "msg-reply-input", value: reply[t.id] || "", placeholder: "Responder…",
           onChange: (e) => setReply((s) => Object.assign({}, s, { [t.id]: e.target.value })),
           onKeyDown: (e) => { if (e.key === "Enter") responder(t.id); } }),
         React.createElement("button", { className: "msg-send", title: "Enviar resposta", onClick: () => responder(t.id) }, Ic("send")),
-        (isRecebida && t.status !== "Concluído")
+        (mode === "recebida" && t.status !== "Concluído")
           ? React.createElement("button", { className: "msg-done", onClick: () => onConcluir(t.id) }, Ic("check"), "Concluir")
           : (t.status === "Concluído" ? React.createElement("button", { className: "msg-reopen", onClick: () => onReabrir(t.id) }, "Reabrir") : null),
       ),
     );
 
-    const lista = tab === "recebidas" ? data.recebidas : data.enviadas;
+    const lista = tab === "recebidas" ? data.recebidas : (tab === "enviadas" ? data.enviadas : (log || []));
     const pendRecebidas = data.recebidas.filter((t) => t.status !== "Concluído").length;
 
     return React.createElement("div", { className: "ho-overlay", onClick: onClose },
@@ -797,10 +806,14 @@
             React.createElement("button", { className: "ho-filter" + (tab === "recebidas" ? " on" : ""), onClick: () => setTab("recebidas") },
               "Recebidas", pendRecebidas ? React.createElement("span", { className: "ct" }, pendRecebidas) : null),
             React.createElement("button", { className: "ho-filter" + (tab === "enviadas" ? " on" : ""), onClick: () => setTab("enviadas") }, "Enviadas"),
+            isAdmin ? React.createElement("button", { className: "ho-filter" + (tab === "log" ? " on" : ""), onClick: openLog }, Ic("shield"), "Log (admin)") : null,
           ),
-          lista.length
-            ? React.createElement("div", { className: "msg-list" }, lista.map((t) => card(t, tab === "recebidas")))
-            : React.createElement("p", { style: { color: "var(--ink-3)", fontSize: 13.5 } }, tab === "recebidas" ? "Nenhuma mensagem recebida." : "Você ainda não enviou mensagens."),
+          (tab === "log" && log === null)
+            ? React.createElement("p", { style: { color: "var(--ink-3)", fontSize: 13.5 } }, "Carregando log…")
+            : lista.length
+              ? React.createElement("div", { className: "msg-list" }, lista.map((t) => card(t, tab === "recebidas" ? "recebida" : (tab === "enviadas" ? "enviada" : "log"))))
+              : React.createElement("p", { style: { color: "var(--ink-3)", fontSize: 13.5 } },
+                  tab === "recebidas" ? "Nenhuma mensagem recebida." : (tab === "enviadas" ? "Você ainda não enviou mensagens." : "Nenhuma mensagem no log.")),
         ),
         React.createElement("div", { className: "ho-modal-foot" },
           React.createElement(Button, { variant: "secondary", onClick: onClose }, "Fechar"),
