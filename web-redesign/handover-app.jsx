@@ -167,10 +167,14 @@
     const [turno, setTurno] = useState(turnoDefault());
     const [data, setData] = useState({ medicamentos: [], pendencias: [], compras: [], checklist: { turno: "—", categories: [], summary: null }, historico: [], comprador: [] });
     const [lastSync, setLastSync] = useState("—");
+    const [tarefas, setTarefas] = useState({ recebidas: [], enviadas: [], naoLidas: 0 });
+    const [msgOpen, setMsgOpen] = useState(false);
+    const [usuarios, setUsuarios] = useState([]);
 
     const [toasts, toast] = useToasts();
     const ddRef = useRef(null);
     const appRef = useRef(null);
+    const tarefasSeen = useRef(null);
 
     // ---- data loading ----
     const reloadBundle = useCallback((tok, tn) => {
@@ -193,6 +197,31 @@
       if (!token) return;
       API.loadHistorico(token).then((h) => setData((d) => Object.assign({}, d, { historico: h }))).catch(() => {});
     }, [operador]);
+
+    const reloadTarefas = useCallback((tok) => {
+      const token = tok || (operador && operador.token);
+      if (!token) return Promise.resolve();
+      return API.tarefasListar(token).then((t) => {
+        const ids = new Set(t.recebidas.map((x) => x.id));
+        if (tarefasSeen.current) {
+          const novos = t.recebidas.filter((x) => !tarefasSeen.current.has(x.id) && x.status !== "Concluído");
+          if (novos.length === 1) toast("Nova mensagem de " + novos[0].de);
+          else if (novos.length > 1) toast(novos.length + " novas mensagens");
+        }
+        tarefasSeen.current = ids;
+        setTarefas(t);
+      }).catch(() => {});
+    }, [operador]);
+    const loadUsuarios = (usuarioAtual) => {
+      Promise.all([API.usuariosComPin(), API.usuariosSemPin()]).then((arr) => {
+        const seen = {}, out = [];
+        [].concat(arr[0] || [], arr[1] || []).forEach((u) => {
+          if (u && u.u && u.u !== usuarioAtual && !seen[u.u]) { seen[u.u] = 1; out.push(u); }
+        });
+        out.sort((a, b) => String(a.label).localeCompare(String(b.label)));
+        setUsuarios(out);
+      }).catch(() => {});
+    };
 
     // ---- session persistence (sobrevive a F5) ----
     const persistSession = (op) => {
@@ -219,6 +248,9 @@
       reloadBundle(op.token, turno);
       reloadComprador(op.token);
       reloadHistorico(op.token);
+      tarefasSeen.current = null;
+      reloadTarefas(op.token);
+      loadUsuarios(op.usuario);
     };
 
     // Logout: encerra a sessão no servidor, limpa o localStorage e volta ao login.
@@ -251,10 +283,34 @@
         setLastSync(new Date().toTimeString().slice(0, 5));
         reloadComprador(token);
         reloadHistorico(token);
+        tarefasSeen.current = null;
+        reloadTarefas(token);
+        loadUsuarios(usuario);
       }).catch(() => {
         clearSession();   // token inválido/expirado → login limpo
       });
     }, []);
+
+    // Polling curto das mensagens-tarefa (toast automático ~15s).
+    useEffect(() => {
+      if (!operador) return;
+      const iv = setInterval(() => reloadTarefas(), 15000);
+      return () => clearInterval(iv);
+    }, [operador, reloadTarefas]);
+
+    const openMensagens = () => {
+      setMsgOpen(true);
+      if (operador) API.tarefasMarcarLidas(operador.token).then(() => reloadTarefas());
+    };
+    const handleTarefaCriar = (dest, mensagem, todos) =>
+      API.tarefaCriar(operador.token, dest, mensagem, todos).then((r) => {
+        if (r && r.ok) { toast(r.enviadas > 1 ? ("Enviado para " + r.enviadas + " pessoas") : "Mensagem enviada"); reloadTarefas(); }
+        else toast((r && r.erro) || "Erro ao enviar");
+        return r;
+      });
+    const handleTarefaResponder = (id, txt) => API.tarefaResponder(operador.token, id, txt).then((r) => { reloadTarefas(); return r; });
+    const handleTarefaConcluir = (id) => API.tarefaConcluir(operador.token, id).then(() => { toast("Tarefa concluída"); reloadTarefas(); });
+    const handleTarefaReabrir = (id) => API.tarefaReabrir(operador.token, id).then(() => { toast("Tarefa reaberta"); reloadTarefas(); });
 
     useEffect(() => {
       if (!operador) return;
@@ -476,6 +532,11 @@
           React.createElement("button", { className: "ho-icbtn" + (spin ? " ho-icbtn--spin" : ""), onClick: () => { setSpin(true); reloadBundle().then(() => toast("Painel atualizado")); reloadComprador(); reloadHistorico(); setTimeout(() => setSpin(false), 700); }, "aria-label": "Atualizar agora" }, Ic("refresh-cw")),
           React.createElement(ThemeToggle, { target: ".ho-app" }),
           React.createElement("button", {
+            className: "ho-icbtn ho-msgbtn", onClick: openMensagens,
+            "aria-label": "Mensagens", title: "Mensagens",
+          }, Ic("message-square"),
+            tarefas.naoLidas ? React.createElement("span", { className: "ho-msgbadge" }, tarefas.naoLidas > 9 ? "9+" : tarefas.naoLidas) : null),
+          React.createElement("button", {
             className: "ho-icbtn", onClick: onLogout,
             "aria-label": "Sair", title: "Sair (" + (operador.nome || operador.usuario) + ")",
           }, Ic("log-out")),
@@ -517,6 +578,12 @@
       modal && modal.type === "novo" && React.createElement(F.NovoRegistro, { initial: modal.initial, operador: operador.nome || operador.usuario, onClose: () => setModal(null), onToast: toast, onCreate: handleCreate }),
       modal && modal.type === "detail" && React.createElement(V.CardDetail, { item: modal.item, onClose: () => setModal(null) }),
       modal && modal.type === "trilha" && React.createElement(V.TrilhaModal, { item: modal.item, token: operador.token, onClose: () => setModal(null) }),
+      msgOpen && React.createElement(V.MensagensModal, {
+        data: tarefas, usuarios: usuarios, meUser: operador.usuario,
+        onClose: () => setMsgOpen(false),
+        onCriar: handleTarefaCriar, onResponder: handleTarefaResponder,
+        onConcluir: handleTarefaConcluir, onReabrir: handleTarefaReabrir, onToast: toast,
+      }),
       // tweaks
       React.createElement(window.TweaksPanel, null,
         React.createElement(window.TweakSection, { label: "Densidade dos cards" }),

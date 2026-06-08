@@ -341,6 +341,49 @@ window.HO_API = (function () {
   function checklistObservacao(token, id, obs) {
     return rpc("handover_checklist_observacao", { p_token: token, p_id: id, p_observacao: obs });
   }
+
+  // ---------- Mensagens-tarefa diretas ----------
+  function _tarefaMap(t) {
+    return {
+      id: t.ID, grupoId: t.Grupo_ID,
+      de: t.Criado_Nome || t.Criado_Por, deUser: t.Criado_Por,
+      para: t.Destinatario_Nome || t.Destinatario, paraUser: t.Destinatario,
+      mensagem: t.Mensagem || "", status: t.Status || "Pendente", lido: !!t.Lido,
+      criado: fmt(t.Criado_Em), concluido: t.Concluido_Em ? fmt(t.Concluido_Em) : null,
+      concluidoPor: t.Concluido_Por || null,
+      respostas: (t.Respostas || []).map(function (r) {
+        return { autor: r.Autor_Nome || r.Autor, autorUser: r.Autor, texto: r.Texto, quando: fmt(r.Criado_Em) };
+      }),
+    };
+  }
+  function tarefasListar(token) {
+    return rpc("handover_tarefas_listar", { p_token: token }).then(function (res) {
+      if (res.error) return { recebidas: [], enviadas: [], naoLidas: 0 };
+      var d = res.data || {};
+      return {
+        recebidas: (d.recebidas || []).map(_tarefaMap),
+        enviadas: (d.enviadas || []).map(_tarefaMap),
+        naoLidas: d.naoLidas || 0,
+      };
+    }).catch(function () { return { recebidas: [], enviadas: [], naoLidas: 0 }; });
+  }
+  function tarefaCriar(token, destinatarios, mensagem, todos) {
+    return rpc("handover_tarefa_criar", { p_token: token, p_destinatarios: destinatarios || [], p_mensagem: mensagem, p_todos: !!todos })
+      .then(function (res) { return (res && res.data) || { ok: false, erro: "Erro de conexão." }; });
+  }
+  function tarefaResponder(token, tarefaId, texto) {
+    return rpc("handover_tarefa_responder", { p_token: token, p_tarefa_id: tarefaId, p_texto: texto })
+      .then(function (res) { return (res && res.data) || { ok: false }; });
+  }
+  function tarefaConcluir(token, tarefaId) {
+    return rpc("handover_tarefa_concluir", { p_token: token, p_tarefa_id: tarefaId }).then(function (res) { return (res && res.data) || { ok: false }; });
+  }
+  function tarefaReabrir(token, tarefaId) {
+    return rpc("handover_tarefa_reabrir", { p_token: token, p_tarefa_id: tarefaId }).then(function (res) { return (res && res.data) || { ok: false }; });
+  }
+  function tarefasMarcarLidas(token) {
+    return rpc("handover_tarefas_marcar_lidas", { p_token: token }).catch(function () {});
+  }
   function compradorAction(token, item, status) {
     if (item.origem === "Medicamentos") {
       if (status === "Comprado" || status === "Não encontrado")
@@ -375,6 +418,8 @@ window.HO_API = (function () {
     medAction: medAction, pendenciaResolver: pendenciaResolver,
     checklistStatus: checklistStatus, checklistObservacao: checklistObservacao,
     compradorAction: compradorAction,
+    tarefasListar: tarefasListar, tarefaCriar: tarefaCriar, tarefaResponder: tarefaResponder,
+    tarefaConcluir: tarefaConcluir, tarefaReabrir: tarefaReabrir, tarefasMarcarLidas: tarefasMarcarLidas,
     criarPendencia: criarPendencia, criarMedicamento: criarMedicamento, criarCompra: criarCompra,
     fmt: fmt, fmtData: fmtData,
   };

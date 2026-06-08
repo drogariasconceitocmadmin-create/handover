@@ -703,5 +703,97 @@
     );
   }
 
-  window.HandoverViews = { QueueView, Checklist, Historico, Comprador, CardDetail, OrcamentoModal, TrilhaModal, Ic };
+  // ============================================================
+  // Mensagens-tarefa diretas (checklist à parte)
+  // ============================================================
+  function MensagensModal({ data, usuarios, meUser, onClose, onCriar, onResponder, onConcluir, onReabrir, onToast }) {
+    const [tab, setTab] = useState("recebidas");
+    const [dest, setDest] = useState({});
+    const [todos, setTodos] = useState(false);
+    const [msg, setMsg] = useState("");
+    const [reply, setReply] = useState({});
+    const [busy, setBusy] = useState(false);
+
+    const toggleDest = (u) => { setTodos(false); setDest((s) => { const n = Object.assign({}, s); if (n[u]) delete n[u]; else n[u] = true; return n; }); };
+    const destList = Object.keys(dest);
+
+    const enviar = () => {
+      if (!msg.trim()) return onToast("Escreva a mensagem");
+      if (!todos && destList.length === 0) return onToast("Escolha o destinatário");
+      setBusy(true);
+      Promise.resolve(onCriar(todos ? [] : destList, msg.trim(), todos)).then((r) => {
+        setBusy(false);
+        if (r && r.ok) { setMsg(""); setDest({}); setTodos(false); }
+      });
+    };
+    const responder = (id) => {
+      const txt = (reply[id] || "").trim();
+      if (!txt) return;
+      Promise.resolve(onResponder(id, txt)).then(() => setReply((s) => Object.assign({}, s, { [id]: "" })));
+    };
+
+    const card = (t, isRecebida) => React.createElement("div", { className: "msg-card" + (t.status === "Concluído" ? " done" : ""), key: t.id },
+      React.createElement("div", { className: "msg-card-h" },
+        React.createElement("span", { className: "msg-who" }, isRecebida ? ("De: " + t.de) : ("Para: " + t.para)),
+        React.createElement("span", { className: "msg-badge msg-badge--" + (t.status === "Concluído" ? "done" : "pend") }, t.status),
+        React.createElement("span", { className: "msg-time" }, t.criado),
+      ),
+      React.createElement("p", { className: "msg-text" }, t.mensagem),
+      t.respostas.length ? React.createElement("div", { className: "msg-thread" },
+        t.respostas.map((r, i) => React.createElement("div", { className: "msg-reply" + (r.autorUser === meUser ? " mine" : ""), key: i },
+          React.createElement("b", null, r.autor), " ", React.createElement("span", null, r.texto),
+          React.createElement("span", { className: "msg-reply-time" }, r.quando),
+        ))) : null,
+      React.createElement("div", { className: "msg-actions" },
+        React.createElement("input", { className: "msg-reply-input", value: reply[t.id] || "", placeholder: "Responder…",
+          onChange: (e) => setReply((s) => Object.assign({}, s, { [t.id]: e.target.value })),
+          onKeyDown: (e) => { if (e.key === "Enter") responder(t.id); } }),
+        React.createElement("button", { className: "msg-send", title: "Enviar resposta", onClick: () => responder(t.id) }, Ic("send")),
+        (isRecebida && t.status !== "Concluído")
+          ? React.createElement("button", { className: "msg-done", onClick: () => onConcluir(t.id) }, Ic("check"), "Concluir")
+          : (t.status === "Concluído" ? React.createElement("button", { className: "msg-reopen", onClick: () => onReabrir(t.id) }, "Reabrir") : null),
+      ),
+    );
+
+    const lista = tab === "recebidas" ? data.recebidas : data.enviadas;
+    const pendRecebidas = data.recebidas.filter((t) => t.status !== "Concluído").length;
+
+    return React.createElement("div", { className: "ho-overlay", onClick: onClose },
+      React.createElement("div", { className: "ho-modal ho-modal--wide", onClick: (e) => e.stopPropagation() },
+        React.createElement("div", { className: "ho-modal-head" },
+          React.createElement("div", null,
+            React.createElement("h2", null, "Mensagens"),
+            React.createElement("div", { className: "sub" }, "Tarefas diretas entre a equipe"),
+          ),
+          React.createElement("button", { className: "ho-modal-x", onClick: onClose }, Ic("x")),
+        ),
+        React.createElement("div", { className: "ho-modal-body" },
+          React.createElement("div", { className: "msg-compose" },
+            React.createElement("div", { className: "orc-label" }, "Nova mensagem · para"),
+            React.createElement("div", { className: "msg-dest" },
+              React.createElement("button", { type: "button", className: "msg-chip" + (todos ? " on" : ""), onClick: () => { setTodos((v) => !v); setDest({}); } }, "Todos"),
+              usuarios.map((u) => React.createElement("button", { key: u.u, type: "button", className: "msg-chip" + (dest[u.u] ? " on" : ""), onClick: () => toggleDest(u.u) }, u.label)),
+            ),
+            React.createElement("textarea", { className: "orc-textarea", rows: 3, value: msg, placeholder: "Escreva a tarefa/mensagem…", onChange: (e) => setMsg(e.target.value), style: { minHeight: 70 } }),
+            React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginTop: 8 } },
+              React.createElement(Button, { variant: "brand", icon: Ic("send"), disabled: busy, onClick: enviar }, busy ? "Enviando…" : "Enviar"),
+            ),
+          ),
+          React.createElement("div", { className: "ho-filters", style: { margin: "16px 0 14px" } },
+            React.createElement("button", { className: "ho-filter" + (tab === "recebidas" ? " on" : ""), onClick: () => setTab("recebidas") },
+              "Recebidas", pendRecebidas ? React.createElement("span", { className: "ct" }, pendRecebidas) : null),
+            React.createElement("button", { className: "ho-filter" + (tab === "enviadas" ? " on" : ""), onClick: () => setTab("enviadas") }, "Enviadas"),
+          ),
+          lista.length
+            ? React.createElement("div", { className: "msg-list" }, lista.map((t) => card(t, tab === "recebidas")))
+            : React.createElement("p", { style: { color: "var(--ink-3)", fontSize: 13.5 } }, tab === "recebidas" ? "Nenhuma mensagem recebida." : "Você ainda não enviou mensagens."),
+        ),
+        React.createElement("div", { className: "ho-modal-foot" },
+          React.createElement(Button, { variant: "secondary", onClick: onClose }, "Fechar"),
+        ),
+      ),
+    );
+  }
+
+  window.HandoverViews = { QueueView, Checklist, Historico, Comprador, CardDetail, OrcamentoModal, TrilhaModal, MensagensModal, Ic };
 })();
