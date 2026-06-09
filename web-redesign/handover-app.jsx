@@ -23,6 +23,7 @@
     { label: "TURNO", items: [
       { id: "checklist", label: "Checklist", icon: "margem" },
       { id: "tarefas", label: "Tarefas", icon: "orcamentos" },
+      { id: "acompanhando", label: "Acompanhando", icon: "historico" },
       { id: "historico", label: "Histórico", icon: "historico" },
       { id: "comprador", label: "Compras", icon: "recebiveis" },
     ]},
@@ -170,6 +171,7 @@
     const [lastSync, setLastSync] = useState("—");
     const [tarefas, setTarefas] = useState({ recebidas: [], enviadas: [], naoLidas: 0 });
     const [painel, setPainel] = useState({ tarefas: [], avisos: [], naoAck: 0 });
+    const [acomp, setAcomp] = useState({ tarefas: [], naoLidas: 0, loading: false, error: false });
     const [msgOpen, setMsgOpen] = useState(false);
     const [usuarios, setUsuarios] = useState([]);
 
@@ -226,6 +228,20 @@
       }).catch(() => {});
     };
 
+    const reloadAcompanhando = useCallback((tok) => {
+      const token = tok || (operador && operador.token);
+      if (!token) return Promise.resolve();
+      setAcomp((a) => Object.assign({}, a, { loading: true, error: false }));
+      return Promise.all([
+        API.acompanharListar(token),
+        API.notificacoesListar(token),
+      ]).then(function (arr) {
+        setAcomp({ tarefas: arr[0] || [], naoLidas: (arr[1] && arr[1].naoLidas) || 0, loading: false, error: false });
+      }).catch(function () {
+        setAcomp((a) => Object.assign({}, a, { loading: false, error: true }));
+      });
+    }, [operador]);
+
     const reloadPainel = useCallback((tok) => {
       const token = tok || (operador && operador.token);
       if (!token) return Promise.resolve();
@@ -271,6 +287,10 @@
       reloadTarefas(op.token);
       reloadPainel(op.token);
       loadUsuarios(op.usuario);
+      // badge inicial de notificações (naoLidas) sem bloquear o login
+      API.notificacoesListar(op.token).then(function (n) {
+        setAcomp((a) => Object.assign({}, a, { naoLidas: (n && n.naoLidas) || 0 }));
+      }).catch(function () {});
     };
 
     // Logout: encerra a sessão no servidor, limpa o localStorage e volta ao login.
@@ -282,6 +302,7 @@
       setRoute("encomendas");
       setKpiFilter(null);
       setModal(null);
+      setAcomp({ tarefas: [], naoLidas: 0, loading: false, error: false });
       setData({ medicamentos: [], pendencias: [], compras: [], checklist: { turno: "—", categories: [], summary: null }, historico: [], comprador: [] });
     };
 
@@ -308,6 +329,9 @@
         reloadTarefas(token);
         reloadPainel(token);
         loadUsuarios(usuario);
+        API.notificacoesListar(token).then(function (n) {
+          setAcomp((a) => Object.assign({}, a, { naoLidas: (n && n.naoLidas) || 0 }));
+        }).catch(function () {});
       }).catch(() => {
         clearSession();   // token inválido/expirado → login limpo
       });
@@ -319,6 +343,15 @@
       const iv = setInterval(() => { reloadTarefas(); reloadPainel(); }, 8000);
       return () => clearInterval(iv);
     }, [operador, reloadTarefas, reloadPainel]);
+
+    // Polling da aba Acompanhando: só corre enquanto a aba está aberta e a página visível.
+    // Limpa o interval automaticamente ao sair da aba (dependência [route]).
+    useEffect(() => {
+      if (!operador || route !== "acompanhando") return;
+      const poll = () => { if (document.visibilityState !== "hidden") reloadAcompanhando(); };
+      const iv = setInterval(poll, 60000);
+      return () => clearInterval(iv);
+    }, [operador, route, reloadAcompanhando]);
 
     const openMensagens = () => {
       setMsgOpen(true);
@@ -356,6 +389,7 @@
       if (route === "comprador") reloadComprador();
       if (route === "historico") reloadHistorico();
       if (route === "tarefas") { reloadPainel(); if (painel.naoAck) API.painelAvisosAck(operador.token).then(() => reloadPainel()); }
+      if (route === "acompanhando") reloadAcompanhando();
     }, [route, operador]);
 
     // reload bundle when turno changes (checklist depends on it)
@@ -531,6 +565,7 @@
       compras: ["Compras e reposição", "estoque"],
       checklist: ["Checklist do turno", "margem"],
       tarefas: ["Painel de tarefas", "orcamentos"],
+      acompanhando: ["Acompanhando", "historico"],
       historico: ["Histórico", "historico"],
       comprador: ["Comprador", "recebiveis"],
     }[route];
@@ -550,12 +585,18 @@
       view = React.createElement(V.Comprador, { groups: data.comprador, token: operador.token, onToast: toast, onAction: handleCompradorAction, onReverter: handleCompradorReverter, onComprado: handleCompradorComprado });
     else if (route === "tarefas")
       view = React.createElement(V.PainelTarefas, { data: painel, onToast: toast, onCriar: (txt) => handlePainelCriar(txt, null, "manual"), onConcluir: handlePainelConcluir, onReabrir: handlePainelReabrir, onRemover: handlePainelRemover });
+    else if (route === "acompanhando")
+      view = React.createElement(V.AcompanhandoView, { tarefas: acomp.tarefas, naoLidas: acomp.naoLidas, loading: acomp.loading, error: acomp.error, onRefresh: () => reloadAcompanhando() });
 
     const showKpis = ["pendencias", "encomendas", "compras"].includes(route);
     const initials = (operador.nome || operador.usuario || "?").slice(0, 2).toUpperCase();
 
     const navSections = SECTIONS.map((sec) => Object.assign({}, sec, {
-      items: sec.items.map((it) => (it.id === "tarefas" ? Object.assign({}, it, { dot: painel.naoAck > 0 }) : it)),
+      items: sec.items.map((it) => {
+        if (it.id === "tarefas") return Object.assign({}, it, { dot: painel.naoAck > 0 });
+        if (it.id === "acompanhando") return Object.assign({}, it, { dot: acomp.naoLidas > 0 });
+        return it;
+      }),
     }));
 
     return React.createElement("div", { ref: appRef, className: "ho-app", "data-density": t.density, "data-urg": t.urgency },
