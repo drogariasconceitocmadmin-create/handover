@@ -1217,9 +1217,9 @@ html, body {
 .cr-btn.on { opacity: 1; font-weight: 800 !important; transform: translateY(-1px); }
 .cr-btn.on svg { opacity: 1; }
 .cr-btn--feito.on {
-  background: linear-gradient(180deg, #3ee0a0, #16b981) !important;
+  background: linear-gradient(180deg, #4fe3bb, #2cd4a0) !important;
   border-color: rgba(255, 255, 255, 0.55) !important; color: #04231a !important;
-  box-shadow: 0 6px 18px -4px rgba(22, 185, 129, 0.7), 0 0 0 1px rgba(22, 185, 129, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 6px 18px -4px rgba(44, 212, 160, 0.7), 0 0 0 1px rgba(44, 212, 160, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
 }
 .cr-btn--na.on {
   background: linear-gradient(180deg, #9aa4b8, #5f6b80) !important;
@@ -1236,11 +1236,26 @@ html, body {
    Especificidade alta para vencer .ho-modal-body button[type="button"] (regra de vidro genérica). */
 .ho-modal-body button.ho-date-btn.on,
 .ho-date-btn.on {
-  background: linear-gradient(180deg, #3ee0a0, #16b981) !important;
+  background: linear-gradient(180deg, #4fe3bb, #2cd4a0) !important;
   border-color: rgba(255, 255, 255, 0.55) !important; color: #04231a !important; font-weight: 800 !important;
-  box-shadow: 0 6px 18px -4px rgba(22, 185, 129, 0.7), 0 0 0 1px rgba(22, 185, 129, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 6px 18px -4px rgba(44, 212, 160, 0.7), 0 0 0 1px rgba(44, 212, 160, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
 }
 .ho-modal-body button.ho-date-btn.on svg { color: #04231a !important; }
+
+/* Comprador: status selecionado vívido com brilho (teal preferido / vermelho / âmbar) */
+.buy-actions .buy-sel, .bc-actions .buy-sel { transform: translateY(-1px); font-weight: 700 !important; }
+.buy-actions .buy-sel--comprado, .bc-actions .buy-sel--comprado {
+  box-shadow: 0 6px 18px -4px rgba(44, 212, 160, 0.7), 0 0 0 1px rgba(44, 212, 160, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+}
+.buy-actions .buy-sel--cancelado, .bc-actions .buy-sel--cancelado {
+  box-shadow: 0 6px 18px -4px rgba(240, 90, 90, 0.65), 0 0 0 1px rgba(240, 90, 90, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+.buy-actions .buy-sel--naoenc, .bc-actions .buy-sel--naoenc {
+  background: linear-gradient(180deg, #ffcf5c, #f5a524) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important; color: #3a2400 !important;
+  box-shadow: 0 6px 18px -4px rgba(245, 165, 36, 0.65), 0 0 0 1px rgba(245, 165, 36, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+.buy-actions .buy-sel--naoenc svg, .bc-actions .buy-sel--naoenc svg { color: #3a2400 !important; }
 
 /* ============================================================
    SUPLEMENTO — componentes adicionados depois do snapshot
@@ -1288,16 +1303,291 @@ html, body {
   box-shadow: 0 0 0 3px rgba(44,212,160,0.18) !important;
   outline: none !important;
 }
-.painel-date::-webkit-calendar-picker-indicator { filter: invert(0.85) !important; }
+.painel-date::-webkit-calendar-picker-indicator { opacity: 0 !important; width: 0 !important; padding: 0 !important; }
+.painel-cal-btn {
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  color: rgba(255,255,255,0.7) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+.painel-cal-btn:hover {
+  background: rgba(255,255,255,0.18) !important;
+  color: rgba(255,255,255,0.96) !important;
+  border-color: rgba(44,212,160,0.5) !important;
+}
 
-/* Botão "Adicionar ao painel" e mini, abas/threads de mensagem */
+/* ---- Glass calendar picker ---- */
+.cal-trigger {
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  color: rgba(255,255,255,0.96) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+.cal-trigger:hover { border-color: rgba(255,255,255,0.28) !important; }
+.cal-trigger--open {
+  border-color: rgba(44,212,160,0.54) !important;
+  box-shadow: 0 0 0 3px rgba(44,212,160,0.18) !important;
+}
+.cal-placeholder { color: rgba(255,255,255,0.30) !important; }
+.cal-ic { opacity: 0.75; }
+.cal-popup {
+  background: rgba(12,15,28,0.88) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.08) inset !important;
+  backdrop-filter: blur(32px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(180%) !important;
+}
+.cal-month-lbl { color: rgba(255,255,255,0.96) !important; }
+.cal-nav { color: rgba(255,255,255,0.55) !important; }
+.cal-nav:hover { background: rgba(255,255,255,0.12) !important; color: rgba(255,255,255,0.96) !important; }
+.cal-day-hdr { color: rgba(255,255,255,0.30) !important; }
+.cal-day { color: rgba(255,255,255,0.85) !important; }
+.cal-day:hover { background: rgba(255,255,255,0.12) !important; }
+.cal-today { color: var(--brand) !important; }
+.cal-sel {
+  background: linear-gradient(180deg, #4fe3bb, #2cd4a0) !important;
+  color: #04231a !important;
+  box-shadow: 0 0 10px rgba(44,212,160,0.5) !important;
+}
+.cal-footer { border-top-color: rgba(255,255,255,0.10) !important; }
+.cal-foot-btn { color: rgba(44,212,160,0.90) !important; }
+.cal-foot-btn:hover { background: rgba(255,255,255,0.08) !important; }
+
+/* ---- Glass select picker ---- */
+.sel-trigger {
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  color: rgba(255,255,255,0.96) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+.sel-trigger:hover { border-color: rgba(255,255,255,0.28) !important; }
+.sel-trigger--open {
+  border-color: rgba(44,212,160,0.54) !important;
+  box-shadow: 0 0 0 3px rgba(44,212,160,0.18) !important;
+}
+.sel-placeholder { color: rgba(255,255,255,0.28) !important; }
+.sel-popup {
+  background: rgba(12,15,28,0.92) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.08) inset !important;
+  backdrop-filter: blur(32px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(180%) !important;
+}
+.sel-option { color: rgba(255,255,255,0.85) !important; }
+.sel-option:hover { background: rgba(255,255,255,0.10) !important; color: rgba(255,255,255,0.96) !important; }
+.sel-option--sel {
+  background: linear-gradient(135deg, #4fe3bb, #2cd4a0) !important;
+  color: #04231a !important;
+}
+
+/* Botão "＋ Painel" e chip "✓ No painel" nas mensagens (Fase 3.2) */
 .msg-addpainel {
   background: linear-gradient(180deg, rgba(72,228,178,0.30) 0%, rgba(44,212,160,0.18) 100%) !important;
   border: 1px solid rgba(44,212,160,0.40) !important;
   color: #6ef0d0 !important;
 }
+.msg-addpainel.busy {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+/* Chip readonly exibido quando a mensagem já está no painel compartilhado */
+.msg-chip-painel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(74,222,128,0.45);
+  background: rgba(74,222,128,0.12);
+  color: #4ade80;
+  font-size: 0.78rem;
+  font-weight: 500;
+  pointer-events: none;
+  user-select: none;
+}
 .msg-thread { border-left-color: rgba(255,255,255,0.14) !important; }
 .msg-reply.mine { color: rgba(255,255,255,0.92) !important; }
+
+/* ============================================================
+   Acompanhando — painel compartilhado (Fase 3.1)
+   ============================================================ */
+
+/* Badge numérico na heading "Acompanhando" */
+.acomp-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: #e53935;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin-left: 10px;
+  vertical-align: middle;
+  line-height: 1;
+  box-shadow: 0 0 0 2px rgba(229,57,53,0.28);
+}
+
+/* Lista */
+.acomp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+/* Card individual */
+.acomp-card {
+  background: rgba(255,255,255,0.055);
+  border: 1px solid rgba(255,255,255,0.11);
+  border-radius: 16px;
+  padding: 16px 18px 14px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: background 0.18s, border-color 0.18s;
+}
+.acomp-card:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.17);
+}
+.acomp-card.acomp-card--done {
+  opacity: 0.55;
+}
+
+/* Cabeçalho do card */
+.acomp-card-h {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.acomp-titulo {
+  flex: 1;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.90);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* Chips de status */
+.acomp-chip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 9px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+.acomp-chip--pend {
+  background: rgba(255,183,0,0.18);
+  color: #ffcc44;
+  border: 1px solid rgba(255,183,0,0.28);
+}
+.acomp-chip--done {
+  background: rgba(72,200,120,0.16);
+  color: #4ade80;
+  border: 1px solid rgba(72,200,120,0.28);
+}
+
+/* Meta */
+.acomp-meta {
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.40);
+  margin-bottom: 10px;
+}
+
+/* Participantes */
+.acomp-partic {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+.acomp-ptag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.11);
+  font-size: 12px;
+  color: rgba(255,255,255,0.72);
+}
+.acomp-papel {
+  font-size: 10.5px;
+  opacity: 0.58;
+}
+
+/* Eventos (timeline compacta) */
+.acomp-evts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 11px;
+}
+.acomp-evt {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.acomp-evt-ic {
+  flex-shrink: 0;
+  display: inline-flex;
+  margin-top: 1px;
+  opacity: 0.55;
+}
+.acomp-evt-body {
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.68);
+  line-height: 1.45;
+}
+.acomp-evt-autor { font-weight: 600; }
+.acomp-evt-time  { color: rgba(255,255,255,0.38); font-size: 11px; }
+
+/* Skeletons de loading */
+.acomp-skel-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+.acomp-skel {
+  height: 110px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.05);
+  animation: acomp-pulse 1.5s ease-in-out infinite;
+}
+@keyframes acomp-pulse {
+  0%, 100% { opacity: 0.45; }
+  50%       { opacity: 0.85; }
+}
+
+/* Estado vazio / erro */
+.acomp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 52px 24px;
+  color: rgba(255,255,255,0.45);
+  text-align: center;
+  font-size: 14px;
+}
+.acomp-empty p { margin: 0; }
 
 /* Barra flutuante de orçamento */
 .ho-orcbar {

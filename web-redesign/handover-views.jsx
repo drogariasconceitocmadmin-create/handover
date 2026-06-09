@@ -54,6 +54,154 @@
     "Registrado":   "clock",
   };
 
+  // Custom glass select picker (replaces native <select>)
+  function SelectPicker({ name, value, onChange, children, className, placeholder, disabled }) {
+    const isControlled = value !== undefined;
+    const opts = React.Children.toArray(children).filter((c) => c && c.props).map((c) => ({
+      value: c.props.value !== undefined ? String(c.props.value) : String(c.props.children || ""),
+      label: String(c.props.children || ""),
+      disabled: !!c.props.disabled,
+    }));
+    const firstNonEmpty = opts.find((o) => o.value !== "");
+    const initVal = isControlled ? (value || "") : (firstNonEmpty ? firstNonEmpty.value : "");
+    const [internalVal, setInternalVal] = useState(initVal);
+    const [open, setOpen] = useState(false);
+    const wrapRef = useRef(null);
+    const currentVal = isControlled ? (value || "") : internalVal;
+    const selectedOpt = opts.find((o) => o.value === currentVal);
+
+    useEffect(() => {
+      if (!open) return;
+      const h = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+      document.addEventListener("mousedown", h);
+      return () => document.removeEventListener("mousedown", h);
+    }, [open]);
+
+    const pick = (opt) => {
+      if (opt.disabled) return;
+      if (!isControlled) setInternalVal(opt.value);
+      if (onChange) onChange({ target: { value: opt.value } });
+      setOpen(false);
+    };
+
+    return React.createElement("div", { className: "sel-wrap" + (className ? " " + className : ""), ref: wrapRef },
+      name ? React.createElement("input", { type: "hidden", name, value: currentVal }) : null,
+      React.createElement("div", {
+        className: "sel-trigger" + (open ? " sel-trigger--open" : "") + (disabled ? " sel-trigger--disabled" : ""),
+        onClick: () => !disabled && setOpen(!open),
+      },
+        React.createElement("span", { className: "sel-display" + (!selectedOpt || !currentVal ? " sel-placeholder" : "") },
+          selectedOpt && currentVal ? selectedOpt.label : (placeholder || "— Escolha —")),
+        Ic("chevron-down", { className: "sel-ic" }),
+      ),
+      open && React.createElement("div", { className: "sel-popup" },
+        opts.map((opt, i) => React.createElement("div", {
+          key: i,
+          className: "sel-option" + (opt.value === currentVal ? " sel-option--sel" : "") + (opt.disabled ? " sel-option--disabled" : ""),
+          onClick: () => pick(opt),
+        }, opt.label)),
+      ),
+    );
+  }
+
+  // ISO date string for today + offset days
+  const isoFor = (offset) => {
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    return d.toISOString().slice(0, 10);
+  };
+
+  const CAL_MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const CAL_DAYS = ['D','S','T','Q','Q','S','S'];
+
+  // Custom glass calendar picker (replaces native input[type=date])
+  function CalendarPicker({ value, onChange, placeholder }) {
+    const [open, setOpen] = useState(false);
+    const [vy, setVy] = useState(null);
+    const [vm, setVm] = useState(null);
+    const wrapRef = useRef(null);
+    const todayStr = isoFor(0);
+    const sel = value ? new Date(value + 'T12:00:00') : null;
+    const baseY = sel ? sel.getFullYear() : new Date().getFullYear();
+    const baseM = sel ? sel.getMonth() : new Date().getMonth();
+    const year = vy !== null ? vy : baseY;
+    const month = vm !== null ? vm : baseM;
+
+    useEffect(() => { setVy(null); setVm(null); }, [value]);
+    useEffect(() => {
+      if (!open) return;
+      const h = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+      document.addEventListener('mousedown', h);
+      return () => document.removeEventListener('mousedown', h);
+    }, [open]);
+
+    const prevM = () => { if (month === 0) { setVm(11); setVy(year - 1); } else setVm(month - 1); };
+    const nextM = () => { if (month === 11) { setVm(0); setVy(year + 1); } else setVm(month + 1); };
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const cells = [];
+    for (let i = 0; i < firstDay; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+    while (cells.length % 7) cells.push(null);
+
+    const pick = (d) => {
+      if (!d) return;
+      const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      onChange({ target: { value: iso } });
+      setOpen(false);
+    };
+    const clear = () => { onChange({ target: { value: '' } }); setOpen(false); };
+    const goToday = () => { onChange({ target: { value: todayStr } }); setOpen(false); };
+
+    const display = value ? value.split('-').reverse().join('/') : null;
+
+    return React.createElement("div", { className: "cal-wrap", ref: wrapRef },
+      React.createElement("div", { className: "cal-trigger" + (open ? " cal-trigger--open" : ""), onClick: () => setOpen(!open) },
+        React.createElement("span", { className: "cal-display" + (!display ? " cal-placeholder" : "") },
+          display || (placeholder || "dd/mm/aaaa")),
+        Ic("calendar", { className: "cal-ic" }),
+      ),
+      open && React.createElement("div", { className: "cal-popup" },
+        React.createElement("div", { className: "cal-header" },
+          React.createElement("button", { type: "button", className: "cal-nav", onClick: prevM }, Ic("chevron-left")),
+          React.createElement("span", { className: "cal-month-lbl" }, CAL_MONTHS[month] + ' ' + year),
+          React.createElement("button", { type: "button", className: "cal-nav", onClick: nextM }, Ic("chevron-right")),
+        ),
+        React.createElement("div", { className: "cal-grid" },
+          CAL_DAYS.map((d, i) => React.createElement("span", { key: 'h' + i, className: "cal-day-hdr" }, d)),
+          cells.map((d, i) => {
+            if (!d) return React.createElement("span", { key: 'e' + i });
+            const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            return React.createElement("button", {
+              key: 'c' + i, type: "button",
+              className: "cal-day" + (iso === todayStr ? " cal-today" : "") + (iso === value ? " cal-sel" : ""),
+              onClick: () => pick(d),
+            }, d);
+          }),
+        ),
+        React.createElement("div", { className: "cal-footer" },
+          React.createElement("button", { type: "button", className: "cal-foot-btn", onClick: clear }, "Limpar"),
+          React.createElement("button", { type: "button", className: "cal-foot-btn cal-foot-today", onClick: goToday }, "Hoje"),
+        ),
+      ),
+    );
+  }
+
+  // Date filter: custom calendar + optional quick shortcuts
+  function DateFilter({ value, onChange, shortcuts }) {
+    return React.createElement("div", { className: "painel-date-wrap" },
+      React.createElement(CalendarPicker, { value, onChange }),
+      shortcuts ? React.createElement("div", { className: "ho-date-quick" },
+        shortcuts.map(([off, lb]) => React.createElement("button", {
+          key: off, type: "button",
+          className: "ho-date-btn" + (value && value === isoFor(off) ? " on" : ""),
+          onClick: () => onChange({ target: { value: isoFor(off) } }),
+        }, lb)),
+      ) : null,
+    );
+  }
+
   // ---- mappings ----
   const STATUS_TONE = {
     "Pendente": "warn", "Comprado": "brand", "Entregue": "pos",
@@ -367,7 +515,10 @@
           React.createElement("input", { value: q, placeholder: "Buscar por item, descrição ou pessoa…", onChange: (e) => setQ(e.target.value) }),
           q ? React.createElement("button", { className: "ho-search-x", title: "Limpar", onClick: () => setQ("") }, Ic("x")) : null,
         ),
-        React.createElement("input", { type: "date", className: "painel-date", value: dia, onChange: (e) => setDia(e.target.value), title: "Filtrar por data" }),
+        React.createElement(DateFilter, {
+          value: dia, onChange: (e) => setDia(e.target.value),
+          shortcuts: [[-1, "Ontem"], [-2, "Antes de ontem"], [-7, "Semana passada"]],
+        }),
         filtrando ? React.createElement(Button, { variant: "secondary", size: "sm", icon: Ic("x"), onClick: () => { setQ(""); setDia(""); } }, "Limpar filtro") : null,
       ),
       !vis.length
@@ -442,6 +593,7 @@
           key: a, size: "sm",
           variant: status === a ? STATUS_CONF[a].variant : "secondary",
           icon: Ic(STATUS_CONF[a].icon),
+          className: status === a ? ("buy-sel buy-sel--" + STATUS_CONF[a].tone) : "",
           onClick: () => { const sel = status === a ? null : a; onStatus(rowKey, sel); if (sel && onAction) onAction(it, sel); else onToast(a === "Comprado" ? "Item marcado como comprado" : a === "Cancelado" ? "Item cancelado" : "Item marcado como não encontrado"); },
           style: status && status !== a ? { opacity: .45 } : {},
         }, a));
@@ -739,7 +891,7 @@
   // ============================================================
   // Mensagens-tarefa diretas (checklist à parte)
   // ============================================================
-  function MensagensModal({ data, usuarios, meUser, token, isAdmin, onClose, onCriar, onResponder, onConcluir, onReabrir, onAddPainel, onToast }) {
+  function MensagensModal({ data, usuarios, meUser, token, isAdmin, onClose, onCriar, onResponder, onConcluir, onReabrir, painelGrupoIds, onAddAcomp, onToast }) {
     const [tab, setTab] = useState("recebidas");
     const [dest, setDest] = useState({});
     const [todos, setTodos] = useState(false);
@@ -749,6 +901,8 @@
     const [log, setLog] = useState(null);
     const [q, setQ] = useState("");
     const [dia, setDia] = useState("");
+    // Spinner local por grupoId enquanto a chamada acompanharCriar está em andamento.
+    const [painelBusy, setPainelBusy] = useState({});
 
     const openLog = () => {
       setTab("log");
@@ -773,6 +927,17 @@
       Promise.resolve(onResponder(id, txt)).then(() => setReply((s) => Object.assign({}, s, { [id]: "" })));
     };
 
+    // Adiciona mensagem ao painel compartilhado. Spinner por grupoId; reabilita em erro.
+    const handleAddAcomp = (grupoId, titulo) => {
+      if (!grupoId || !onAddAcomp) return;
+      setPainelBusy(function (s) { return Object.assign({}, s, { [grupoId]: true }); });
+      Promise.resolve(onAddAcomp(grupoId, titulo)).then(function () {
+        setPainelBusy(function (s) { return Object.assign({}, s, { [grupoId]: false }); });
+      }).catch(function () {
+        setPainelBusy(function (s) { return Object.assign({}, s, { [grupoId]: false }); });
+      });
+    };
+
     const card = (t, mode) => React.createElement("div", { className: "msg-card" + (t.status === "Concluído" ? " done" : ""), key: t.id },
       React.createElement("div", { className: "msg-card-h" },
         React.createElement("span", { className: "msg-who" },
@@ -785,8 +950,6 @@
         t.respostas.map((r, i) => React.createElement("div", { className: "msg-reply" + (r.autorUser === meUser ? " mine" : ""), key: i },
           React.createElement("b", null, r.autor), " ", React.createElement("span", null, r.texto),
           React.createElement("span", { className: "msg-reply-time" }, r.quando),
-          (mode === "recebida" && onAddPainel) ? React.createElement("button", { className: "msg-addpainel-mini", title: "Adicionar este item ao meu painel",
-            onClick: () => onAddPainel(r.texto, t.id, "resposta") }, Ic("list-plus")) : null,
         ))) : null,
       t.status === "Concluído" && t.concluido
         ? React.createElement("div", { className: "msg-concl" }, "Concluído por " + (t.concluidoPor || t.para) + " · " + t.concluido) : null,
@@ -795,8 +958,19 @@
           onChange: (e) => setReply((s) => Object.assign({}, s, { [t.id]: e.target.value })),
           onKeyDown: (e) => { if (e.key === "Enter") responder(t.id); } }),
         React.createElement("button", { className: "msg-send", title: "Enviar resposta", onClick: () => responder(t.id) }, Ic("send")),
-        (mode === "recebida" && onAddPainel)
-          ? React.createElement("button", { className: "msg-addpainel", title: "Adicionar ao meu painel de tarefas", onClick: () => onAddPainel(t.mensagem, t.id, "mensagem") }, Ic("list-plus"), "Painel") : null,
+        // Painel compartilhado: chip se já adicionado (baseado em backend), botão caso contrário.
+        // Guarda: só renderiza se grupoId existe e o callback está disponível.
+        // Visível em recebida E enviada (RPC autoriza remetente e destinatário).
+        (t.grupoId && onAddAcomp && mode !== "log")
+          ? (painelGrupoIds && painelGrupoIds.has(t.grupoId)
+              ? React.createElement("span", { className: "msg-chip-painel" }, Ic("check"), " No painel")
+              : React.createElement("button", {
+                  className: "msg-addpainel" + (painelBusy[t.grupoId] ? " busy" : ""),
+                  title: "Adicionar ao painel compartilhado",
+                  disabled: !!painelBusy[t.grupoId],
+                  onClick: function () { handleAddAcomp(t.grupoId, t.mensagem); },
+                }, painelBusy[t.grupoId] ? Ic("loader") : Ic("list-plus"), " Painel"))
+          : null,
         (mode === "recebida" && t.status !== "Concluído")
           ? React.createElement("button", { className: "msg-done", onClick: () => onConcluir(t.id) }, Ic("check"), "Concluir")
           : (t.status === "Concluído" ? React.createElement("button", { className: "msg-reopen", onClick: () => onReabrir(t.id) }, "Reabrir") : null),
@@ -844,7 +1018,7 @@
               React.createElement("input", { value: q, placeholder: "Buscar por palavra ou pessoa…", onChange: (e) => setQ(e.target.value) }),
               q ? React.createElement("button", { className: "ho-search-x", title: "Limpar", onClick: () => setQ("") }, Ic("x")) : null,
             ),
-            React.createElement("input", { type: "date", className: "painel-date", value: dia, onChange: (e) => setDia(e.target.value), title: "Filtrar por data" }),
+            React.createElement(DateFilter, { value: dia, onChange: (e) => setDia(e.target.value) }),
             filtrando ? React.createElement(Button, { variant: "secondary", size: "sm", icon: Ic("x"), onClick: () => { setQ(""); setDia(""); } }, "Limpar") : null,
           ),
           (tab === "log" && log === null)
@@ -917,7 +1091,7 @@
           React.createElement("input", { value: q, placeholder: "Buscar por palavra ou pessoa…", onChange: (e) => setQ(e.target.value) }),
           q ? React.createElement("button", { className: "ho-search-x", title: "Limpar", onClick: () => setQ("") }, Ic("x")) : null,
         ),
-        React.createElement("input", { type: "date", className: "painel-date", value: dia, onChange: (e) => setDia(e.target.value), title: "Filtrar por data" }),
+        React.createElement(DateFilter, { value: dia, onChange: (e) => setDia(e.target.value) }),
         filtrando ? React.createElement(Button, { variant: "secondary", size: "sm", icon: Ic("x"), onClick: () => { setQ(""); setDia(""); } }, "Limpar filtro") : null,
       ),
       tarefas.length
@@ -939,5 +1113,109 @@
     );
   }
 
-  window.HandoverViews = { QueueView, Checklist, Historico, Comprador, CardDetail, OrcamentoModal, TrilhaModal, MensagensModal, PainelTarefas, Ic };
+  // ============================================================
+  // Acompanhando — painel compartilhado (Fase 3.1, read-only)
+  // ============================================================
+  const ACOMP_STATUS_CLS = { "Pendente": "acomp-chip--pend", "Concluído": "acomp-chip--done" };
+  const ACOMP_PAPEL_LBL  = { "remetente": "Remetente", "destinatario": "Destinatário", "promotor": "Promotor" };
+  const ACOMP_EVT_IC     = { "criacao": "star", "comentario": "message-circle", "conclusao": "check-circle", "reabertura": "rotate-ccw" };
+
+  function AcompanhandoCard({ t }) {
+    return React.createElement("div", { className: "acomp-card" + (t.status === "Concluído" ? " acomp-card--done" : "") },
+      // Cabeçalho: título + chip de status
+      React.createElement("div", { className: "acomp-card-h" },
+        React.createElement("span", { className: "acomp-titulo" }, t.titulo),
+        React.createElement("span", { className: "acomp-chip " + (ACOMP_STATUS_CLS[t.status] || "acomp-chip--pend") }, t.status),
+      ),
+      // Meta: atualizado + concluído por
+      React.createElement("div", { className: "acomp-meta" },
+        "Atualizado: " + t.atualizadoEm,
+        t.status === "Concluído" && t.concluidoNome
+          ? React.createElement("span", null, " · Concluído por " + t.concluidoNome + (t.concluidoEm ? " em " + t.concluidoEm : ""))
+          : null,
+      ),
+      // Participantes
+      t.participantes.length > 0 ? React.createElement("div", { className: "acomp-partic" },
+        t.participantes.map((p, i) => React.createElement("span", { key: i, className: "acomp-ptag" },
+          p.nome,
+          React.createElement("span", { className: "acomp-papel" }, " · " + (ACOMP_PAPEL_LBL[p.papel] || p.papel)),
+        )),
+      ) : null,
+      // Eventos (timeline compacta)
+      t.eventos.length > 0 ? React.createElement("div", { className: "acomp-evts" },
+        t.eventos.map((ev, i) => React.createElement("div", { key: i, className: "acomp-evt" },
+          React.createElement("span", { className: "acomp-evt-ic" },
+            Ic(ACOMP_EVT_IC[ev.tipo] || "circle", { style: { width: 13, height: 13 } }),
+          ),
+          React.createElement("div", { className: "acomp-evt-body" },
+            React.createElement("span", { className: "acomp-evt-autor" }, ev.autorNome),
+            ev.texto ? React.createElement("span", { className: "acomp-evt-txt" }, ": " + ev.texto) : null,
+            React.createElement("span", { className: "acomp-evt-time" }, " · " + ev.criado),
+          ),
+        )),
+      ) : null,
+    );
+  }
+
+  function AcompanhandoView({ tarefas, naoLidas, loading, error, onRefresh }) {
+    return React.createElement(React.Fragment, null,
+      // Cabeçalho da seção
+      React.createElement("div", { className: "ho-sechead" },
+        React.createElement("div", null,
+          React.createElement("div", { className: "ho-eyebrow", style: { marginBottom: 4 } }, "Compartilhado"),
+          React.createElement("h2", null,
+            "Acompanhando",
+            naoLidas > 0
+              ? React.createElement("span", { className: "acomp-badge" }, naoLidas > 99 ? "99+" : String(naoLidas))
+              : null,
+          ),
+          React.createElement("p", null,
+            loading && tarefas.length === 0
+              ? "Carregando…"
+              : error
+                ? "Não foi possível carregar as tarefas."
+                : tarefas.length + " tarefa(s) em que você está envolvido(a).",
+          ),
+        ),
+        React.createElement("button", {
+          className: "ho-icbtn" + (loading ? " ho-icbtn--spin" : ""),
+          onClick: onRefresh,
+          "aria-label": "Atualizar Acompanhando",
+          title: "Atualizar",
+        }, Ic("refresh-cw")),
+      ),
+      // Skeletons de loading (só quando lista vazia + carregando)
+      loading && tarefas.length === 0
+        ? React.createElement("div", { className: "acomp-skel-wrap" },
+            [1, 2, 3].map((i) => React.createElement("div", { key: i, className: "acomp-skel" })),
+          )
+        : null,
+      // Estado de erro
+      !loading && error
+        ? React.createElement("div", { className: "acomp-empty" },
+            Ic("alert-circle", { style: { width: 32, height: 32, opacity: .45 } }),
+            React.createElement("p", null, "Erro ao carregar tarefas."),
+            React.createElement("p", { style: { fontSize: 12, opacity: .6 } }, "Verifique a conexão e tente novamente."),
+            React.createElement("button", { className: "ci-btn ci-btn--secondary", onClick: onRefresh, style: { marginTop: 6 } }, "Tentar novamente"),
+          )
+        : null,
+      // Estado vazio
+      !loading && !error && tarefas.length === 0
+        ? React.createElement("div", { className: "acomp-empty" },
+            Ic("bookmark", { style: { width: 32, height: 32, opacity: .4 } }),
+            React.createElement("p", null, "Nenhuma tarefa acompanhada ainda."),
+            React.createElement("p", { style: { fontSize: 13, opacity: .55, marginTop: 2 } },
+              "Use o botão \"+ Painel\" em uma mensagem para começar a acompanhar."),
+          )
+        : null,
+      // Lista de cards (atualização silenciosa não apaga a lista)
+      !error && tarefas.length > 0
+        ? React.createElement("div", { className: "acomp-list" },
+            tarefas.map((t) => React.createElement(AcompanhandoCard, { key: t.id, t: t })),
+          )
+        : null,
+    );
+  }
+
+  window.HandoverViews = { QueueView, Checklist, Historico, Comprador, CardDetail, OrcamentoModal, TrilhaModal, MensagensModal, PainelTarefas, AcompanhandoView, Ic, CalendarPicker, SelectPicker, isoFor };
 })();

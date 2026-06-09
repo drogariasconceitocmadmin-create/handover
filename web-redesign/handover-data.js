@@ -451,6 +451,50 @@ window.HO_API = (function () {
     return rpc("handover_compra_reposicao_criar", { p_token: token, p_payload: payload });
   }
 
+  // ---------- Tarefas acompanhadas (painel compartilhado — Fase 3.1) ----------
+  function acompanharListar(token) {
+    return rpc("handover_acompanhar_listar", { p_token: token }).then(function (res) {
+      if (res.error) throw res.error;
+      var tarefas = (res.data && res.data.tarefas) || [];
+      return tarefas.map(function (t) {
+        return {
+          id: t.ID,
+          grupoId: t.Grupo_ID,
+          titulo: t.Titulo || "(sem título)",
+          status: t.Status || "Pendente",
+          criadoNome: t.Criado_Nome || t.Criado_Por || "—",
+          criadoEm: fmt(t.Criado_Em),
+          atualizadoEm: fmt(t.Atualizado_Em),
+          concluidoNome: t.Concluido_Por || null,   // RPC retorna concluido_nome nessa chave
+          concluidoEm: t.Concluido_Em ? fmt(t.Concluido_Em) : null,
+          participantes: (t.Participantes || []).map(function (p) {
+            return { usuario: p.Usuario, nome: p.Nome || p.Usuario, papel: p.Papel || "" };
+          }),
+          eventos: (t.Eventos || []).map(function (e) {
+            return { tipo: e.Tipo, autorNome: e.Autor_Nome || e.Autor || "—", texto: e.Texto || null, criado: fmt(e.Criado_Em) };
+          }),
+        };
+      });
+    });
+  }
+
+  // Notificações in-app: retorna apenas o contador não lidas (badge). Leitura somente.
+  function notificacoesListar(token) {
+    return rpc("handover_notificacoes_listar", { p_token: token }).then(function (res) {
+      if (res.error) throw res.error;
+      return { naoLidas: (res.data && res.data.naoLidas) || 0 };
+    }).catch(function () { return { naoLidas: 0 }; });
+  }
+
+  // Promove uma mensagem (grupoId) ao painel compartilhado.
+  // Retorna { ok, id, jaExistia }. Idempotente: mesmo grupoId → jaExistia=true, sem erro.
+  function acompanharCriar(token, grupoId, titulo) {
+    return rpc("handover_acompanhar_criar", { p_token: token, p_grupo_id: grupoId, p_titulo: titulo || null }).then(function (res) {
+      if (res.error) throw res.error;
+      return res.data || {};
+    });
+  }
+
   return {
     client: client,
     login: login, logout: logout,
@@ -468,6 +512,7 @@ window.HO_API = (function () {
     painelListar: painelListar, painelCriar: painelCriar, painelConcluir: painelConcluir,
     painelReabrir: painelReabrir, painelRemover: painelRemover, painelAvisosAck: painelAvisosAck,
     criarPendencia: criarPendencia, criarMedicamento: criarMedicamento, criarCompra: criarCompra,
+    acompanharListar: acompanharListar, notificacoesListar: notificacoesListar, acompanharCriar: acompanharCriar,
     fmt: fmt, fmtData: fmtData,
   };
 })();
