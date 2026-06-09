@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+<title>Compras Conceito</title>
+<meta name="description" content="App do comprador — fila de compras e mensagens da Drogarias Conceito." />
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#0c0f1c" />
+<link rel="icon" type="image/png" href="icons/icon-192.png" />
+
+<!-- iOS standalone -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Compras" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+
+<link rel="stylesheet" href="comprador.css" />
+</head>
+<body>
+<div class="co-wallpaper" aria-hidden="true"></div>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="comprador-data.js"></script>
+<script type="text/babel" src="comprador-app.jsx"></script>
+
+<script>
+  // Registrar service worker (somente em https / produção).
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    // Quando um SW novo assume o controle, recarrega 1x p/ pegar a versão nova na hora.
+    var _refreshing = false;
+    navigator.serviceWorker.addEventListener("controllerchange", function () {
+      if (_refreshing) return;
+      _refreshing = true;
+      window.location.reload();
+    });
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").then(function (reg) {
+        // Checa por atualização a cada vez que o app abre.
+        reg.update();
+      }).catch(function () {});
+    });
+  }
+</script>
+</body>
+</html>
