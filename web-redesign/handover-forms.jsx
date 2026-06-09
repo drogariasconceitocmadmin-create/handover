@@ -6,47 +6,36 @@
   const { useState, useEffect } = React;
   const Ic = (window.HandoverViews && window.HandoverViews.Ic)
     || ((n, p) => React.createElement("span", p));
+  const CalendarPicker = window.HandoverViews && window.HandoverViews.CalendarPicker;
+  const SelectPickerShared = window.HandoverViews && window.HandoverViews.SelectPicker;
+  const isoForShared = window.HandoverViews && window.HandoverViews.isoFor;
 
   const Field = ({ label, children }) =>
     React.createElement("div", { className: "ho-field" },
       React.createElement("label", null, label), children);
 
   const Input = (p) => React.createElement("input", Object.assign({ className: "ho-input" }, p));
-  const Select = ({ children, ...p }) => React.createElement("select", Object.assign({ className: "ho-select" }, p), children);
+  const Select = SelectPickerShared
+    ? (props) => React.createElement(SelectPickerShared, props)
+    : ({ children, ...p }) => React.createElement("select", Object.assign({ className: "ho-select" }, p), children);
   const Textarea = (p) => React.createElement("textarea", Object.assign({ className: "ho-textarea" }, p));
 
-  // Helper to format date as YYYY-MM-DD
-  const fmtDateISO = (d) => {
-    const pad = (n) => String(n).padStart(2, '0');
-    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-  };
-
-  // Date shortcuts component
-  const DateInput = (p) => {
-    const inputRef = React.useRef(null);
-    const [val, setVal] = React.useState("");
-    const isoFor = (daysOffset) => {
-      const d = new Date();
-      d.setDate(d.getDate() + daysOffset);
-      return fmtDateISO(d);
-    };
-    const setDate = (daysOffset) => {
-      const iso = isoFor(daysOffset);
-      if (inputRef.current) {
-        inputRef.current.value = iso;
-        inputRef.current.dispatchEvent(new Event('input', { bubbles: true }));
-        inputRef.current.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-      setVal(iso);
-    };
+  // Date field with glass calendar + shortcuts (uses shared CalendarPicker from HandoverViews)
+  const DateInput = ({ name, placeholder }) => {
+    const [val, setVal] = useState("");
+    const isoFor = isoForShared || ((offset) => { const d = new Date(); d.setDate(d.getDate() + offset); return d.toISOString().slice(0, 10); });
     const QUICK = [[1, "Amanhã"], [2, "Depois de amanhã"], [7, "Semana que vem"]];
+    // Hidden input to carry the value in the form
     return React.createElement("div", null,
-      React.createElement("input", Object.assign({ ref: inputRef, className: "ho-input" }, p, { type: "date", onChange: (e) => { setVal(e.target.value); if (p.onChange) p.onChange(e); } })),
+      React.createElement("input", { type: "hidden", name: name, value: val }),
+      CalendarPicker
+        ? React.createElement(CalendarPicker, { value: val, onChange: (e) => setVal(e.target.value), placeholder })
+        : React.createElement("input", { type: "date", className: "ho-input", value: val, onChange: (e) => setVal(e.target.value) }),
       React.createElement("div", { className: "ho-date-quick" },
         QUICK.map(([off, lb]) => React.createElement("button", {
           key: off, type: "button",
           className: "ho-date-btn" + (val && val === isoFor(off) ? " on" : ""),
-          onClick: () => setDate(off),
+          onClick: () => setVal(isoFor(off)),
         }, lb)),
       ),
     );
