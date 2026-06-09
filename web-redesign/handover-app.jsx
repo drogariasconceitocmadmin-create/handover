@@ -549,6 +549,13 @@
       reloadBundle(operador.token, newTurno);
     };
 
+    // DEVE ficar antes de qualquer early return — regra dos Hooks.
+    // Quando !operador, acomp.tarefas é [] e o Set fica vazio (inócuo).
+    const painelGrupoIds = React.useMemo(
+      function () { return new Set(acomp.tarefas.map(function (t) { return t.grupoId; })); },
+      [acomp.tarefas]
+    );
+
     if (!operador) {
       return React.createElement("div", { ref: appRef, className: "ho-app", style: { position: "relative" }, "data-density": t.density, "data-urg": t.urgency },
         React.createElement(DotMatrix, { appRef }),
@@ -603,12 +610,6 @@
       view = React.createElement(V.PainelTarefas, { data: painel, onToast: toast, onCriar: (txt) => handlePainelCriar(txt, null, "manual"), onConcluir: handlePainelConcluir, onReabrir: handlePainelReabrir, onRemover: handlePainelRemover });
     else if (route === "acompanhando")
       view = React.createElement(V.AcompanhandoView, { tarefas: acomp.tarefas, naoLidas: acomp.naoLidas, loading: acomp.loading, error: acomp.error, onRefresh: () => reloadAcompanhando() });
-
-    // Set de grupo_ids já no painel compartilhado — alimenta o chip "✓ No painel" no MensagensModal.
-    const painelGrupoIds = React.useMemo(
-      function () { return new Set(acomp.tarefas.map(function (t) { return t.grupoId; })); },
-      [acomp.tarefas]
-    );
 
     const showKpis = ["pendencias", "encomendas", "compras"].includes(route);
     const initials = (operador.nome || operador.usuario || "?").slice(0, 2).toUpperCase();
