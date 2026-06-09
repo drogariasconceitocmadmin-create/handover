@@ -287,10 +287,9 @@
       reloadTarefas(op.token);
       reloadPainel(op.token);
       loadUsuarios(op.usuario);
-      // badge inicial de notificações (naoLidas) sem bloquear o login
-      API.notificacoesListar(op.token).then(function (n) {
-        setAcomp((a) => Object.assign({}, a, { naoLidas: (n && n.naoLidas) || 0 }));
-      }).catch(function () {});
+      // Carrega tarefas acompanhadas (lista completa) + naoLidas ao logar.
+      // Necessário para derivar painelGrupoIds no MensagensModal já no login.
+      reloadAcompanhando(op.token);
     };
 
     // Logout: encerra a sessão no servidor, limpa o localStorage e volta ao login.
@@ -329,9 +328,8 @@
         reloadTarefas(token);
         reloadPainel(token);
         loadUsuarios(usuario);
-        API.notificacoesListar(token).then(function (n) {
-          setAcomp((a) => Object.assign({}, a, { naoLidas: (n && n.naoLidas) || 0 }));
-        }).catch(function () {});
+        // Carrega tarefas acompanhadas (lista + naoLidas) no restore-session.
+        reloadAcompanhando(token);
       }).catch(() => {
         clearSession();   // token inválido/expirado → login limpo
       });
@@ -373,6 +371,24 @@
         if (r && r.ok) { toast("Adicionado ao painel"); reloadPainel(); } else toast((r && r.erro) || "Erro");
         return r;
       });
+
+    // Painel COMPARTILHADO — promove uma mensagem (grupoId) para tarefas_acompanhadas.
+    // Contrato da RPC: { ok, id, jaExistia }. jaExistia=true é sucesso (idempotente).
+    const handleAcompanharCriar = useCallback((grupoId, titulo) => {
+      if (!operador || !grupoId) return Promise.reject(new Error("sem token ou grupoId"));
+      return API.acompanharCriar(operador.token, grupoId, titulo).then(function (res) {
+        if (res.ok !== true) {
+          toast(res.erro || "Erro ao adicionar ao painel");
+          return res;
+        }
+        if (!res.jaExistia) toast("Adicionado ao painel compartilhado");
+        reloadAcompanhando();
+        return res;
+      }).catch(function () {
+        toast("Erro ao adicionar ao painel");
+        throw new Error("Erro ao adicionar ao painel");
+      });
+    }, [operador, reloadAcompanhando]);
     const handlePainelConcluir = (id) => API.painelConcluir(operador.token, id).then(() => { toast("Tarefa concluída"); reloadPainel(); });
     const handlePainelReabrir = (id) => API.painelReabrir(operador.token, id).then(() => reloadPainel());
     const handlePainelRemover = (id) => API.painelRemover(operador.token, id).then(() => reloadPainel());
@@ -588,6 +604,12 @@
     else if (route === "acompanhando")
       view = React.createElement(V.AcompanhandoView, { tarefas: acomp.tarefas, naoLidas: acomp.naoLidas, loading: acomp.loading, error: acomp.error, onRefresh: () => reloadAcompanhando() });
 
+    // Set de grupo_ids já no painel compartilhado — alimenta o chip "✓ No painel" no MensagensModal.
+    const painelGrupoIds = React.useMemo(
+      function () { return new Set(acomp.tarefas.map(function (t) { return t.grupoId; })); },
+      [acomp.tarefas]
+    );
+
     const showKpis = ["pendencias", "encomendas", "compras"].includes(route);
     const initials = (operador.nome || operador.usuario || "?").slice(0, 2).toUpperCase();
 
@@ -680,7 +702,8 @@
         onClose: () => setMsgOpen(false),
         onCriar: handleTarefaCriar, onResponder: handleTarefaResponder,
         onConcluir: handleTarefaConcluir, onReabrir: handleTarefaReabrir,
-        onAddPainel: (txt, oid, tipo) => handlePainelCriar(txt, oid, tipo),
+        painelGrupoIds: painelGrupoIds,
+        onAddAcomp: handleAcompanharCriar,
         onToast: toast,
       }),
       // tweaks

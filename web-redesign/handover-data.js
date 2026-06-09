@@ -486,6 +486,15 @@ window.HO_API = (function () {
     }).catch(function () { return { naoLidas: 0 }; });
   }
 
+  // Promove uma mensagem (grupoId) ao painel compartilhado.
+  // Retorna { ok, id, jaExistia }. Idempotente: mesmo grupoId → jaExistia=true, sem erro.
+  function acompanharCriar(token, grupoId, titulo) {
+    return rpc("handover_acompanhar_criar", { p_token: token, p_grupo_id: grupoId, p_titulo: titulo || null }).then(function (res) {
+      if (res.error) throw res.error;
+      return res.data || {};
+    });
+  }
+
   return {
     client: client,
     login: login, logout: logout,
@@ -503,7 +512,7 @@ window.HO_API = (function () {
     painelListar: painelListar, painelCriar: painelCriar, painelConcluir: painelConcluir,
     painelReabrir: painelReabrir, painelRemover: painelRemover, painelAvisosAck: painelAvisosAck,
     criarPendencia: criarPendencia, criarMedicamento: criarMedicamento, criarCompra: criarCompra,
-    acompanharListar: acompanharListar, notificacoesListar: notificacoesListar,
+    acompanharListar: acompanharListar, notificacoesListar: notificacoesListar, acompanharCriar: acompanharCriar,
     fmt: fmt, fmtData: fmtData,
   };
 })();

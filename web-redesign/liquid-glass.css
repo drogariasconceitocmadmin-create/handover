@@ -1383,11 +1383,30 @@ html, body {
   color: #04231a !important;
 }
 
-/* Botão "Adicionar ao painel" e mini, abas/threads de mensagem */
+/* Botão "＋ Painel" e chip "✓ No painel" nas mensagens (Fase 3.2) */
 .msg-addpainel {
   background: linear-gradient(180deg, rgba(72,228,178,0.30) 0%, rgba(44,212,160,0.18) 100%) !important;
   border: 1px solid rgba(44,212,160,0.40) !important;
   color: #6ef0d0 !important;
+}
+.msg-addpainel.busy {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+/* Chip readonly exibido quando a mensagem já está no painel compartilhado */
+.msg-chip-painel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(74,222,128,0.45);
+  background: rgba(74,222,128,0.12);
+  color: #4ade80;
+  font-size: 0.78rem;
+  font-weight: 500;
+  pointer-events: none;
+  user-select: none;
 }
 .msg-thread { border-left-color: rgba(255,255,255,0.14) !important; }
 .msg-reply.mine { color: rgba(255,255,255,0.92) !important; }

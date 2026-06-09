@@ -891,7 +891,7 @@
   // ============================================================
   // Mensagens-tarefa diretas (checklist à parte)
   // ============================================================
-  function MensagensModal({ data, usuarios, meUser, token, isAdmin, onClose, onCriar, onResponder, onConcluir, onReabrir, onAddPainel, onToast }) {
+  function MensagensModal({ data, usuarios, meUser, token, isAdmin, onClose, onCriar, onResponder, onConcluir, onReabrir, painelGrupoIds, onAddAcomp, onToast }) {
     const [tab, setTab] = useState("recebidas");
     const [dest, setDest] = useState({});
     const [todos, setTodos] = useState(false);
@@ -901,6 +901,8 @@
     const [log, setLog] = useState(null);
     const [q, setQ] = useState("");
     const [dia, setDia] = useState("");
+    // Spinner local por grupoId enquanto a chamada acompanharCriar está em andamento.
+    const [painelBusy, setPainelBusy] = useState({});
 
     const openLog = () => {
       setTab("log");
@@ -925,6 +927,17 @@
       Promise.resolve(onResponder(id, txt)).then(() => setReply((s) => Object.assign({}, s, { [id]: "" })));
     };
 
+    // Adiciona mensagem ao painel compartilhado. Spinner por grupoId; reabilita em erro.
+    const handleAddAcomp = (grupoId, titulo) => {
+      if (!grupoId || !onAddAcomp) return;
+      setPainelBusy(function (s) { return Object.assign({}, s, { [grupoId]: true }); });
+      Promise.resolve(onAddAcomp(grupoId, titulo)).then(function () {
+        setPainelBusy(function (s) { return Object.assign({}, s, { [grupoId]: false }); });
+      }).catch(function () {
+        setPainelBusy(function (s) { return Object.assign({}, s, { [grupoId]: false }); });
+      });
+    };
+
     const card = (t, mode) => React.createElement("div", { className: "msg-card" + (t.status === "Concluído" ? " done" : ""), key: t.id },
       React.createElement("div", { className: "msg-card-h" },
         React.createElement("span", { className: "msg-who" },
@@ -937,8 +950,6 @@
         t.respostas.map((r, i) => React.createElement("div", { className: "msg-reply" + (r.autorUser === meUser ? " mine" : ""), key: i },
           React.createElement("b", null, r.autor), " ", React.createElement("span", null, r.texto),
           React.createElement("span", { className: "msg-reply-time" }, r.quando),
-          (mode === "recebida" && onAddPainel) ? React.createElement("button", { className: "msg-addpainel-mini", title: "Adicionar este item ao meu painel",
-            onClick: () => onAddPainel(r.texto, t.id, "resposta") }, Ic("list-plus")) : null,
         ))) : null,
       t.status === "Concluído" && t.concluido
         ? React.createElement("div", { className: "msg-concl" }, "Concluído por " + (t.concluidoPor || t.para) + " · " + t.concluido) : null,
@@ -947,8 +958,19 @@
           onChange: (e) => setReply((s) => Object.assign({}, s, { [t.id]: e.target.value })),
           onKeyDown: (e) => { if (e.key === "Enter") responder(t.id); } }),
         React.createElement("button", { className: "msg-send", title: "Enviar resposta", onClick: () => responder(t.id) }, Ic("send")),
-        (mode === "recebida" && onAddPainel)
-          ? React.createElement("button", { className: "msg-addpainel", title: "Adicionar ao meu painel de tarefas", onClick: () => onAddPainel(t.mensagem, t.id, "mensagem") }, Ic("list-plus"), "Painel") : null,
+        // Painel compartilhado: chip se já adicionado (baseado em backend), botão caso contrário.
+        // Guarda: só renderiza se grupoId existe e o callback está disponível.
+        // Visível em recebida E enviada (RPC autoriza remetente e destinatário).
+        (t.grupoId && onAddAcomp && mode !== "log")
+          ? (painelGrupoIds && painelGrupoIds.has(t.grupoId)
+              ? React.createElement("span", { className: "msg-chip-painel" }, Ic("check"), " No painel")
+              : React.createElement("button", {
+                  className: "msg-addpainel" + (painelBusy[t.grupoId] ? " busy" : ""),
+                  title: "Adicionar ao painel compartilhado",
+                  disabled: !!painelBusy[t.grupoId],
+                  onClick: function () { handleAddAcomp(t.grupoId, t.mensagem); },
+                }, painelBusy[t.grupoId] ? Ic("loader") : Ic("list-plus"), " Painel"))
+          : null,
         (mode === "recebida" && t.status !== "Concluído")
           ? React.createElement("button", { className: "msg-done", onClick: () => onConcluir(t.id) }, Ic("check"), "Concluir")
           : (t.status === "Concluído" ? React.createElement("button", { className: "msg-reopen", onClick: () => onReabrir(t.id) }, "Reabrir") : null),
